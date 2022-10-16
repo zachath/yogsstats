@@ -2,39 +2,81 @@ package handlers
 
 import (
 	//Go packages
+	"context"
+	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
-
+	
 	//External dependencies
 	log "github.com/rs/zerolog/log"
+
+	//Local packages
+	. "yogsstats/models"
+	config "yogsstats/config"
 )
+
+func ValidateTTTInput(next http.HandlerFunc, game string) http.HandlerFunc {
+	log.Debug().Msg("[ValidateTTTInput]")
+	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		ctx := req.Context()
+
+		var round TTTRound
+		defer req.Body.Close()
+
+		reqBody, err := ioutil.ReadAll(req.Body)
+		if err != nil {
+			log.Error().Err(err).Stack().Msg("Parsing body to TTT round failed")
+			http.Error(rw, "Could not parse input data", http.StatusBadRequest)
+			return
+		}
+
+		err = json.Unmarshal(reqBody, &round)
+		if err != nil {
+			log.Error().Err(err).Stack().Msg("Unmarshaling failed")
+			http.Error(rw, "Could not marshal input data", http.StatusBadRequest)
+			return
+		}
+
+		matched := len(config.DateRegex.FindAllString(round.Date, -1)) == 1
+		if !matched {
+			log.Error().Err(err).Stack().Msgf("Date did not match regex")
+			http.Error(rw, "Wrong date format", http.StatusBadRequest)
+			return
+		}
+
+		ctx = context.WithValue(ctx, "round", round)
+		req = req.WithContext(ctx)
+
+		next(rw, req)
+	})
+}
 
 func HomeHandler(rw http.ResponseWriter, req *http.Request) {
 	log.Debug().Msg("[HomeHandler]")
 	http.Error(rw, "Not implemented", http.StatusNotImplemented)
 }
 
-func StatsHandler(rw http.ResponseWriter, req *http.Request) {
-	log.Debug().Msg("[StatsHandler]")
+func TTTStatsHandler(rw http.ResponseWriter, req *http.Request) {
+	log.Debug().Msg("[TTTStatsHandler]")
 	switch req.Method {
 	case http.MethodGet:
-		serveStatsGet(rw, req)
+		serveTTTStatsGet(rw, req)
 	case http.MethodPost:
-		serveStatsPost(rw, req)
-	default:
-		errString := fmt.Sprintf("Unsupported method %s\n", req.Method)
-		log.Error().Msgf(errString)
-		http.Error(rw, errString, http.StatusForbidden)
+		serveTTTStatsPost(rw, req)
 	}
 }
 
-func serveStatsGet(rw http.ResponseWriter, req *http.Request) {
-	log.Debug().Msg("[serverStatsGet]")
+func serveTTTStatsGet(rw http.ResponseWriter, req *http.Request) {
+	log.Debug().Msg("[serveTTTStatsGet]")
 	io.WriteString(rw, "serveStatsGet\n")
+	http.Error(rw, "Not implemented", http.StatusNotImplemented)
 }
 
-func serveStatsPost(rw http.ResponseWriter, req *http.Request) {
-	log.Debug().Msg("[serverStatsPost]")
-	io.WriteString(rw, "serveStatsPost\n")
+func serveTTTStatsPost(rw http.ResponseWriter, req *http.Request) {
+	log.Debug().Msg("[serveTTTStatsPost]")
+	
+	round := req.Context().Value("round")
+	io.WriteString(rw, fmt.Sprintf("Got %v", round))
 }

@@ -12,7 +12,7 @@ import (
 	log "github.com/rs/zerolog/log"
 
 	//Local packages
-	"yogsstats/handlers"
+	. "yogsstats/handlers"
 )
 
 func init() {
@@ -23,8 +23,8 @@ func main() {
 	log.Debug().Msg("[main]")
 
 	r := mux.NewRouter()
-	r.HandleFunc("/", handlers.HomeHandler).Methods(http.MethodGet)
-	r.HandleFunc("/stats", handlers.StatsHandler).Methods(http.MethodGet, http.MethodPost)
+	r.HandleFunc("/", HomeHandler).Methods(http.MethodGet)
+	r.HandleFunc("/stats/ttt", ValidateTTTInput(TTTStatsHandler, "ttt")).Methods(http.MethodGet, http.MethodPost)
 
 	s := &http.Server{
 		Handler: r,
