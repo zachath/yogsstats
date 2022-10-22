@@ -5,19 +5,15 @@ type Round struct {
 }
 type TTTRound struct {
 	Round
-	Innocents	[]TTTPlayer `json:"innocents"`
-	Traitors	[]TTTPlayer	`json:"traitors"`
+	Players		[]TTTPlayer `json:"players"`
 	WinningTeam	string		`json:"winningTeam"`
 }
-type GTARound struct {
-	Round
-	Teams		[][]Player 	`json:"teams"`
-	WinningTeam	[]Player	`json:"winningTeam"`
-}
+
 type Player struct {
 	Name	string 	`json:"name"`
 }
 type TTTPlayer struct {
 	Player
 	Role	string	`json:"role"`
+	Team	string 	`json:"team"`
 }

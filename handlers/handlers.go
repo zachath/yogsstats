@@ -4,7 +4,6 @@ import (
 	//Go packages
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -15,6 +14,7 @@ import (
 	//Local packages
 	. "yogsstats/models"
 	config "yogsstats/config"
+	db "yogsstats/database"
 )
 
 func ValidateTTTInput(next http.HandlerFunc, game string) http.HandlerFunc {
@@ -77,6 +77,14 @@ func serveTTTStatsGet(rw http.ResponseWriter, req *http.Request) {
 func serveTTTStatsPost(rw http.ResponseWriter, req *http.Request) {
 	log.Debug().Msg("[serveTTTStatsPost]")
 	
-	round := req.Context().Value("round")
-	io.WriteString(rw, fmt.Sprintf("Got %v", round))
+	round := req.Context().Value("round").(TTTRound)
+
+	err := db.InsertRoundTTT(round)
+	if err != nil {
+		log.Error().Err(err).Msg("Round insertion failed")
+		http.Error(rw, "Failed to add POSTed round to database", http.StatusInternalServerError)
+		return
+	}
+
+	io.WriteString(rw, "POSTed round successfully")
 }
