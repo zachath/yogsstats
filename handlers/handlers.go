@@ -4,17 +4,18 @@ import (
 	//Go packages
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
-	
+
 	//External dependencies
 	log "github.com/rs/zerolog/log"
 
 	//Local packages
-	. "yogsstats/models"
 	config "yogsstats/config"
 	db "yogsstats/database"
+	. "yogsstats/models"
 )
 
 func ValidateTTTInput(next http.HandlerFunc, game string) http.HandlerFunc {
@@ -82,7 +83,7 @@ func serveTTTStatsPost(rw http.ResponseWriter, req *http.Request) {
 	err := db.InsertRoundTTT(round)
 	if err != nil {
 		log.Error().Err(err).Msg("Round insertion failed")
-		http.Error(rw, "Failed to add POSTed round to database", http.StatusInternalServerError)
+		http.Error(rw, fmt.Sprintf("Failed to add POSTed round to database: %s", err.Error()), http.StatusInternalServerError)
 		return
 	}
 

@@ -26,6 +26,12 @@ func InsertRoundTTT(round TTTRound) error {
 		return err
 	}
 
+	err = executeQuery(fmt.Sprintf("INSERT INTO \"Round\" VALUES ('%s', '%s', '%s')", round.Id, round.Date, round.WinningTeam), db)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to insert Roud into database")
+		return err
+	}
+
 	for _, player := range round.Players {
 		err := ensurePlayerExistence(player.Name, db)
 		if err != nil {
@@ -34,7 +40,21 @@ func InsertRoundTTT(round TTTRound) error {
 		}
 	}
 
+	for _, player := range round.Players {
+		err = executeQuery(fmt.Sprintf("INSERT INTO \"RoundParticipation\" VALUES ('%s', '%s', '%s', '%s')", round.Id, player.Name, player.Role, player.Team), db)
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to insert RoudParticipation into database")
+			return err
+		}
+	}
+
 	return  nil
+}
+
+func executeQuery(query string, db *sql.DB) error {
+	log.Debug().Msg("[executeQuery]")
+	_, err := db.Exec(query)
+	return err
 }
 
 func ensurePlayerExistence(player string, db *sql.DB) error {
@@ -52,7 +72,7 @@ func ensurePlayerExistence(player string, db *sql.DB) error {
 		return nil
 	} else {
 		log.Debug().Msgf("No player found, inserting into database player '%s'", player)
-		_, err := db.Exec(fmt.Sprintf("INSERT INTO \"Player\" VALUES ('%s', %d, %d)", player, 0, 0))
+		_, err := db.Exec(fmt.Sprintf("INSERT INTO \"Player\" VALUES ('%s')", player))
 		return err
 	}
 }
