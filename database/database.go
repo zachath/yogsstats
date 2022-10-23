@@ -28,7 +28,7 @@ func InsertRoundTTT(round *TTTRound) error {
 		return err
 	}
 
-	err = executeQuery(fmt.Sprintf("INSERT INTO \"Round\" VALUES ('%s', '%s', '%s')", round.Id, round.Date, round.WinningTeam), db)
+	err = executeQuery(fmt.Sprintf("INSERT INTO \"Round\" VALUES ('%s', '%s', '%s', '%s')", round.Id, round.Date, round.WinningTeam, round.Randomat), db)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to insert Roud into database")
 		return err
@@ -54,7 +54,7 @@ func InsertRoundTTT(round *TTTRound) error {
 }
 
 func GetTTTRound(id string) (*TTTRound, error) {
-	log.Debug().Msg("[InsertRoundTTT]")
+	log.Debug().Msg("[GetTTTRound]")
 
 	db, err := sql.Open("postgres", connectionStringTTT)
 	if err != nil {
@@ -62,7 +62,7 @@ func GetTTTRound(id string) (*TTTRound, error) {
 		return nil, err
 	}
 
-	query := fmt.Sprintf("SELECT R.date, R.winning_team, RP.player, RP.role, RP.team FROM \"Round\" R JOIN \"RoundParticipation\" RP ON RP.id = R.id WHERE R.id = %s;", id)
+	query := fmt.Sprintf("SELECT R.date, R.winning_team, R.randomat, RP.player, RP.role, RP.team FROM \"Round\" R JOIN \"RoundParticipation\" RP ON RP.id = R.id WHERE R.id = %s;", id)
 	rows, err := db.Query(query)
 	if err != nil {
 		log.Error().Msg("Failed query")
@@ -77,6 +77,7 @@ func GetTTTRound(id string) (*TTTRound, error) {
 	type row struct {
 		Date		string
 		WinningTeam	string
+		Randomat	string
 		Player		string
 		Role		string
 		Team		string
@@ -84,9 +85,14 @@ func GetTTTRound(id string) (*TTTRound, error) {
 
 	if rows.Next() {
 		row := row{}
-		rows.Scan(&row.Date, &row.WinningTeam, &row.Player, &row.Role, &row.Team)
+		rows.Scan(&row.Date, &row.WinningTeam, &row.Randomat, &row.Player, &row.Role, &row.Team)
+		if err != nil {
+			log.Error().Msg("Failed to scan rows")
+			return nil, err
+		}
 		round.Date = row.Date
 		round.WinningTeam = row.WinningTeam
+		round.Randomat = row.Randomat
 		round.Players = append(round.Players, TTTPlayer{Player: Player{Name: row.Player}, Role: row.Role, Team: row.Team})
 	} else {
 		log.Debug().Msg("No rows found")
@@ -95,7 +101,7 @@ func GetTTTRound(id string) (*TTTRound, error) {
 
 	for rows.Next() {
 		row := row{}
-		err := rows.Scan(&row.Date, &row.WinningTeam, &row.Player, &row.Role, &row.Team)
+		err := rows.Scan(&row.Date, &row.WinningTeam, &row.Randomat, &row.Player, &row.Role, &row.Team)
 		if err != nil {
 			log.Error().Msg("Failed to scan rows")
 			return nil, err
