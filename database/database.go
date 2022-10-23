@@ -1,12 +1,14 @@
 package database
 
+//TODO: Check out the sqlx package
+
 import (
 	"database/sql"
 	"fmt"
 
 	//External dependencies
-	log "github.com/rs/zerolog/log"
 	_ "github.com/lib/pq"
+	log "github.com/rs/zerolog/log"
 
 	. "yogsstats/models"
 )
@@ -18,7 +20,7 @@ var (
 	connectionStringTTT = fmt.Sprintf("postgresql://%s:%s@%s/%s", user, password, dbIp, "ttt")
 )
 
-func InsertRoundTTT(round TTTRound) error {
+func InsertRoundTTT(round *TTTRound) error {
 	log.Debug().Msg("[InsertRoundTTT]")
 
 	db, err := sql.Open("postgres", connectionStringTTT)
@@ -48,7 +50,61 @@ func InsertRoundTTT(round TTTRound) error {
 		}
 	}
 
-	return  nil
+	return nil
+}
+
+func GetTTTRound(id string) (*TTTRound, error) {
+	log.Debug().Msg("[InsertRoundTTT]")
+
+	db, err := sql.Open("postgres", connectionStringTTT)
+	if err != nil {
+		log.Error().Msg("Failed to connect to database")
+		return nil, err
+	}
+
+	query := fmt.Sprintf("SELECT R.date, R.winning_team, RP.player, RP.role, RP.team FROM \"Round\" R JOIN \"RoundParticipation\" RP ON RP.id = R.id WHERE R.id = %s;", id)
+	rows, err := db.Query(query)
+	if err != nil {
+		log.Error().Msg("Failed query")
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	round := &TTTRound{}
+	round.Id = id
+
+	type row struct {
+		Date		string
+		WinningTeam	string
+		Player		string
+		Role		string
+		Team		string
+	}
+
+	if rows.Next() {
+		row := row{}
+		rows.Scan(&row.Date, &row.WinningTeam, &row.Player, &row.Role, &row.Team)
+		round.Date = row.Date
+		round.WinningTeam = row.WinningTeam
+		round.Players = append(round.Players, TTTPlayer{Player: Player{Name: row.Player}, Role: row.Role, Team: row.Team})
+	} else {
+		log.Debug().Msg("No rows found")
+		return nil, nil
+	}
+
+	for rows.Next() {
+		row := row{}
+		err := rows.Scan(&row.Date, &row.WinningTeam, &row.Player, &row.Role, &row.Team)
+		if err != nil {
+			log.Error().Msg("Failed to scan rows")
+			return nil, err
+		}
+
+		round.Players = append(round.Players, TTTPlayer{Player: Player{Name: row.Player}, Role: row.Role, Team: row.Team})
+	}
+
+	return round, nil
 }
 
 func executeQuery(query string, db *sql.DB) error {

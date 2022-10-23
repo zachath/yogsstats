@@ -18,7 +18,7 @@ import (
 	. "yogsstats/models"
 )
 
-func ValidateTTTInput(next http.HandlerFunc, game string) http.HandlerFunc {
+func ValidateTTTInput(next http.HandlerFunc) http.HandlerFunc {
 	log.Debug().Msg("[ValidateTTTInput]")
 	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		ctx := req.Context()
@@ -59,28 +59,39 @@ func HomeHandler(rw http.ResponseWriter, req *http.Request) {
 	http.Error(rw, "Not implemented", http.StatusNotImplemented)
 }
 
-func TTTStatsHandler(rw http.ResponseWriter, req *http.Request) {
-	log.Debug().Msg("[TTTStatsHandler]")
-	switch req.Method {
-	case http.MethodGet:
-		serveTTTStatsGet(rw, req)
-	case http.MethodPost:
-		serveTTTStatsPost(rw, req)
-	}
-}
-
-func serveTTTStatsGet(rw http.ResponseWriter, req *http.Request) {
+func ServeTTTStatsGet(rw http.ResponseWriter, req *http.Request) {
 	log.Debug().Msg("[serveTTTStatsGet]")
-	io.WriteString(rw, "serveStatsGet\n")
-	http.Error(rw, "Not implemented", http.StatusNotImplemented)
+	
+	id := req.URL.Query().Get("id") //TODO: Support batch requests
+	if len(id) != 9 {
+		http.Error(rw, "Id must be of length 9, in the future batch requests with lenght 8 will be supported", http.StatusBadRequest)
+		return
+	}
+
+	round, err := db.GetTTTRound(id)
+	if err != nil {
+		log.Error().Err(err).Msgf("Failed to get TTT round with id '%s'", id)
+		http.Error(rw, "Failed to get TTT round", http.StatusInternalServerError)
+		return
+	}
+
+	if round == nil {
+		http.Error(rw, fmt.Sprintf("No round with id '%s' found", id), http.StatusNotFound)
+		return
+	}
+
+	rw.Header().Set("Content-Type", "application/json")
+	rw.WriteHeader(http.StatusOK)
+
+	json.NewEncoder(rw).Encode(round)
 }
 
-func serveTTTStatsPost(rw http.ResponseWriter, req *http.Request) {
+func ServeTTTStatsPost(rw http.ResponseWriter, req *http.Request) {
 	log.Debug().Msg("[serveTTTStatsPost]")
 	
 	round := req.Context().Value("round").(TTTRound)
 
-	err := db.InsertRoundTTT(round)
+	err := db.InsertRoundTTT(&round)
 	if err != nil {
 		log.Error().Err(err).Msg("Round insertion failed")
 		http.Error(rw, fmt.Sprintf("Failed to add POSTed round to database: %s", err.Error()), http.StatusInternalServerError)

@@ -24,7 +24,8 @@ func main() {
 
 	r := mux.NewRouter()
 	r.HandleFunc("/", HomeHandler).Methods(http.MethodGet)
-	r.HandleFunc("/stats/ttt", ValidateTTTInput(TTTStatsHandler, "ttt")).Methods(http.MethodGet, http.MethodPost)
+	r.HandleFunc("/stats/ttt", ValidateTTTInput(ServeTTTStatsPost)).Methods(http.MethodPost)
+	r.HandleFunc("/stats/ttt", ServeTTTStatsGet).Methods(http.MethodGet)
 
 	s := &http.Server{
 		Handler: r,
