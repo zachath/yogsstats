@@ -21,8 +21,6 @@ var (
 )
 
 func InsertRoundTTT(round *TTTRound) error {
-	log.Debug().Msg("[InsertRoundTTT]")
-
 	db, err := sql.Open("postgres", connectionStringTTT)
 	if err != nil {
 		return err
@@ -54,8 +52,6 @@ func InsertRoundTTT(round *TTTRound) error {
 }
 
 func GetTTTRound(id string) (*TTTRound, error) {
-	log.Debug().Msg("[GetTTTRound]")
-
 	db, err := sql.Open("postgres", connectionStringTTT)
 	if err != nil {
 		log.Error().Msg("Failed to connect to database")
@@ -113,15 +109,56 @@ func GetTTTRound(id string) (*TTTRound, error) {
 	return round, nil
 }
 
+func TeamWinPercentage(team string) (float64, error) {
+	db, err := sql.Open("postgres", connectionStringTTT)
+	if err != nil {
+		log.Error().Msg("Failed to connect to database")
+		return 0, err
+	}
+
+	teamInDB, err := teamExists(team, db)
+	if err != nil {
+		return -1, err
+	} else if !teamInDB {
+		return -1, fmt.Errorf("Team %s does not exist", team)
+	}
+
+	totalRowsQuery := "SELECT COUNT(id) FROM \"Round\""
+	rowsOfTeam := "SELECT COUNT(id) FROM \"Round\" WHERE winning_team = '%s'"
+
+	rows, err := db.Query(totalRowsQuery)
+	if err != nil {
+		return 0, err
+	}
+
+	if !rows.Next() {
+		return -1, fmt.Errorf("Error querying database, received no rows.")
+	}
+
+	var totalRowsCount float64
+	rows.Scan(&totalRowsCount)
+
+	rows, err = db.Query(fmt.Sprintf(rowsOfTeam, team))
+	if err != nil {
+		return 0, err
+	}
+
+	if !rows.Next() {
+		return -1, fmt.Errorf("Error querying database, received no rows.")
+	}
+
+	var totalRowsTeam float64
+	rows.Scan(&totalRowsTeam)
+
+	return totalRowsTeam / totalRowsCount, nil
+}
+
 func executeQuery(query string, db *sql.DB) error {
-	log.Debug().Msg("[executeQuery]")
 	_, err := db.Exec(query)
 	return err
 }
 
 func ensurePlayerExistence(player string, db *sql.DB) error {
-	log.Debug().Msg("[ensurePlayerExistence]")
-
 	checkQuery := fmt.Sprintf("SELECT 1 FROM \"Player\" WHERE name = '%s';", player)
 	rows, err := db.Query(checkQuery)
 	if err != nil {
@@ -130,11 +167,20 @@ func ensurePlayerExistence(player string, db *sql.DB) error {
 	defer rows.Close()
 
 	if rows.Next() {
-		log.Debug().Msgf("Player '%s' already present in the database", player)
 		return nil
 	} else {
 		log.Debug().Msgf("No player found, inserting into database player '%s'", player)
 		_, err := db.Exec(fmt.Sprintf("INSERT INTO \"Player\" VALUES ('%s')", player))
 		return err
 	}
+}
+
+func teamExists(team string, db *sql.DB) (bool, error) {
+	query := fmt.Sprintf("SELECT 1 FROM \"Team\" WHERE team = '%s'", team)
+	rows, err := db.Query(query)
+	if err != nil {
+		return false, err
+	}
+
+	return rows.Next(), nil
 }

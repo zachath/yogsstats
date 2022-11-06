@@ -100,3 +100,30 @@ func ServeTTTStatsPost(rw http.ResponseWriter, req *http.Request) {
 
 	io.WriteString(rw, "POSTed round successfully")
 }
+
+func ServeWinPercentage(rw http.ResponseWriter, req *http.Request) {
+	if req.URL.Query().Has("team") && req.URL.Query().Has("player") {
+		io.WriteString(rw, "May only specify either team or player as arguments")
+		return
+	}
+
+	team := req.URL.Query().Get("team")
+	player := req.URL.Query().Get("player")
+
+	if team != "" {
+		win, err := db.TeamWinPercentage(team)
+		if err != nil {
+			log.Error().Err(err).Str("team", team).Msg("Failed getting win %")
+			http.Error(rw, fmt.Sprintf("Failed to get win %s of team with error: %s", team, err.Error()), http.StatusInternalServerError)
+			return
+		}
+
+		io.WriteString(rw, fmt.Sprintf("Win percentage of team %s: %f", team, win))
+	} else if player != "" {
+		io.WriteString(rw, "Not yet supported")
+		return
+	} else {
+		io.WriteString(rw, "Either \"team\" or \"player\" has to be specified as argument in the url.")
+		return
+	}
+}
