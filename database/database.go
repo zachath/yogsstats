@@ -1,186 +1,102 @@
 package database
 
-//TODO: Check out the sqlx package
-
 import (
-	"database/sql"
 	"fmt"
+	"os"
 
 	//External dependencies
 	_ "github.com/lib/pq"
 	log "github.com/rs/zerolog/log"
+	"github.com/jmoiron/sqlx"
 
 	. "yogsstats/models"
 )
 
 var (
 	user = "postgres"
-	password = "zacharias00"
+	password = os.Getenv("PQ_PASS")
 	dbIp = "localhost:5432"
 	connectionStringTTT = fmt.Sprintf("postgresql://%s:%s@%s/%s", user, password, dbIp, "ttt")
+	db *sqlx.DB = initDB(connectionStringTTT)
 )
 
-func InsertRoundTTT(round *TTTRound) error {
-	db, err := sql.Open("postgres", connectionStringTTT)
+func initDB(connectionString string) *sqlx.DB {
+	db, err := sqlx.Open("postgres", connectionString)
 	if err != nil {
+		os.Exit(1)
+	}
+
+	return db
+}
+
+func rollbackTransaction(id string) {
+	tx := db.MustBegin()
+	tx.MustExec("DELETE FROM round_participation WHERE id = $1;", id)
+	tx.MustExec("DELETE FROM round WHERE id = $1;", id)
+	err := tx.Commit()
+	if err != nil {
+		log.Fatal().Err(err).Msg("Database rollback failed, terminating...")
+	}
+
+	log.Debug().Msgf("Round with id '%s' has been rolled back.", id)
+}
+
+func addPlayer(name string) {
+	tx := db.MustBegin()
+	tx.MustExec(fmt.Sprintf("INSERT INTO player (name) VALUES ('%s') ON CONFLICT (name) DO NOTHING;", name))
+	tx.Commit()
+}
+
+func InsertRound(round *TTTRound) error {
+	tx := db.MustBegin()
+	tx.MustExec(fmt.Sprintf("INSERT INTO round (id, date, winning_team, randomat) VALUES ('%s', '%s', '%s', '%s');", round.Id, round.Date, round.WinningTeam, round.Randomat))
+	for _, player := range round.Players {
+		addPlayer(player.Name)
+		tx.NamedExec(fmt.Sprintf("INSERT INTO round_participation (id, player, role, team) VALUES ('%s', :name, :role, :team);", round.Id), player)
+	}
+
+	err := tx.Commit()
+	if err != nil {
+		log.Error().Err(err).Msgf("Failed to insert round '%v' into database, rolling back transaction...", round)
+		rollbackTransaction(round.Id)
 		return err
 	}
 
-	err = executeQuery(fmt.Sprintf("INSERT INTO \"Round\" VALUES ('%s', '%s', '%s', '%s')", round.Id, round.Date, round.WinningTeam, round.Randomat), db)
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to insert Roud into database")
-		return err
-	}
-
-	for _, player := range round.Players {
-		err := ensurePlayerExistence(player.Name, db)
-		if err != nil {
-			log.Error().Err(err).Msg("Got error while ensuring players in database")
-			return err
-		}
-	}
-
-	for _, player := range round.Players {
-		err = executeQuery(fmt.Sprintf("INSERT INTO \"RoundParticipation\" VALUES ('%s', '%s', '%s', '%s')", round.Id, player.Name, player.Role, player.Team), db)
-		if err != nil {
-			log.Error().Err(err).Msg("Failed to insert RoudParticipation into database")
-			return err
-		}
-	}
-
+	log.Debug().Msgf("Inserted round with id '%s' into database.", round.Id)
 	return nil
 }
 
-func GetTTTRound(id string) (*TTTRound, error) {
-	db, err := sql.Open("postgres", connectionStringTTT)
-	if err != nil {
-		log.Error().Msg("Failed to connect to database")
-		return nil, err
-	}
-
-	query := fmt.Sprintf("SELECT R.date, R.winning_team, R.randomat, RP.player, RP.role, RP.team FROM \"Round\" R JOIN \"RoundParticipation\" RP ON RP.id = R.id WHERE R.id = %s;", id)
-	rows, err := db.Query(query)
-	if err != nil {
-		log.Error().Msg("Failed query")
-		return nil, err
-	}
-
-	defer rows.Close()
-
-	round := &TTTRound{}
-	round.Id = id
+func GetRound(id string) (*TTTRound, error) {
+	round := TTTRound{}
 
 	type row struct {
-		Date		string
-		WinningTeam	string
-		Randomat	string
-		Player		string
-		Role		string
-		Team		string
+		Date			string
+		WinningTeam		string `db:"winning_team"`
+		Randomat		string
+		Player			string
+		Role			string
+		Team			string
 	}
 
-	if rows.Next() {
-		row := row{}
-		rows.Scan(&row.Date, &row.WinningTeam, &row.Randomat, &row.Player, &row.Role, &row.Team)
-		if err != nil {
-			log.Error().Msg("Failed to scan rows")
-			return nil, err
-		}
-		round.Date = row.Date
-		round.WinningTeam = row.WinningTeam
-		round.Randomat = row.Randomat
-		round.Players = append(round.Players, TTTPlayer{Player: Player{Name: row.Player}, Role: row.Role, Team: row.Team})
-	} else {
-		log.Debug().Msg("No rows found")
-		return nil, nil
+	rows := []row{}
+	err := db.Select(&rows, fmt.Sprintf("SELECT R.date, R.winning_team, R.randomat, RP.player, RP.role, RP.team FROM round R JOIN round_participation RP ON RP.id = R.id WHERE R.id = %s;", id))
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to query the database")
+		return nil, err
 	}
 
-	for rows.Next() {
-		row := row{}
-		err := rows.Scan(&row.Date, &row.WinningTeam, &row.Randomat, &row.Player, &row.Role, &row.Team)
-		if err != nil {
-			log.Error().Msg("Failed to scan rows")
-			return nil, err
-		}
+	round.Id = id
+	round.Date = rows[0].Date
+	round.Randomat = rows[0].Randomat
+	round.WinningTeam = rows[0].WinningTeam
 
+	for _, row := range rows {
 		round.Players = append(round.Players, TTTPlayer{Player: Player{Name: row.Player}, Role: row.Role, Team: row.Team})
 	}
-
-	return round, nil
+	
+	return &round, nil
 }
 
 func TeamWinPercentage(team string) (float64, error) {
-	db, err := sql.Open("postgres", connectionStringTTT)
-	if err != nil {
-		log.Error().Msg("Failed to connect to database")
-		return 0, err
-	}
-
-	teamInDB, err := teamExists(team, db)
-	if err != nil {
-		return -1, err
-	} else if !teamInDB {
-		return -1, fmt.Errorf("Team %s does not exist", team)
-	}
-
-	totalRowsQuery := "SELECT COUNT(id) FROM \"Round\""
-	rowsOfTeam := "SELECT COUNT(id) FROM \"Round\" WHERE winning_team = '%s'"
-
-	rows, err := db.Query(totalRowsQuery)
-	if err != nil {
-		return 0, err
-	}
-
-	if !rows.Next() {
-		return -1, fmt.Errorf("Error querying database, received no rows.")
-	}
-
-	var totalRowsCount float64
-	rows.Scan(&totalRowsCount)
-
-	rows, err = db.Query(fmt.Sprintf(rowsOfTeam, team))
-	if err != nil {
-		return 0, err
-	}
-
-	if !rows.Next() {
-		return -1, fmt.Errorf("Error querying database, received no rows.")
-	}
-
-	var totalRowsTeam float64
-	rows.Scan(&totalRowsTeam)
-
-	return totalRowsTeam / totalRowsCount, nil
-}
-
-func executeQuery(query string, db *sql.DB) error {
-	_, err := db.Exec(query)
-	return err
-}
-
-func ensurePlayerExistence(player string, db *sql.DB) error {
-	checkQuery := fmt.Sprintf("SELECT 1 FROM \"Player\" WHERE name = '%s';", player)
-	rows, err := db.Query(checkQuery)
-	if err != nil {
-		return err
-	}
-	defer rows.Close()
-
-	if rows.Next() {
-		return nil
-	} else {
-		log.Debug().Msgf("No player found, inserting into database player '%s'", player)
-		_, err := db.Exec(fmt.Sprintf("INSERT INTO \"Player\" VALUES ('%s')", player))
-		return err
-	}
-}
-
-func teamExists(team string, db *sql.DB) (bool, error) {
-	query := fmt.Sprintf("SELECT 1 FROM \"Team\" WHERE team = '%s'", team)
-	rows, err := db.Query(query)
-	if err != nil {
-		return false, err
-	}
-
-	return rows.Next(), nil
+	return 0, nil
 }

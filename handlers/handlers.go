@@ -19,7 +19,6 @@ import (
 )
 
 func ValidateTTTInput(next http.HandlerFunc) http.HandlerFunc {
-	log.Debug().Msg("[ValidateTTTInput]")
 	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		ctx := req.Context()
 
@@ -55,22 +54,19 @@ func ValidateTTTInput(next http.HandlerFunc) http.HandlerFunc {
 }
 
 func HomeHandler(rw http.ResponseWriter, req *http.Request) {
-	log.Debug().Msg("[HomeHandler]")
 	http.Error(rw, "Not implemented", http.StatusNotImplemented)
 }
 
 func ServeTTTStatsGet(rw http.ResponseWriter, req *http.Request) {
-	log.Debug().Msg("[serveTTTStatsGet]")
-	
 	id := req.URL.Query().Get("id") //TODO: Support batch requests
 	if len(id) != 9 {
 		http.Error(rw, "Id must be of length 9, in the future batch requests with lenght 8 will be supported", http.StatusBadRequest)
 		return
 	}
 
-	round, err := db.GetTTTRound(id)
+	round, err := db.GetRound(id)
 	if err != nil {
-		log.Error().Err(err).Msgf("Failed to get TTT round with id '%s'", id)
+		log.Error().Msgf("Failed to get TTT round with id '%s'", id)
 		http.Error(rw, "Failed to get TTT round", http.StatusInternalServerError)
 		return
 	}
@@ -87,13 +83,11 @@ func ServeTTTStatsGet(rw http.ResponseWriter, req *http.Request) {
 }
 
 func ServeTTTStatsPost(rw http.ResponseWriter, req *http.Request) {
-	log.Debug().Msg("[serveTTTStatsPost]")
-	
 	round := req.Context().Value("round").(TTTRound)
 
-	err := db.InsertRoundTTT(&round)
+	err := db.InsertRound(&round)
 	if err != nil {
-		log.Error().Err(err).Msg("Round insertion failed")
+		log.Error().Msg("Round insertion failed.")
 		http.Error(rw, fmt.Sprintf("Failed to add POSTed round to database: %s", err.Error()), http.StatusInternalServerError)
 		return
 	}
@@ -103,7 +97,7 @@ func ServeTTTStatsPost(rw http.ResponseWriter, req *http.Request) {
 
 func ServeWinPercentage(rw http.ResponseWriter, req *http.Request) {
 	if req.URL.Query().Has("team") && req.URL.Query().Has("player") {
-		io.WriteString(rw, "May only specify either team or player as arguments")
+		http.Error(rw, "May only specify either team or player as arguments", http.StatusBadRequest)
 		return
 	}
 
@@ -123,7 +117,7 @@ func ServeWinPercentage(rw http.ResponseWriter, req *http.Request) {
 		io.WriteString(rw, "Not yet supported")
 		return
 	} else {
-		io.WriteString(rw, "Either \"team\" or \"player\" has to be specified as argument in the url.")
+		io.WriteString(rw, "Either 'team' or 'player' has to be specified as argument in the url.")
 		return
 	}
 }

@@ -20,8 +20,6 @@ func init() {
 }
 
 func main() {
-	log.Debug().Msg("[main]")
-
 	r := mux.NewRouter()
 	r.HandleFunc("/", HomeHandler).Methods(http.MethodGet)
 	r.HandleFunc("/stats/ttt", ValidateTTTInput(ServeTTTStatsPost)).Methods(http.MethodPost)
