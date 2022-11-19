@@ -1,13 +1,15 @@
 package database
 
 import (
+	"errors"
 	"fmt"
 	"os"
+	"strconv"
 
 	//External dependencies
+	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	log "github.com/rs/zerolog/log"
-	"github.com/jmoiron/sqlx"
 
 	. "yogsstats/models"
 )
@@ -66,10 +68,22 @@ func InsertRound(round *TTTRound) error {
 	return nil
 }
 
-func GetRound(id string) (*TTTRound, error) {
-	round := TTTRound{}
+func GetRound(id, from, to string) ([]TTTRound, error) {
+	var query string
+	if id != "" {
+		if len(id) != 9 { //Specific
+			return nil, errors.New(fmt.Sprintf("Invalid id lenght %d, must be of lenght 8 or 9", len(id)))
+		} 
+
+		query = fmt.Sprintf("SELECT R.id, R.date, R.winning_team, R.randomat, RP.player, RP.role, RP.team FROM round R JOIN round_participation RP ON RP.id = R.id WHERE R.id = %s ORDER BY R.id ASC;", id)
+	} else {
+		query = fmt.Sprintf("SELECT R.id, R.date, R.winning_team, R.randomat, RP.player, RP.role, RP.team FROM round R JOIN round_participation RP ON RP.id = R.id WHERE R.date >= '%s' AND R.date <= '%s' ORDER BY R.id ASC;", from, to)
+	}
+
+	rounds := []TTTRound{}
 
 	type row struct {
+		Id				int
 		Date			string
 		WinningTeam		string `db:"winning_team"`
 		Randomat		string
@@ -79,22 +93,33 @@ func GetRound(id string) (*TTTRound, error) {
 	}
 
 	rows := []row{}
-	err := db.Select(&rows, fmt.Sprintf("SELECT R.date, R.winning_team, R.randomat, RP.player, RP.role, RP.team FROM round R JOIN round_participation RP ON RP.id = R.id WHERE R.id = %s;", id))
+	err := db.Select(&rows, query)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to query the database")
+		log.Error().Err(err).Msg("Failed to query the database.")
 		return nil, err
 	}
 
-	round.Id = id
-	round.Date = rows[0].Date
-	round.Randomat = rows[0].Randomat
-	round.WinningTeam = rows[0].WinningTeam
+	if len(rows) == 0 {
+		log.Debug().Msg("No rows found.")
+		return nil, nil
+	}
 
+	var round TTTRound
 	for _, row := range rows {
+		if round.Id != strconv.Itoa(row.Id) {
+			if round.Id != "" {
+				rounds = append(rounds, round)
+			}
+
+			round = TTTRound{Round: Round{Id: strconv.Itoa(row.Id), Date: row.Date}, Randomat: row.Randomat, WinningTeam: row.WinningTeam}
+		}
+
 		round.Players = append(round.Players, TTTPlayer{Player: Player{Name: row.Player}, Role: row.Role, Team: row.Team})
 	}
-	
-	return &round, nil
+
+	rounds = append(rounds, round)
+
+	return rounds, nil
 }
 
 func TeamWinPercentage(team string) (float64, error) {

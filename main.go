@@ -22,8 +22,8 @@ func init() {
 func main() {
 	r := mux.NewRouter()
 	r.HandleFunc("/", HomeHandler).Methods(http.MethodGet)
-	r.HandleFunc("/stats/ttt", ValidateTTTInput(ServeTTTStatsPost)).Methods(http.MethodPost)
-	r.HandleFunc("/stats/ttt", ServeTTTStatsGet).Methods(http.MethodGet)
+	r.HandleFunc("/stats/ttt", ValidateTTTInput(PostTTTRound)).Methods(http.MethodPost)
+	r.HandleFunc("/stats/ttt", GetTTTRound).Methods(http.MethodGet)
 	r.HandleFunc("/stats/ttt/winPercentage", ServeWinPercentage).Methods(http.MethodGet)
 
 	s := &http.Server{

@@ -57,32 +57,41 @@ func HomeHandler(rw http.ResponseWriter, req *http.Request) {
 	http.Error(rw, "Not implemented", http.StatusNotImplemented)
 }
 
-func ServeTTTStatsGet(rw http.ResponseWriter, req *http.Request) {
-	id := req.URL.Query().Get("id") //TODO: Support batch requests
-	if len(id) != 9 {
-		http.Error(rw, "Id must be of length 9, in the future batch requests with lenght 8 will be supported", http.StatusBadRequest)
+func GetTTTRound(rw http.ResponseWriter, req *http.Request) {
+	var id string
+	var rounds []TTTRound
+	var err	error
+
+	if req.URL.Query().Has("id") {
+		id = req.URL.Query().Get("id")
+		rounds, err = db.GetRound(id, "", "")
+	} else if req.URL.Query().Has("from") && req.URL.Query().Has("to") {
+		from := req.URL.Query().Get("from")
+		to := req.URL.Query().Get("to")
+		rounds, err = db.GetRound("", from, to)
+	} else {
+		http.Error(rw, "Invalid argument combination provided (id OR (from AND to)).", http.StatusBadRequest)
 		return
 	}
 
-	round, err := db.GetRound(id)
 	if err != nil {
-		log.Error().Msgf("Failed to get TTT round with id '%s'", id)
+		log.Error().Msgf("Failed to get TTT round")
 		http.Error(rw, "Failed to get TTT round", http.StatusInternalServerError)
 		return
 	}
 
-	if round == nil {
-		http.Error(rw, fmt.Sprintf("No round with id '%s' found", id), http.StatusNotFound)
+	if rounds == nil {
+		http.Error(rw, fmt.Sprint("No rounds found."), http.StatusNotFound)
 		return
 	}
 
 	rw.Header().Set("Content-Type", "application/json")
 	rw.WriteHeader(http.StatusOK)
 
-	json.NewEncoder(rw).Encode(round)
+	json.NewEncoder(rw).Encode(rounds)
 }
 
-func ServeTTTStatsPost(rw http.ResponseWriter, req *http.Request) {
+func PostTTTRound(rw http.ResponseWriter, req *http.Request) {
 	round := req.Context().Value("round").(TTTRound)
 
 	err := db.InsertRound(&round)
