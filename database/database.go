@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 
 	//External dependencies
 	"github.com/jmoiron/sqlx"
@@ -49,8 +50,27 @@ func addPlayer(name string) {
 	tx.Commit()
 }
 
+func escapeCharacter(s *string, char string) {
+	if strings.Contains(*s, char) {
+		tmp := ""
+		for _, c := range *s {
+			ch := string(c)
+			if ch == char {
+				ch = "'" + ch
+			}
+
+			tmp += ch
+		}
+
+		*s = tmp
+	}
+}
+
 func InsertRound(round *TTTRound) error {
 	tx := db.MustBegin()
+
+	escapeCharacter(&round.Randomat, "'")
+
 	tx.MustExec(fmt.Sprintf("INSERT INTO round (id, date, winning_team, randomat) VALUES ('%s', '%s', '%s', '%s');", round.Id, round.Date, round.WinningTeam, round.Randomat))
 	for _, player := range round.Players {
 		addPlayer(player.Name)
