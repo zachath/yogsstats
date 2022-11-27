@@ -8,6 +8,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"time"
 
 	//External dependencies
 	log "github.com/rs/zerolog/log"
@@ -104,29 +105,32 @@ func PostTTTRound(rw http.ResponseWriter, req *http.Request) {
 	io.WriteString(rw, "POSTed round successfully")
 }
 
-func ServeWinPercentage(rw http.ResponseWriter, req *http.Request) {
-	if req.URL.Query().Has("team") && req.URL.Query().Has("player") {
-		http.Error(rw, "May only specify either team or player as arguments", http.StatusBadRequest)
-		return
-	}
-
+func TeamWinShare(rw http.ResponseWriter, req *http.Request) {
 	team := req.URL.Query().Get("team")
-	player := req.URL.Query().Get("player")
+	from := req.URL.Query().Get("from")
+	to := req.URL.Query().Get("to")
 
-	if team != "" {
-		win, err := db.TeamWinPercentage(team)
-		if err != nil {
-			log.Error().Err(err).Str("team", team).Msg("Failed getting win %")
-			http.Error(rw, fmt.Sprintf("Failed to get win %s of team with error: %s", team, err.Error()), http.StatusInternalServerError)
-			return
-		}
-
-		io.WriteString(rw, fmt.Sprintf("Win percentage of team %s: %f", team, win))
-	} else if player != "" {
-		io.WriteString(rw, "Not yet supported")
-		return
-	} else {
-		io.WriteString(rw, "Either 'team' or 'player' has to be specified as argument in the url.")
-		return
+	if from == "" {
+		from = "2000-12-24"
 	}
+
+	if to == "" {
+		to = time.Now().Format("2006-01-02")
+	}
+
+	var response db.TeamWinShareResponse
+	var err error
+	if team == "" {
+		response, err = db.TeamWinShare("*", from, to)
+		if err != nil {
+			log.Error().Err(err).Msg("Failed getting team win share.")
+		}
+	} else {
+		response, err = db.TeamWinShare(team, from, to)
+		if err != nil {
+			log.Error().Err(err).Msg("Failed getting team win share.")
+		}
+	}
+	
+	json.NewEncoder(rw).Encode(response)
 }

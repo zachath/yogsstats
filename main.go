@@ -24,7 +24,7 @@ func main() {
 	r.HandleFunc("/", HomeHandler).Methods(http.MethodGet)
 	r.HandleFunc("/stats/ttt", ValidateTTTInput(PostTTTRound)).Methods(http.MethodPost)
 	r.HandleFunc("/stats/ttt", GetTTTRound).Methods(http.MethodGet)
-	r.HandleFunc("/stats/ttt/winPercentage", ServeWinPercentage).Methods(http.MethodGet)
+	r.HandleFunc("/stats/ttt/teamWinShare", TeamWinShare).Methods(http.MethodGet)
 
 	s := &http.Server{
 		Handler: r,

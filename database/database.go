@@ -1,7 +1,6 @@
 package database
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -10,6 +9,7 @@ import (
 	//External dependencies
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
+	"github.com/pkg/errors"
 	log "github.com/rs/zerolog/log"
 
 	. "yogsstats/models"
@@ -22,6 +22,10 @@ var (
 	connectionStringTTT = fmt.Sprintf("postgresql://%s:%s@%s/%s", user, password, dbIp, "ttt")
 	db *sqlx.DB = initDB(connectionStringTTT)
 )
+
+type UserFeedback struct {
+	Feedback string
+}
 
 func initDB(connectionString string) *sqlx.DB {
 	db, err := sqlx.Open("postgres", connectionString)
@@ -64,6 +68,46 @@ func escapeCharacter(s *string, char string) {
 
 		*s = tmp
 	}
+}
+
+func getTeams(team string) ([]string, error) {
+	var query string
+	if team == "*" {
+		query = "SELECT * FROM team;"
+	} else {
+		query = fmt.Sprintf("SELECT * FROM team WHERE team = '%s';", team)
+	}
+
+	var rows []string
+	err := db.Select(&rows, query)
+	if err != nil {
+		return nil, errors.Wrap(err, query)
+	}
+
+	var teams []string
+	for _, t := range rows {
+		teams = append(teams, t)
+	}
+
+	return teams, nil
+}
+
+func countRows(table, whereClause string) (int, error) {
+	var count []int
+	var query string
+
+	if whereClause == "" {
+		query = fmt.Sprintf("SELECT COUNT(*) FROM %s", table)
+	} else {
+		query = fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE %s", table, whereClause)
+	}
+
+	err := db.Select(&count, query)
+	if err != nil {
+		return -1, errors.Wrap(err, query)
+	}
+
+	return count[0], nil
 }
 
 func InsertRound(round *TTTRound) error {
@@ -142,6 +186,38 @@ func GetRound(id, from, to string) ([]TTTRound, error) {
 	return rounds, nil
 }
 
-func TeamWinPercentage(team string) (float64, error) {
-	return 0, nil
+type TeamWinShareResponse struct {
+	UserFeedback UserFeedback	`json:"feedback"`
+	Response map[string]float64 `json:"response"`
+}
+
+func TeamWinShare(team, from, to string) (TeamWinShareResponse, error) {
+	teams, err := getTeams(team)
+	if err != nil {
+		return TeamWinShareResponse{}, err
+	}
+
+	totalRounds, err := countRows("round", fmt.Sprintf("date >= '%s' AND date <= '%s'", from, to))
+	if err != nil {
+		return TeamWinShareResponse{UserFeedback: UserFeedback{"Error counting rows"}}, err
+	}
+
+	if totalRounds == 0 {
+		return TeamWinShareResponse{UserFeedback: UserFeedback{Feedback: "No rounds found"}}, nil
+	}
+
+	var response TeamWinShareResponse
+	response.Response = map[string]float64{}
+	for _, team := range teams {
+		winsOfTeam, err := countRows("round", fmt.Sprintf("winning_team = '%s' AND date >= '%s' AND date <= '%s'", team, from, to))
+		if err != nil {
+			return TeamWinShareResponse{UserFeedback: UserFeedback{"Internal server erros"}}, err
+		}
+
+		result := float64(winsOfTeam) / float64(totalRounds)
+		response.Response[team] = float64(int(result*100)) / 1000
+	}
+
+	response.UserFeedback.Feedback = "Successfull requst"
+	return response, nil
 }
