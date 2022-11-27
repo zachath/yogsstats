@@ -23,8 +23,9 @@ func main() {
 	r := mux.NewRouter()
 	r.HandleFunc("/", HomeHandler).Methods(http.MethodGet)
 	r.HandleFunc("/stats/ttt", ValidateTTTInput(PostTTTRound)).Methods(http.MethodPost)
-	r.HandleFunc("/stats/ttt", GetTTTRound).Methods(http.MethodGet)
-	r.HandleFunc("/stats/ttt/teamWinShare", TeamWinShare).Methods(http.MethodGet)
+	r.HandleFunc("/stats/ttt", DateValidation(GetTTTRound)).Methods(http.MethodGet)
+	r.HandleFunc("/stats/ttt/teamWinShare", DateValidation(TeamWinShare)).Methods(http.MethodGet)
+	r.HandleFunc("/stats/ttt/playerWinPercentage", DateValidation(PlayerWinPercentage)).Methods(http.MethodGet)
 
 	s := &http.Server{
 		Handler: r,

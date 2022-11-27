@@ -23,10 +23,6 @@ var (
 	db *sqlx.DB = initDB(connectionStringTTT)
 )
 
-type UserFeedback struct {
-	Feedback string
-}
-
 func initDB(connectionString string) *sqlx.DB {
 	db, err := sqlx.Open("postgres", connectionString)
 	if err != nil {
@@ -70,12 +66,12 @@ func escapeCharacter(s *string, char string) {
 	}
 }
 
-func getTeams(team string) ([]string, error) {
+func getEntries(table, column, value string) ([]string, error) {
 	var query string
-	if team == "*" {
-		query = "SELECT * FROM team;"
+	if value == "*" {
+		query = fmt.Sprintf("SELECT * FROM %s;", table)
 	} else {
-		query = fmt.Sprintf("SELECT * FROM team WHERE team = '%s';", team)
+		query = fmt.Sprintf("SELECT * FROM %s WHERE %s = '%s';", table, column, value)
 	}
 
 	var rows []string
@@ -84,12 +80,12 @@ func getTeams(team string) ([]string, error) {
 		return nil, errors.Wrap(err, query)
 	}
 
-	var teams []string
+	var entries []string
 	for _, t := range rows {
-		teams = append(teams, t)
+		entries = append(entries, t)
 	}
 
-	return teams, nil
+	return entries, nil
 }
 
 func countRows(table, whereClause string) (int, error) {
@@ -187,23 +183,23 @@ func GetRound(id, from, to string) ([]TTTRound, error) {
 }
 
 type TeamWinShareResponse struct {
-	UserFeedback UserFeedback	`json:"feedback"`
-	Response map[string]float64 `json:"response"`
+	Feedback string	`json:"feedback"`
+	Response map[string]float64 `json:"teams"`
 }
 
 func TeamWinShare(team, from, to string) (TeamWinShareResponse, error) {
-	teams, err := getTeams(team)
+	teams, err := getEntries("team", "team", team)
 	if err != nil {
-		return TeamWinShareResponse{}, err
+		return TeamWinShareResponse{Feedback: "Error getting entries"}, err
 	}
 
 	totalRounds, err := countRows("round", fmt.Sprintf("date >= '%s' AND date <= '%s'", from, to))
 	if err != nil {
-		return TeamWinShareResponse{UserFeedback: UserFeedback{"Error counting rows"}}, err
+		return TeamWinShareResponse{Feedback: "Error counting rows"}, err
 	}
 
 	if totalRounds == 0 {
-		return TeamWinShareResponse{UserFeedback: UserFeedback{Feedback: "No rounds found"}}, nil
+		return TeamWinShareResponse{Feedback: "No rounds found"}, nil
 	}
 
 	var response TeamWinShareResponse
@@ -211,13 +207,68 @@ func TeamWinShare(team, from, to string) (TeamWinShareResponse, error) {
 	for _, team := range teams {
 		winsOfTeam, err := countRows("round", fmt.Sprintf("winning_team = '%s' AND date >= '%s' AND date <= '%s'", team, from, to))
 		if err != nil {
-			return TeamWinShareResponse{UserFeedback: UserFeedback{"Internal server erros"}}, err
+			return TeamWinShareResponse{Feedback: "Internal server erros"}, err
 		}
 
 		result := float64(winsOfTeam) / float64(totalRounds)
-		response.Response[team] = float64(int(result*100)) / 1000
+		response.Response[team] = float64(int(result*100)) / 100
 	}
 
-	response.UserFeedback.Feedback = "Successfull requst"
+	response.Feedback = "Successfull request"
+	return response, nil
+}
+
+type TeamsWinPercentage struct {
+	Teams map[string]float64 `json:"teams"`
+}
+type PlayerWinPercentageResponse struct {
+	Feedback string 	`json:"feedback"`
+	Players map[string]TeamsWinPercentage `json:"players"`
+}
+
+func PlayerWinPercentage(player, from, to string) (PlayerWinPercentageResponse, error) {
+	players, err := getEntries("player", "name", player)
+	if err != nil {
+		return PlayerWinPercentageResponse{Feedback: "Error getting entries"}, nil
+	}
+
+	type row struct {
+		Team	string
+		Win		string `db:"winning_team"`
+	}
+
+	response := PlayerWinPercentageResponse{
+		Players: make(map[string]TeamsWinPercentage),
+	}
+
+	for _, player := range players {
+		query := fmt.Sprintf("SELECT RP.team, R.winning_team FROM round_participation RP JOIN round R ON RP.id = R.id WHERE RP.player = '%s';", player)
+		var rows []row
+		err := db.Select(&rows, query)
+		if err != nil {
+			return PlayerWinPercentageResponse{Feedback: fmt.Sprintf("Error getting player rows (%s)", player)}, err
+		}
+
+		totalRounds := float64(len(rows))
+
+		winsByTeams := make(map[string]int)
+		for _, row := range rows {
+			if _, exists := winsByTeams[row.Team]; !exists {
+				winsByTeams[row.Team] = 0
+			} 
+
+			if row.Team == row.Win {
+				winsByTeams[row.Team]++
+			}
+		}
+
+		response.Players[player] = TeamsWinPercentage{Teams: make(map[string]float64)}
+		for team, val := range winsByTeams {
+			result := float64(val) / totalRounds
+			response.Players[player].Teams[team] = float64(int(result*100)) / 100
+		}
+	}
+
+	response.Feedback = "Successfull request"
 	return response, nil
 }

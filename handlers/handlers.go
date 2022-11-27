@@ -54,6 +54,53 @@ func ValidateTTTInput(next http.HandlerFunc) http.HandlerFunc {
 	})
 }
 
+func verifyDate(date string) error {
+	_, err := time.Parse("2006-01-02", date)
+	return err
+}
+
+func setTimeBox(to, from *string) {
+	if *from == "" {
+		*from = "2000-12-24"
+	}
+
+	if *to == "" {
+		*to = time.Now().Format("2006-01-02")
+	}
+}
+
+func DateValidation(next http.HandlerFunc) http.HandlerFunc {
+	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		ctx := req.Context()
+
+		from := req.URL.Query().Get("from")
+		if from != "" {
+			err := verifyDate(from)
+			if err != nil {
+				log.Error().Err(err).Msg("Invalid date format")
+				http.Error(rw, "Invalid date (from)", http.StatusBadRequest)
+				return
+			}
+		}
+
+		to := req.URL.Query().Get("to")
+		if to != "" {
+			err := verifyDate(from)
+			if err != nil {
+				log.Error().Err(err).Msg("Invalid date format")
+				http.Error(rw, "Invalid date (to)", http.StatusBadRequest)
+				return
+			}
+		}
+
+		ctx = context.WithValue(ctx, "from", from)
+		ctx = context.WithValue(ctx, "to", to)
+		req = req.WithContext(ctx)
+
+		next(rw, req)
+	})
+}
+
 func HomeHandler(rw http.ResponseWriter, req *http.Request) {
 	http.Error(rw, "Not implemented", http.StatusNotImplemented)
 }
@@ -66,9 +113,9 @@ func GetTTTRound(rw http.ResponseWriter, req *http.Request) {
 	if req.URL.Query().Has("id") {
 		id = req.URL.Query().Get("id")
 		rounds, err = db.GetRound(id, "", "")
-	} else if req.URL.Query().Has("from") && req.URL.Query().Has("to") {
-		from := req.URL.Query().Get("from")
-		to := req.URL.Query().Get("to")
+	} else if req.Context().Value("from") != "" && req.Context().Value("to") != "" {
+		from := req.Context().Value("from").(string)
+		to := req.Context().Value("to").(string)
 		rounds, err = db.GetRound("", from, to)
 	} else {
 		http.Error(rw, "Invalid argument combination provided (id OR (from AND to)).", http.StatusBadRequest)
@@ -107,16 +154,10 @@ func PostTTTRound(rw http.ResponseWriter, req *http.Request) {
 
 func TeamWinShare(rw http.ResponseWriter, req *http.Request) {
 	team := req.URL.Query().Get("team")
-	from := req.URL.Query().Get("from")
-	to := req.URL.Query().Get("to")
+	from := req.Context().Value("from").(string)
+	to := req.Context().Value("to").(string)
 
-	if from == "" {
-		from = "2000-12-24"
-	}
-
-	if to == "" {
-		to = time.Now().Format("2006-01-02")
-	}
+	setTimeBox(&from, &to)
 
 	var response db.TeamWinShareResponse
 	var err error
@@ -127,6 +168,30 @@ func TeamWinShare(rw http.ResponseWriter, req *http.Request) {
 		}
 	} else {
 		response, err = db.TeamWinShare(team, from, to)
+		if err != nil {
+			log.Error().Err(err).Msg("Failed getting team win share.")
+		}
+	}
+	
+	json.NewEncoder(rw).Encode(response)
+}
+
+func PlayerWinPercentage(rw http.ResponseWriter, req *http.Request) {
+	player := req.URL.Query().Get("player")
+	from := req.Context().Value("from").(string)
+	to := req.Context().Value("to").(string)
+
+	setTimeBox(&from, &to)
+
+	var response db.PlayerWinPercentageResponse
+	var err error
+	if player == "" {
+		response, err = db.PlayerWinPercentage("*", from, to)
+		if err != nil {
+			log.Error().Err(err).Msg("Failed getting team win share.")
+		}
+	} else {
+		response, err = db.PlayerWinPercentage(player, from, to)
 		if err != nil {
 			log.Error().Err(err).Msg("Failed getting team win share.")
 		}
