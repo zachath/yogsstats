@@ -60,7 +60,7 @@ func verifyDate(date string) error {
 	return err
 }
 
-func setTimeBox(to, from *string) {
+func setTimeBox(from, to *string) {
 	if *from == "" {
 		*from = "2000-12-24"
 	}
