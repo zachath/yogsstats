@@ -11,6 +11,7 @@ import (
 	"time"
 
 	//External dependencies
+	"github.com/pkg/errors"
 	log "github.com/rs/zerolog/log"
 
 	//Local packages
@@ -197,5 +198,39 @@ func PlayerWinPercentage(rw http.ResponseWriter, req *http.Request) {
 		}
 	}
 	
+	json.NewEncoder(rw).Encode(response)
+}
+
+func APIMetaData(rw http.ResponseWriter, req *http.Request) {
+	type MetaResponse struct {
+		Count 		int 			`json:"roundCount"`
+		OldestRound db.RoundInfo 	`json:"oldestRond"`
+		NewestRound db.RoundInfo 	`json:"newestRound"`
+	}
+
+	count, err := db.CountRows("round", "")
+	if err != nil {
+		http.Error(rw, errors.Wrap(err, "Failed to count round rows").Error(), http.StatusInternalServerError)
+		return
+	}
+
+	oldestRound, err := db.GetOldestRoundInfo()
+	if err != nil {
+		http.Error(rw, errors.Wrap(err, "Failed to get oldest round info").Error(), http.StatusInternalServerError)
+		return
+	}
+
+	newestRound, err := db.GetNewestRoundInfo()
+	if err != nil {
+		http.Error(rw, errors.Wrap(err, "Faailed to get newest round info").Error(), http.StatusInternalServerError)
+		return
+	}
+
+	response := MetaResponse{
+		Count: count,
+		OldestRound: oldestRound,
+		NewestRound: newestRound,
+	}
+
 	json.NewEncoder(rw).Encode(response)
 }

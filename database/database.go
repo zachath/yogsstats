@@ -88,7 +88,7 @@ func getEntries(table, column, value string) ([]string, error) {
 	return entries, nil
 }
 
-func countRows(table, whereClause string) (int, error) {
+func CountRows(table, whereClause string) (int, error) {
 	var count []int
 	var query string
 
@@ -104,6 +104,36 @@ func countRows(table, whereClause string) (int, error) {
 	}
 
 	return count[0], nil
+}
+
+func GetOldestRoundInfo() (RoundInfo, error) {
+	return getRoundInfo("ASC")
+}
+
+func GetNewestRoundInfo() (RoundInfo, error) {
+	return getRoundInfo("DESC")
+}
+
+type RoundInfo struct {
+	Id 		string `json:"id"`
+	Date 	string `json:"date"`
+}
+
+func getRoundInfo(sort string) (RoundInfo, error) {
+	if sort != "ASC" && sort != "DESC" {
+		return RoundInfo{}, errors.Errorf("Unknown sort '%s', only accepts 'ASC' or 'DESC'.", sort)
+	}
+
+	query := fmt.Sprintf("SELECT id, date FROM round ORDER by id %s LIMIT 1", sort)
+
+	var info []RoundInfo
+	err := db.Select(&info, query)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return RoundInfo{}, err
+	}
+
+	return info[0], nil
 }
 
 func InsertRound(round *TTTRound) error {
@@ -193,7 +223,7 @@ func TeamWinShare(team, from, to string) (TeamWinShareResponse, error) {
 		return TeamWinShareResponse{Feedback: "Error getting entries"}, err
 	}
 
-	totalRounds, err := countRows("round", fmt.Sprintf("date >= '%s' AND date <= '%s'", from, to))
+	totalRounds, err := CountRows("round", fmt.Sprintf("date >= '%s' AND date <= '%s'", from, to))
 	if err != nil {
 		return TeamWinShareResponse{Feedback: "Error counting rows"}, err
 	}
@@ -205,7 +235,7 @@ func TeamWinShare(team, from, to string) (TeamWinShareResponse, error) {
 	var response TeamWinShareResponse
 	response.Response = map[string]float64{}
 	for _, team := range teams {
-		winsOfTeam, err := countRows("round", fmt.Sprintf("winning_team = '%s' AND date >= '%s' AND date <= '%s'", team, from, to))
+		winsOfTeam, err := CountRows("round", fmt.Sprintf("winning_team = '%s' AND date >= '%s' AND date <= '%s'", team, from, to))
 		if err != nil {
 			return TeamWinShareResponse{Feedback: "Internal server erros"}, err
 		}
