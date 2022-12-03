@@ -250,10 +250,11 @@ func TeamWinShare(team, from, to string) (TeamWinShareResponse, error) {
 
 type TeamsWinPercentage struct {
 	Teams map[string]float64 `json:"teams"`
+	Dwin  float64 `json:"detectiveWinPercentage"`
 }
 type PlayerWinPercentageResponse struct {
-	Feedback string 	`json:"feedback"`
-	Players map[string]TeamsWinPercentage `json:"players"`
+	Feedback string 						`json:"feedback"`
+	Players map[string]TeamsWinPercentage 	`json:"players"`
 }
 
 func PlayerWinPercentage(player, from, to string) (PlayerWinPercentageResponse, error) {
@@ -272,7 +273,7 @@ func PlayerWinPercentage(player, from, to string) (PlayerWinPercentageResponse, 
 	}
 
 	for _, player := range players {
-		query := fmt.Sprintf("SELECT RP.team, R.winning_team FROM round_participation RP JOIN round R ON RP.id = R.id WHERE RP.player = '%s';", player)
+		query := fmt.Sprintf("SELECT RP.team, R.winning_team FROM round_participation RP JOIN round R ON RP.id = R.id WHERE RP.player = '%s' AND R.date >= '%s' AND R.date <= '%s';", player, from, to)
 		var rows []row
 		err := db.Select(&rows, query)
 		if err != nil {
@@ -297,8 +298,45 @@ func PlayerWinPercentage(player, from, to string) (PlayerWinPercentageResponse, 
 			result := float64(val) / totalRounds
 			response.Players[player].Teams[team] = float64(int(result*100)) / 100
 		}
+
+		dWin, err := detectiveWinPercentage(player, from, to)
+		if err != nil {
+			return PlayerWinPercentageResponse{Feedback: fmt.Sprintf("Error getting detective win percentage (%s)", player)}, err
+		}
+
+		entry, _ := response.Players[player]
+		entry.Dwin = float64(int(dWin*100)) / 100
+		response.Players[player] = entry
 	}
 
 	response.Feedback = "Successfull request"
 	return response, nil
+}
+
+func detectiveWinPercentage(player, from, to string) (float64, error) {
+	query := fmt.Sprintf("SELECT R.winning_team FROM round_participation RP JOIN round R ON RP.id = R.id WHERE RP.player = '%s' AND date >= '%s' AND date <= '%s' AND (RP.role = 'paladin' OR RP.role = 'tracker' OR RP.role = 'medium');", player, from, to)
+
+	type row struct {
+		Role	string 
+		Win		string `db:"winning_team"`
+	}
+
+	var rows []row
+	err := db.Select(&rows, query)
+	if err != nil {
+		return -1, err
+	}
+
+	if len(rows) == 0 {
+		return 0, nil
+	}
+
+	var wins float64
+	for _, row := range rows {
+		if row.Win == "innocents" {
+			wins++
+		}
+	}
+
+	return (wins / float64(len(rows))), nil
 }
