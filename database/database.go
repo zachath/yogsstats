@@ -340,3 +340,94 @@ func detectiveWinPercentage(player, from, to string) (float64, error) {
 
 	return (wins / float64(len(rows))), nil
 }
+
+type TraitorCombosResponse struct {
+	Feedback string	`json:"feedback"`
+	Combos map[string]map[string]float64 `json:"combos"`
+}
+
+func TraitorCombos(player, from, to string) (TraitorCombosResponse, error) {
+	players, err := getEntries("player", "name", player)
+	if err != nil {
+		return TraitorCombosResponse{Feedback: "Error getting entries"}, nil
+	}
+
+	response := TraitorCombosResponse{Combos: make(map[string]map[string]float64)}
+
+	for _, player := range players {
+		for _, other := range players {
+			if _, alreadyDone := response.Combos[player][other]; other != player && !alreadyDone {
+				comboWinRate, err, anyCommonRounds := getTraitorWinRate(player, other, from, to)
+				if err != nil {
+					log.Error().Err(err).Msg("")
+					return TraitorCombosResponse{Feedback: "Error getting combo win %"}, nil
+				}
+
+				if !anyCommonRounds {
+					continue
+				}
+				
+				if response.Combos[player] == nil {
+					response.Combos[player] = make(map[string]float64)
+				}
+				response.Combos[player][other] = comboWinRate
+
+				if response.Combos[other] == nil {
+					response.Combos[other] = make(map[string]float64)
+				}
+				response.Combos[other][player] = comboWinRate
+			}
+		}
+	}
+
+	response.Feedback = "Successfull request"
+	return response, nil
+}
+
+func getTraitorWinRate(player1, player2, from, to string) (float64, error, bool) {
+	player1Rounds, err := getTraitorRounds(player1, from, to)
+	if err != nil {
+		return -1, err, false
+	}
+
+	player2Rounds, err := getTraitorRounds(player2, from, to)
+	if err != nil {
+		return -1, err, false
+	}
+
+	var len float64
+	var wins float64
+	for _, round := range player1Rounds {
+		for _, otherRound := range player2Rounds {
+			if round.Id == otherRound.Id {
+				len++
+				if round.Win == "traitors" {
+					wins++
+				}
+			}
+		}
+	}
+
+	if len == 0 {
+		return 0, nil, false
+	}
+
+	return float64(int((wins / len)*100)) / 100, nil, true
+}
+
+type traitorRound struct {
+	Id string
+	Win string `db:"winning_team"`
+}
+
+func getTraitorRounds(player, from, to string) ([]traitorRound, error) {
+	query := fmt.Sprintf("SELECT R.id, R.winning_team FROM round_participation RP JOIN round R ON RP.id = R.id WHERE RP.player = '%s' AND R.date >= '%s' AND R.date <= '%s' AND RP.team = 'traitors';", player, from, to)
+
+	var rounds []traitorRound
+	err := db.Select(&rounds, query)
+	if err != nil {
+		return nil, err
+	}
+
+	return rounds, nil
+}

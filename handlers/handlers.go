@@ -234,3 +234,19 @@ func APIMetaData(rw http.ResponseWriter, req *http.Request) {
 
 	json.NewEncoder(rw).Encode(response)
 }
+
+func TraitorCombos(rw http.ResponseWriter, req *http.Request) {
+	from := req.Context().Value("from").(string)
+	to := req.Context().Value("to").(string)
+
+	setTimeBox(&from, &to)
+
+	var response db.TraitorCombosResponse
+	var err error
+	response, err = db.TraitorCombos("*", from, to)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed getting team win share.")
+	}
+	
+	json.NewEncoder(rw).Encode(response)
+}
