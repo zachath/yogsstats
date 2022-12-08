@@ -141,6 +141,7 @@ func InsertRound(round *TTTRound) error {
 
 	escapeCharacter(&round.Randomat, "'")
 
+	tx.MustExec(fmt.Sprintf("INSERT INTO video (title, id) VALUES ('%s', '%s')", round.Vid, round.Title))
 	tx.MustExec(fmt.Sprintf("INSERT INTO round (id, date, winning_team, randomat) VALUES ('%s', '%s', '%s', '%s');", round.Id, round.Date, round.WinningTeam, round.Randomat))
 	for _, player := range round.Players {
 		addPlayer(player.Name)
@@ -162,12 +163,12 @@ func GetRound(id, from, to string) ([]TTTRound, error) {
 	var query string
 	if id != "" {
 		if len(id) != 9 { //Specific
-			return nil, errors.New(fmt.Sprintf("Invalid id lenght %d, must be of lenght 8 or 9", len(id)))
+			return nil, errors.New(fmt.Sprintf("Invalid id length %d, must be of length 8 or 9", len(id)))
 		} 
 
-		query = fmt.Sprintf("SELECT R.id, R.date, R.winning_team, R.randomat, RP.player, RP.role, RP.team FROM round R JOIN round_participation RP ON RP.id = R.id WHERE R.id = %s ORDER BY R.id ASC;", id)
+		query = fmt.Sprintf("SELECT R.id, R.date, R.winning_team, R.randomat, RP.player, RP.role, RP.team, V.Title, V.vid, R.start, R.end FROM round R JOIN round_participation RP ON RP.id = R.id JOIN video V ON R.id = RP.id AND V.vid = R.video WHERE R.id = '%s' ORDER BY R.id ASC;", id)
 	} else {
-		query = fmt.Sprintf("SELECT R.id, R.date, R.winning_team, R.randomat, RP.player, RP.role, RP.team FROM round R JOIN round_participation RP ON RP.id = R.id WHERE R.date >= '%s' AND R.date <= '%s' ORDER BY R.id ASC;", from, to)
+		query = fmt.Sprintf("SELECT R.id, R.date, R.winning_team, R.randomat, RP.player, RP.role, RP.team, V.Title, V.vid, R.start, R.end FROM round R JOIN round_participation RP ON RP.id = R.id JOIN video V ON R.id = RP.id AND V.vid = R.video WHERE R.date >= '%s' AND R.date <= '%s' ORDER BY R.id ASC;", from, to)
 	}
 
 	rounds := []TTTRound{}
@@ -180,6 +181,10 @@ func GetRound(id, from, to string) ([]TTTRound, error) {
 		Player			string
 		Role			string
 		Team			string
+		Title			string
+		Vid				string
+		Start			int
+		End				int
 	}
 
 	rows := []row{}
@@ -201,7 +206,7 @@ func GetRound(id, from, to string) ([]TTTRound, error) {
 				rounds = append(rounds, round)
 			}
 
-			round = TTTRound{Round: Round{Id: strconv.Itoa(row.Id), Date: row.Date}, Randomat: row.Randomat, WinningTeam: row.WinningTeam}
+			round = TTTRound{Round: Round{Id: strconv.Itoa(row.Id), Date: row.Date, Title: row.Title, Vid: row.Vid, Start: row.Start, End: row.End}, Randomat: row.Randomat, WinningTeam: row.WinningTeam}
 		}
 
 		round.Players = append(round.Players, TTTPlayer{Player: Player{Name: row.Player}, Role: row.Role, Team: row.Team})

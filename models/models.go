@@ -1,8 +1,13 @@
 package models
 type Round struct {
-	Id			string		`json:"id" db:"id"`
-	Date		string 		`json:"date" db:"data"`
+	Id			string	`json:"id" db:"id"`
+	Date		string 	`json:"date" db:"date"`
+	Title		string	`json:"title" db:"title"`
+	Vid			string	`json:"vid" db:"id"`
+	Start		int		`json:"start" db:"start"`
+	End			int 	`json:"end" db:"end"`
 }
+
 type TTTRound struct {
 	Round
 	Players		[]TTTPlayer `json:"players" db:"players"`

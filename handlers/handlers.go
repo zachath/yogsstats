@@ -124,8 +124,8 @@ func GetTTTRound(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	if err != nil {
-		log.Error().Msgf("Failed to get TTT round")
-		http.Error(rw, "Failed to get TTT round", http.StatusInternalServerError)
+		log.Error().Err(err).Msgf("Failed to get TTT round")
+		http.Error(rw, fmt.Sprintf("Failed to get TTT round: %s", err.Error()), http.StatusInternalServerError)
 		return
 	}
 
