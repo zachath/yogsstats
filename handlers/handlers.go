@@ -8,6 +8,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"time"
 
 	//External dependencies
@@ -181,18 +182,27 @@ func PlayerWinPercentage(rw http.ResponseWriter, req *http.Request) {
 	player := req.URL.Query().Get("player")
 	from := req.Context().Value("from").(string)
 	to := req.Context().Value("to").(string)
+	
+	canon := false
+	var err error
+	if req.URL.Query().Has("canon") {
+		canon, err = strconv.ParseBool(req.URL.Query().Get("canon"))
+		if err != nil {
+			io.WriteString(rw, "Cannot parse 'canon' paramter, reverting to default\n")
+			canon = false
+		}
+	}
 
 	setTimeBox(&from, &to)
 
 	var response db.PlayerWinPercentageResponse
-	var err error
 	if player == "" {
-		response, err = db.PlayerWinPercentage("*", from, to)
+		response, err = db.PlayerWinPercentage("*", from, to, canon)
 		if err != nil {
 			log.Error().Err(err).Msg("Failed getting team win share.")
 		}
 	} else {
-		response, err = db.PlayerWinPercentage(player, from, to)
+		response, err = db.PlayerWinPercentage(player, from, to, canon)
 		if err != nil {
 			log.Error().Err(err).Msg("Failed getting team win share.")
 		}

@@ -262,7 +262,7 @@ type PlayerWinPercentageResponse struct {
 	Players map[string]TeamsWinPercentage 	`json:"players"`
 }
 
-func PlayerWinPercentage(player, from, to string) (PlayerWinPercentageResponse, error) {
+func PlayerWinPercentage(player, from, to string, canon bool) (PlayerWinPercentageResponse, error) {
 	players, err := getEntries("player", "name", player)
 	if err != nil {
 		return PlayerWinPercentageResponse{Feedback: "Error getting entries"}, nil
@@ -311,6 +311,11 @@ func PlayerWinPercentage(player, from, to string) (PlayerWinPercentageResponse, 
 
 		entry, _ := response.Players[player]
 		entry.Dwin = float64(int(dWin*100)) / 100
+
+		if canon && player == "Zylus" {
+			entry.Dwin = 1
+		}
+
 		response.Players[player] = entry
 	}
 
