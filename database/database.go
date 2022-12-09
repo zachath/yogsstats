@@ -141,8 +141,16 @@ func InsertRound(round *TTTRound) error {
 
 	escapeCharacter(&round.Randomat, "'")
 
-	tx.MustExec(fmt.Sprintf("INSERT INTO video (title, id) VALUES ('%s', '%s')", round.Vid, round.Title))
-	tx.MustExec(fmt.Sprintf("INSERT INTO round (id, date, winning_team, randomat) VALUES ('%s', '%s', '%s', '%s');", round.Id, round.Date, round.WinningTeam, round.Randomat))
+	if count, err := CountRows("video", fmt.Sprintf("vid = '%s'", round.Vid)); err == nil {
+		if count == 0 {
+			tx.MustExec(fmt.Sprintf("INSERT INTO video (title, vid) VALUES ('%s', '%s')", round.Title, round.Vid))
+		}
+	} else {
+		log.Error().Err(err).Msg("")
+		return err
+	}
+
+	tx.MustExec(fmt.Sprintf("INSERT INTO round (id, date, winning_team, randomat, video, vid_start, vid_end) VALUES ('%s', '%s', '%s', '%s', '%s', %d, %d);", round.Id, round.Date, round.WinningTeam, round.Randomat, round.Vid, round.Start, round.End))
 	for _, player := range round.Players {
 		addPlayer(player.Name)
 		tx.NamedExec(fmt.Sprintf("INSERT INTO round_participation (id, player, role, team) VALUES ('%s', :name, :role, :team);", round.Id), player)

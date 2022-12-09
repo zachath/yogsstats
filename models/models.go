@@ -4,8 +4,8 @@ type Round struct {
 	Date		string 	`json:"date" db:"date"`
 	Title		string	`json:"title" db:"title"`
 	Vid			string	`json:"vid" db:"id"`
-	Start		int		`json:"start" db:"start"`
-	End			int 	`json:"end" db:"end"`
+	Start		int		`json:"start" db:"vid_start"`
+	End			int 	`json:"end" db:"vid_end"`
 }
 
 type TTTRound struct {
