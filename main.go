@@ -2,6 +2,7 @@ package main
 
 import (
 	//Go packages
+	"fmt"
 	"net/http"
 	"os"
 	"time"
@@ -31,7 +32,7 @@ func main() {
 
 	s := &http.Server{
 		Handler: r,
-		Addr: ":8080",
+		Addr: fmt.Sprintf(":%s", os.Getenv("PORT")),
 		WriteTimeout: 15 * time.Second,
 		ReadTimeout:  15 * time.Second,
 	}

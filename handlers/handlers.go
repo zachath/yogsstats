@@ -214,7 +214,7 @@ func PlayerWinPercentage(rw http.ResponseWriter, req *http.Request) {
 func APIMetaData(rw http.ResponseWriter, req *http.Request) {
 	type MetaResponse struct {
 		Count 		int 			`json:"roundCount"`
-		OldestRound db.RoundInfo 	`json:"oldestRond"`
+		OldestRound db.RoundInfo 	`json:"oldestRound"`
 		NewestRound db.RoundInfo 	`json:"newestRound"`
 	}
 

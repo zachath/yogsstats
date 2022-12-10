@@ -174,9 +174,9 @@ func GetRound(id, from, to string) ([]TTTRound, error) {
 			return nil, errors.New(fmt.Sprintf("Invalid id length %d, must be of length 8 or 9", len(id)))
 		} 
 
-		query = fmt.Sprintf("SELECT R.id, R.date, R.winning_team, R.randomat, RP.player, RP.role, RP.team, V.Title, V.vid, R.start, R.end FROM round R JOIN round_participation RP ON RP.id = R.id JOIN video V ON R.id = RP.id AND V.vid = R.video WHERE R.id = '%s' ORDER BY R.id ASC;", id)
+		query = fmt.Sprintf("SELECT R.id, R.date, R.winning_team, R.randomat, RP.player, RP.role, RP.team, V.Title, V.vid, R.vid_start, R.vid_end FROM round R JOIN round_participation RP ON RP.id = R.id JOIN video V ON R.id = RP.id AND V.vid = R.video WHERE R.id = '%s' ORDER BY R.id ASC;", id)
 	} else {
-		query = fmt.Sprintf("SELECT R.id, R.date, R.winning_team, R.randomat, RP.player, RP.role, RP.team, V.Title, V.vid, R.start, R.end FROM round R JOIN round_participation RP ON RP.id = R.id JOIN video V ON R.id = RP.id AND V.vid = R.video WHERE R.date >= '%s' AND R.date <= '%s' ORDER BY R.id ASC;", from, to)
+		query = fmt.Sprintf("SELECT R.id, R.date, R.winning_team, R.randomat, RP.player, RP.role, RP.team, V.Title, V.vid, R.vid_start, R.vid_end FROM round R JOIN round_participation RP ON RP.id = R.id JOIN video V ON R.id = RP.id AND V.vid = R.video WHERE R.date >= '%s' AND R.date <= '%s' ORDER BY R.id ASC;", from, to)
 	}
 
 	rounds := []TTTRound{}
@@ -190,9 +190,9 @@ func GetRound(id, from, to string) ([]TTTRound, error) {
 		Role			string
 		Team			string
 		Title			string
-		Vid				string
-		Start			int
-		End				int
+		Vid			string
+		Start			int		`db:"vid_start"`
+		End				int		`db:"vid_end"`
 	}
 
 	rows := []row{}
