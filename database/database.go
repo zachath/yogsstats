@@ -143,10 +143,10 @@ func InsertRound(round *TTTRound) error {
 
 	if count, err := CountRows("video", fmt.Sprintf("vid = '%s'", round.Vid)); err == nil {
 		if count == 0 {
-			tx.MustExec(fmt.Sprintf("INSERT INTO video (title, vid) VALUES ('%s', '%s')", round.Title, round.Vid))
+			tx.MustExec(fmt.Sprintf("INSERT INTO video (title, vid) VALUES ('%s', '%s');", round.Title, round.Vid))
 		}
 	} else {
-		log.Error().Err(err).Msg("")
+		log.Error().Err(err).Msg("Failed to insert video")
 		return err
 	}
 
@@ -168,8 +168,13 @@ func InsertRound(round *TTTRound) error {
 }
 
 func GetRound(id, from, to string) ([]TTTRound, error) {
+	var query string
+	if id == "" {
+		query = fmt.Sprintf("SELECT R.id, R.date, R.winning_team, R.randomat, RP.player, RP.role, RP.team, V.Title, V.vid, R.vid_start, R.vid_end FROM round R JOIN round_participation RP ON RP.id = R.id JOIN video V ON R.id = RP.id AND V.vid = R.video WHERE R.date >= '%s' AND R.date <= '%s' ORDER BY R.id ASC;", from, to)
+	} else {
+		query = fmt.Sprintf("SELECT R.id, R.date, R.winning_team, R.randomat, RP.player, RP.role, RP.team, V.Title, V.vid, R.vid_start, R.vid_end FROM round R JOIN round_participation RP ON RP.id = R.id JOIN video V ON R.id = RP.id AND V.vid = R.video WHERE R.id = '%s' AND R.date >= '%s' AND R.date <= '%s' ORDER BY R.id ASC;", id, from, to)
 
-	query := fmt.Sprintf("SELECT R.id, R.date, R.winning_team, R.randomat, RP.player, RP.role, RP.team, V.Title, V.vid, R.vid_start, R.vid_end FROM round R JOIN round_participation RP ON RP.id = R.id JOIN video V ON R.id = RP.id AND V.vid = R.video WHERE R.date >= '%s' AND R.date <= '%s' ORDER BY R.id ASC;", from, to)
+	}
 
 	rounds := []TTTRound{}
 
