@@ -108,21 +108,16 @@ func HomeHandler(rw http.ResponseWriter, req *http.Request) {
 }
 
 func GetTTTRound(rw http.ResponseWriter, req *http.Request) {
-	var id string
 	var rounds []TTTRound
 	var err	error
 
-	if req.URL.Query().Has("id") {
-		id = req.URL.Query().Get("id")
-		rounds, err = db.GetRound(id, "", "")
-	} else if req.Context().Value("from") != "" && req.Context().Value("to") != "" {
-		from := req.Context().Value("from").(string)
-		to := req.Context().Value("to").(string)
-		rounds, err = db.GetRound("", from, to)
-	} else {
-		http.Error(rw, "Invalid argument combination provided (id OR (from AND to)).", http.StatusBadRequest)
-		return
-	}
+	id := req.URL.Query().Get("id")
+	from := req.Context().Value("from").(string)
+	to := req.Context().Value("to").(string)
+
+	setTimeBox(&from, &to)
+
+	rounds, err = db.GetRound(id, from, to)
 
 	if err != nil {
 		log.Error().Err(err).Msgf("Failed to get TTT round")
