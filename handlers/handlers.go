@@ -12,6 +12,8 @@ import (
 	"time"
 
 	//External dependencies
+	"github.com/gomarkdown/markdown"
+	"github.com/gomarkdown/markdown/html"
 	"github.com/pkg/errors"
 	log "github.com/rs/zerolog/log"
 
@@ -104,7 +106,16 @@ func DateValidation(next http.HandlerFunc) http.HandlerFunc {
 }
 
 func HomeHandler(rw http.ResponseWriter, req *http.Request) {
-	http.Error(rw, "Not implemented", http.StatusNotImplemented)
+	content, err := ioutil.ReadFile("README.md")
+	if err != nil {
+		http.Error(rw, "Error loading page.", http.StatusInternalServerError)
+		return
+	}
+
+	md := []byte(content)
+	flags := html.CommonFlags | html.HrefTargetBlank
+	html := markdown.ToHTML(md, nil, html.NewRenderer(html.RendererOptions{Flags: flags}))
+	rw.Write(html)
 }
 
 func GetTTTRound(rw http.ResponseWriter, req *http.Request) {
