@@ -9,7 +9,7 @@ Data is manually entered for every round played, the players, their roles, teams
 
 `/stats/ttt/teamWinShare`: Returns the win share of all the teams. Valid query parameter: `team` to only return the win rate of the specified team.
 
-`/stats/ttt/playerWinPercentage:` Returns the win percentage of all the players. Valid query parameter: `player` to only return the win percentage of the specified player.
+`/stats/ttt/playerWinPercentage:` Returns the win percentage of all the players. Valid query parameter: `player` to only return the win percentage of the specified player. `canon` a boolean value of `true` or `false`, if set to true the response will only include stats from "canon" rounds.
 
 **NOTE**: By win rate is meant by what percentage a team has won in the ENTIRE dataset, while the win percentage only accounts for the rounds that the player has actually played in.
 
