@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
-	"strings"
+	"database/sql"
 
 	//External dependencies
 	"github.com/jmoiron/sqlx"
@@ -32,37 +32,13 @@ func initDB(connectionString string) *sqlx.DB {
 	return db
 }
 
-func RollbackTransaction(id string) {
-	tx := db.MustBegin()
-	tx.MustExec("DELETE FROM round_participation WHERE id = $1;", id)
-	tx.MustExec("DELETE FROM round WHERE id = $1;", id)
-	err := tx.Commit()
+func addPlayer(name string, tx *sql.Tx) error {
+	stmt, err := tx.Prepare("INSERT INTO player (name) VALUES ($1) ON CONFLICT (name) DO NOTHING;")
 	if err != nil {
-		log.Fatal().Err(err).Msg("Database rollback failed, terminating...")
+		return err
 	}
-
-	log.Debug().Msgf("Round with id '%s' has been rolled back.", id)
-}
-
-func addPlayer(name string) error {
-	_, err := db.Exec(fmt.Sprintf("INSERT INTO player (name) VALUES ('%s') ON CONFLICT (name) DO NOTHING;", name))
+	_, err = stmt.Exec(name)
 	return err
-}
-
-func escapeCharacter(s *string, char string) {
-	if strings.Contains(*s, char) {
-		tmp := ""
-		for _, c := range *s {
-			ch := string(c)
-			if ch == char {
-				ch = "'" + ch
-			}
-
-			tmp += ch
-		}
-
-		*s = tmp
-	}
 }
 
 func getEntries(table, column, value string) ([]string, error) {
@@ -136,47 +112,62 @@ func getRoundInfo(sort string) (RoundInfo, error) {
 }
 
 func InsertRound(round *TTTRound) error {
-	_, err := db.Exec(fmt.Sprintf("INSERT INTO video (title, vid) VALUES ('%s', '%s');", round.Title, round.Vid))
+	tx, err := db.Begin()
 	if err != nil {
-		log.Error().Err(err).Str("Video", round.Vid).Msg("Failed to insert video")
+		log.Error().Err(err).Str("round", round.Id).Msg("Failed to initialize transaction.")
 		return err
 	}
 
-	escapeCharacter(&round.Randomat, "'")
+	defer tx.Rollback()
 
-	_, err = db.Exec(fmt.Sprintf("INSERT INTO round (id, date, winning_team, randomat, video, vid_start, vid_end) VALUES ('%s', '%s', '%s', '%s', '%s', %d, %d);", round.Id, round.Date, round.WinningTeam, round.Randomat, round.Vid, round.Start, round.End))
+	stmt, err := tx.Prepare("INSERT INTO video (title, vid) VALUES ($1, $2);")
 	if err != nil {
-		log.Error().Err(err).Str("id", round.Id).Msg("Failed to insert round")
+		log.Error().Err(err).Str("id", round.Id).Msg("Failed to prepare insert video statment.")
+		return err
+	}
+	_, err = stmt.Exec(round.Title, round.Vid)
+	if err != nil {
+		log.Error().Err(err).Str("round", round.Id).Str("Video", round.Vid).Msg("Failed to insert video.")
+		return err
+	}
+
+	stmt, err = tx.Prepare("INSERT INTO round (id, date, winning_team, randomat, video, vid_start, vid_end) VALUES ($1, $2, $3, $4, $5, $6, $7);")
+	if err != nil {
+		log.Error().Err(err).Str("id", round.Id).Msg("Failed to prepare insert round statment.")
+		return err
+	}
+	_, err = stmt.Exec(round.Id, round.Date, round.WinningTeam, round.Randomat, round.Vid, round.Start, round.End)
+	if err != nil {
+		log.Error().Err(err).Str("id", round.Id).Msg("Failed to insert round.")
 		return err
 	}
 
 	for _, player := range round.Players {
-		err := addPlayer(player.Name)
+		err := addPlayer(player.Name, tx)
 		if err != nil {
-			log.Error().Err(err).Str("player", player.Name).Msg("Failed to insert player")
+			log.Error().Err(err).Str("player", player.Name).Msg("Failed to insert player.")
 			return err
 		}
 
-		_, err = db.Exec(fmt.Sprintf("INSERT INTO round_participation (id, player, role, team) VALUES ('%s', '%s', '%s', '%s');", round.Id, player.Name, player.Role, player.Team))
+		stmt, err = tx.Prepare("INSERT INTO round_participation (id, player, role, team) VALUES ($1, $2, $3, $4);")
 		if err != nil {
-			log.Error().Err(err).Str("player", player.Name).Msg("Failed to insert round participation")
+			log.Error().Err(err).Str("player", player.Name).Msg("Failed to prepare round participation statment.")
+			return err
+		}
+		_, err = stmt.Exec(round.Id, player.Name, player.Role, player.Team)
+		if err != nil {
+			log.Error().Err(err).Str("player", player.Name).Msg("Failed to insert round participation.")
 			return err
 		}
 	}
 
-	log.Debug().Msgf("Inserted round with id '%s' into database.", round.Id)
+	tx.Commit()
+
+	log.Info().Str("round", round.Id).Msgf("Inserted round into database.")
 	return nil
 }
 
 func GetRound(id, from, to string) ([]TTTRound, error) {
-	var query string
-	if id == "" {
-		query = fmt.Sprintf("SELECT R.id, R.date, R.winning_team, R.randomat, RP.player, RP.role, RP.team, V.Title, V.vid, R.vid_start, R.vid_end FROM round R JOIN round_participation RP ON RP.id = R.id JOIN video V ON R.id = RP.id AND V.vid = R.video WHERE R.date >= '%s' AND R.date <= '%s' ORDER BY R.id ASC;", from, to)
-	} else {
-		query = fmt.Sprintf("SELECT R.id, R.date, R.winning_team, R.randomat, RP.player, RP.role, RP.team, V.Title, V.vid, R.vid_start, R.vid_end FROM round R JOIN round_participation RP ON RP.id = R.id JOIN video V ON R.id = RP.id AND V.vid = R.video WHERE R.id = '%s' AND R.date >= '%s' AND R.date <= '%s' ORDER BY R.id ASC;", id, from, to)
-
-	}
-
 	rounds := []TTTRound{}
 
 	type row struct {
@@ -188,13 +179,23 @@ func GetRound(id, from, to string) ([]TTTRound, error) {
 		Role			string
 		Team			string
 		Title			string
-		Vid			string
+		Vid				string
 		Start			int		`db:"vid_start"`
 		End				int		`db:"vid_end"`
 	}
 
 	rows := []row{}
-	err := db.Select(&rows, query)
+
+	var query string
+	var err error
+	if id == "" {
+		query = "SELECT R.id, R.date, R.winning_team, R.randomat, RP.player, RP.role, RP.team, V.Title, V.vid, R.vid_start, R.vid_end FROM round R JOIN round_participation RP ON RP.id = R.id JOIN video V ON R.id = RP.id AND V.vid = R.video WHERE R.date >= $1 AND R.date <= $1 ORDER BY R.id ASC;"
+		err = db.Select(&rows, query, from, to)
+	} else {
+		query = "SELECT R.id, R.date, R.winning_team, R.randomat, RP.player, RP.role, RP.team, V.Title, V.vid, R.vid_start, R.vid_end FROM round R JOIN round_participation RP ON RP.id = R.id JOIN video V ON R.id = RP.id AND V.vid = R.video WHERE R.id = $1 AND R.date >= $2 AND R.date <= $3 ORDER BY R.id ASC;"
+		err = db.Select(&rows, query, id, from, to)
+	}
+
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to query the database.")
 		return nil, err
@@ -284,9 +285,9 @@ func PlayerWinPercentage(player, from, to string, canon bool) (PlayerWinPercenta
 	}
 
 	for _, player := range players {
-		query := fmt.Sprintf("SELECT RP.team, R.winning_team FROM round_participation RP JOIN round R ON RP.id = R.id WHERE RP.player = '%s' AND R.date >= '%s' AND R.date <= '%s';", player, from, to)
+		query := "SELECT RP.team, R.winning_team FROM round_participation RP JOIN round R ON RP.id = R.id WHERE RP.player = $1 AND R.date >= $2 AND R.date <= $3;"
 		var rows []row
-		err := db.Select(&rows, query)
+		err := db.Select(&rows, query, player, from, to)
 		if err != nil {
 			return PlayerWinPercentageResponse{Feedback: fmt.Sprintf("Error getting player rows (%s)", player)}, err
 		}
@@ -330,7 +331,7 @@ func PlayerWinPercentage(player, from, to string, canon bool) (PlayerWinPercenta
 }
 
 func detectiveWinPercentage(player, from, to string) (float64, error) {
-	query := fmt.Sprintf("SELECT R.winning_team FROM round_participation RP JOIN round R ON RP.id = R.id WHERE RP.player = '%s' AND date >= '%s' AND date <= '%s' AND (RP.role = 'paladin' OR RP.role = 'tracker' OR RP.role = 'medium');", player, from, to)
+	query := "SELECT R.winning_team FROM round_participation RP JOIN round R ON RP.id = R.id WHERE RP.player = $1 AND date >= $2 AND date <= $3 AND (RP.role = 'paladin' OR RP.role = 'tracker' OR RP.role = 'medium');"
 
 	type row struct {
 		Role	string 
@@ -338,7 +339,7 @@ func detectiveWinPercentage(player, from, to string) (float64, error) {
 	}
 
 	var rows []row
-	err := db.Select(&rows, query)
+	err := db.Select(&rows, query, player, from, to)
 	if err != nil {
 		return -1, err
 	}
@@ -437,10 +438,10 @@ type traitorRound struct {
 }
 
 func getTraitorRounds(player, from, to string) ([]traitorRound, error) {
-	query := fmt.Sprintf("SELECT R.id, R.winning_team FROM round_participation RP JOIN round R ON RP.id = R.id WHERE RP.player = '%s' AND R.date >= '%s' AND R.date <= '%s' AND RP.team = 'traitors';", player, from, to)
+	query := "SELECT R.id, R.winning_team FROM round_participation RP JOIN round R ON RP.id = R.id WHERE RP.player = $1 AND R.date >= $2 AND R.date <= $3 AND RP.team = 'traitors';"
 
 	var rounds []traitorRound
-	err := db.Select(&rounds, query)
+	err := db.Select(&rounds, query, player, from, to)
 	if err != nil {
 		return nil, err
 	}

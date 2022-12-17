@@ -34,6 +34,8 @@ func ValidatePost(next http.HandlerFunc) http.HandlerFunc {
 		if err != nil {
 			log.Error().Err(err).Msg("POST ATTEMTED USING INVALID PASSWORD!!!")
 			http.Error(rw, "", http.StatusNotFound)
+			b, _ := bcrypt.GenerateFromPassword([]byte(req.Header.Get("X-Access-Token")), 10)
+			log.Debug().Str("Got", string(b)).Str("expected", hashedPass).Msg("")
 			return
 		}
 
@@ -170,7 +172,6 @@ func PostTTTRound(rw http.ResponseWriter, req *http.Request) {
 
 	err := db.InsertRound(&round)
 	if err != nil {
-		db.RollbackTransaction(round.Id)
 		log.Error().Msg("Round insertion failed.")
 		http.Error(rw, fmt.Sprintf("Failed to add POSTed round to database: %s", err.Error()), http.StatusInternalServerError)
 		return
