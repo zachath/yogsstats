@@ -120,7 +120,7 @@ func InsertRound(round *TTTRound) error {
 
 	defer tx.Rollback()
 
-	stmt, err := tx.Prepare("INSERT INTO video (title, vid) VALUES ($1, $2);")
+	stmt, err := tx.Prepare("INSERT INTO video (title, vid) VALUES ($1, $2) ON CONFLICT DO NOTHING;")
 	if err != nil {
 		log.Error().Err(err).Str("id", round.Id).Msg("Failed to prepare insert video statment.")
 		return err
@@ -189,7 +189,7 @@ func GetRound(id, from, to string) ([]TTTRound, error) {
 	var query string
 	var err error
 	if id == "" {
-		query = "SELECT R.id, R.date, R.winning_team, R.randomat, RP.player, RP.role, RP.team, V.Title, V.vid, R.vid_start, R.vid_end FROM round R JOIN round_participation RP ON RP.id = R.id JOIN video V ON R.id = RP.id AND V.vid = R.video WHERE R.date >= $1 AND R.date <= $1 ORDER BY R.id ASC;"
+		query = "SELECT R.id, R.date, R.winning_team, R.randomat, RP.player, RP.role, RP.team, V.Title, V.vid, R.vid_start, R.vid_end FROM round R JOIN round_participation RP ON RP.id = R.id JOIN video V ON R.id = RP.id AND V.vid = R.video WHERE R.date >= $1 AND R.date <= $2 ORDER BY R.id ASC;"
 		err = db.Select(&rows, query, from, to)
 	} else {
 		query = "SELECT R.id, R.date, R.winning_team, R.randomat, RP.player, RP.role, RP.team, V.Title, V.vid, R.vid_start, R.vid_end FROM round R JOIN round_participation RP ON RP.id = R.id JOIN video V ON R.id = RP.id AND V.vid = R.video WHERE R.id = $1 AND R.date >= $2 AND R.date <= $3 ORDER BY R.id ASC;"
@@ -331,7 +331,7 @@ func PlayerWinPercentage(player, from, to string, canon bool) (PlayerWinPercenta
 }
 
 func detectiveWinPercentage(player, from, to string) (float64, error) {
-	query := "SELECT R.winning_team FROM round_participation RP JOIN round R ON RP.id = R.id WHERE RP.player = $1 AND date >= $2 AND date <= $3 AND (RP.role = 'paladin' OR RP.role = 'tracker' OR RP.role = 'medium');"
+	query := "SELECT R.winning_team FROM round_participation RP JOIN round R ON RP.id = R.id WHERE RP.player = $1 AND date >= $2 AND date <= $3 AND (RP.role = 'paladin' OR RP.role = 'tracker' OR RP.role = 'medium' OR rp.role = 'detective' OR RP.role = 'santa');"
 
 	type row struct {
 		Role	string 
