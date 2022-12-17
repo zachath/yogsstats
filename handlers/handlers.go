@@ -8,6 +8,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 
@@ -16,12 +17,29 @@ import (
 	"github.com/gomarkdown/markdown/html"
 	"github.com/pkg/errors"
 	log "github.com/rs/zerolog/log"
+	"golang.org/x/crypto/bcrypt"
 
 	//Local packages
 	config "yogsstats/config"
 	db "yogsstats/database"
 	. "yogsstats/models"
 )
+
+func ValidatePost(next http.HandlerFunc) http.HandlerFunc {
+	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		hashedPass := os.Getenv("POST_PASS")
+		
+		err := bcrypt.CompareHashAndPassword([]byte(hashedPass), []byte(req.Header.Get("X-Access-Token")))
+
+		if err != nil {
+			log.Error().Err(err).Msg("POST ATTEMTED USING INVALID PASSWORD!!!")
+			http.Error(rw, "", http.StatusNotFound)
+			return
+		}
+
+		next(rw, req)
+	})
+}
 
 func ValidateTTTInput(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
