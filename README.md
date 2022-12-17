@@ -9,11 +9,11 @@ Data is manually entered for every round played, the players, their roles, teams
 
 `/stats/ttt/teamWinShare`: Returns the win share of all the teams. Valid query parameter: `team` to only return the win rate of the specified team.
 
-`/stats/ttt/playerWinPercentage:` Returns the win percentage of all the players. Valid query parameter: `player` to only return the win percentage of the specified player. `canon` a boolean value of `true` or `false`, if set to true the response will only include stats from "canon" rounds.
+`/stats/ttt/playerWinPercentage:` Returns the win percentage of all the players. Valid optional query parameters: `player` to only return the win percentage of the specified player, `canon` a boolean value of `true` or `false`, if set to true the response will only include stats from "canon" rounds (default false).
 
 **NOTE**: By win rate is meant by what percentage a team has won in the ENTIRE dataset, while the win percentage only accounts for the rounds that the player has actually played in.
 
-`/stats/ttt/traitorCombos`: Returns every player tracked in the database, mapped to every player they have been traitor "buddies" with and what their win rate together has been. **NOTE**: This is a computationally expensive calculation, the responses might be slow and bog down the API.
+`/stats/ttt/traitorCombos`: Returns every player tracked in the database, mapped to every player they have been "traitor buddies" with and what their win rate together has been. **NOTE**: This is a computationally expensive calculation, the responses might be slow and bog down the API.
 
 Every endpoint, except `meta`, supports the following query parameters: `to` and `from` in the `YYYY-MM-DD` format which then only includes rounds within the specified date range. These are implicitly used if not explicitly defined, with the `to` date being set to the time of the request.
 
