@@ -32,7 +32,7 @@ func initDB(connectionString string) *sqlx.DB {
 	return db
 }
 
-func rollbackTransaction(id string) {
+func RollbackTransaction(id string) {
 	tx := db.MustBegin()
 	tx.MustExec("DELETE FROM round_participation WHERE id = $1;", id)
 	tx.MustExec("DELETE FROM round WHERE id = $1;", id)
@@ -44,10 +44,9 @@ func rollbackTransaction(id string) {
 	log.Debug().Msgf("Round with id '%s' has been rolled back.", id)
 }
 
-func addPlayer(name string) {
-	tx := db.MustBegin()
-	tx.MustExec(fmt.Sprintf("INSERT INTO player (name) VALUES ('%s') ON CONFLICT (name) DO NOTHING;", name))
-	tx.Commit()
+func addPlayer(name string) error {
+	_, err := db.Exec(fmt.Sprintf("INSERT INTO player (name) VALUES ('%s') ON CONFLICT (name) DO NOTHING;", name))
+	return err
 }
 
 func escapeCharacter(s *string, char string) {
@@ -137,30 +136,32 @@ func getRoundInfo(sort string) (RoundInfo, error) {
 }
 
 func InsertRound(round *TTTRound) error {
-	tx := db.MustBegin()
+	_, err := db.Exec(fmt.Sprintf("INSERT INTO video (title, vid) VALUES ('%s', '%s');", round.Title, round.Vid))
+	if err != nil {
+		log.Error().Err(err).Str("Video", round.Vid).Msg("Failed to insert video")
+		return err
+	}
 
 	escapeCharacter(&round.Randomat, "'")
 
-	if count, err := CountRows("video", fmt.Sprintf("vid = '%s'", round.Vid)); err == nil {
-		if count == 0 {
-			tx.MustExec(fmt.Sprintf("INSERT INTO video (title, vid) VALUES ('%s', '%s');", round.Title, round.Vid))
-		}
-	} else {
-		log.Error().Err(err).Msg("Failed to insert video")
-		return err
-	}
-
-	tx.MustExec(fmt.Sprintf("INSERT INTO round (id, date, winning_team, randomat, video, vid_start, vid_end) VALUES ('%s', '%s', '%s', '%s', '%s', %d, %d);", round.Id, round.Date, round.WinningTeam, round.Randomat, round.Vid, round.Start, round.End))
-	for _, player := range round.Players {
-		addPlayer(player.Name)
-		tx.NamedExec(fmt.Sprintf("INSERT INTO round_participation (id, player, role, team) VALUES ('%s', :name, :role, :team);", round.Id), player)
-	}
-
-	err := tx.Commit()
+	_, err = db.Exec(fmt.Sprintf("INSERT INTO round (id, date, winning_team, randomat, video, vid_start, vid_end) VALUES ('%s', '%s', '%s', '%s', '%s', %d, %d);", round.Id, round.Date, round.WinningTeam, round.Randomat, round.Vid, round.Start, round.End))
 	if err != nil {
-		log.Error().Err(err).Msgf("Failed to insert round '%v' into database, rolling back transaction...", round)
-		rollbackTransaction(round.Id)
+		log.Error().Err(err).Str("id", round.Id).Msg("Failed to insert round")
 		return err
+	}
+
+	for _, player := range round.Players {
+		err := addPlayer(player.Name)
+		if err != nil {
+			log.Error().Err(err).Str("player", player.Name).Msg("Failed to insert player")
+			return err
+		}
+
+		_, err = db.Exec(fmt.Sprintf("INSERT INTO round_participation (id, player, role, team) VALUES ('%s', '%s', '%s', '%s');", round.Id, player.Name, player.Role, player.Team))
+		if err != nil {
+			log.Error().Err(err).Str("player", player.Name).Msg("Failed to insert round participation")
+			return err
+		}
 	}
 
 	log.Debug().Msgf("Inserted round with id '%s' into database.", round.Id)
