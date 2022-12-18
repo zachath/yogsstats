@@ -131,12 +131,12 @@ func InsertRound(round *TTTRound) error {
 		return err
 	}
 
-	stmt, err = tx.Prepare("INSERT INTO round (id, date, winning_team, randomat, video, vid_start, vid_end) VALUES ($1, $2, $3, $4, $5, $6, $7);")
+	stmt, err = tx.Prepare("INSERT INTO round (id, date, winning_team, video, vid_start, vid_end) VALUES ($1, $2, $3, $4, $5, $6);")
 	if err != nil {
 		log.Error().Err(err).Str("id", round.Id).Msg("Failed to prepare insert round statment.")
 		return err
 	}
-	_, err = stmt.Exec(round.Id, round.Date, round.WinningTeam, round.Randomat, round.Vid, round.Start, round.End)
+	_, err = stmt.Exec(round.Id, round.Date, round.WinningTeam, round.Vid, round.Start, round.End)
 	if err != nil {
 		log.Error().Err(err).Str("id", round.Id).Msg("Failed to insert round.")
 		return err
@@ -174,7 +174,6 @@ func GetRound(id, from, to string) ([]TTTRound, error) {
 		Id				int
 		Date			string
 		WinningTeam		string `db:"winning_team"`
-		Randomat		string
 		Player			string
 		Role			string
 		Team			string
@@ -189,10 +188,10 @@ func GetRound(id, from, to string) ([]TTTRound, error) {
 	var query string
 	var err error
 	if id == "" {
-		query = "SELECT R.id, R.date, R.winning_team, R.randomat, RP.player, RP.role, RP.team, V.Title, V.vid, R.vid_start, R.vid_end FROM round R JOIN round_participation RP ON RP.id = R.id JOIN video V ON R.id = RP.id AND V.vid = R.video WHERE R.date >= $1 AND R.date <= $2 ORDER BY R.id ASC;"
+		query = "SELECT R.id, R.date, R.winning_team, RP.player, RP.role, RP.team, V.Title, V.vid, R.vid_start, R.vid_end FROM round R JOIN round_participation RP ON RP.id = R.id JOIN video V ON R.id = RP.id AND V.vid = R.video WHERE R.date >= $1 AND R.date <= $2 ORDER BY R.id ASC;"
 		err = db.Select(&rows, query, from, to)
 	} else {
-		query = "SELECT R.id, R.date, R.winning_team, R.randomat, RP.player, RP.role, RP.team, V.Title, V.vid, R.vid_start, R.vid_end FROM round R JOIN round_participation RP ON RP.id = R.id JOIN video V ON R.id = RP.id AND V.vid = R.video WHERE R.id = $1 AND R.date >= $2 AND R.date <= $3 ORDER BY R.id ASC;"
+		query = "SELECT R.id, R.date, R.winning_team, RP.player, RP.role, RP.team, V.Title, V.vid, R.vid_start, R.vid_end FROM round R JOIN round_participation RP ON RP.id = R.id JOIN video V ON R.id = RP.id AND V.vid = R.video WHERE R.id = $1 AND R.date >= $2 AND R.date <= $3 ORDER BY R.id ASC;"
 		err = db.Select(&rows, query, id, from, to)
 	}
 
@@ -213,7 +212,7 @@ func GetRound(id, from, to string) ([]TTTRound, error) {
 				rounds = append(rounds, round)
 			}
 
-			round = TTTRound{Round: Round{Id: strconv.Itoa(row.Id), Date: row.Date, Title: row.Title, Vid: row.Vid, Start: row.Start, End: row.End}, Randomat: row.Randomat, WinningTeam: row.WinningTeam}
+			round = TTTRound{Round: Round{Id: strconv.Itoa(row.Id), Date: row.Date, Title: row.Title, Vid: row.Vid, Start: row.Start, End: row.End}, WinningTeam: row.WinningTeam}
 		}
 
 		round.Players = append(round.Players, TTTPlayer{Player: Player{Name: row.Player}, Role: row.Role, Team: row.Team})
