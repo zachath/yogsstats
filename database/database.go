@@ -330,7 +330,7 @@ func PlayerWinPercentage(player, from, to string, canon bool) (PlayerWinPercenta
 }
 
 func detectiveWinPercentage(player, from, to string) (float64, error) {
-	query := "SELECT R.winning_team FROM round_participation RP JOIN round R ON RP.id = R.id WHERE RP.player = $1 AND date >= $2 AND date <= $3 AND (RP.role = 'paladin' OR RP.role = 'tracker' OR RP.role = 'medium' OR rp.role = 'detective' OR RP.role = 'santa');"
+	query := "SELECT R.winning_team FROM round_participation RP JOIN round R ON RP.id = R.id JOIN role RO ON RP.role = RO.role WHERE RP.player = $1 AND date >= $2 AND date <= $3 AND RO.detective = 'd';"
 
 	type row struct {
 		Role	string 
