@@ -268,7 +268,7 @@ type PlayerWinPercentageResponse struct {
 	Players map[string]TeamsWinPercentage 	`json:"players"`
 }
 
-func PlayerWinPercentage(player, from, to string, canon bool) (PlayerWinPercentageResponse, error) {
+func PlayerWinPercentage(player, from, to string, canon, trunc bool) (PlayerWinPercentageResponse, error) {
 	players, err := getEntries("player", "name", player)
 	if err != nil {
 		return PlayerWinPercentageResponse{Feedback: "Error getting entries"}, nil
@@ -307,16 +307,20 @@ func PlayerWinPercentage(player, from, to string, canon bool) (PlayerWinPercenta
 		response.Players[player] = TeamsWinPercentage{Teams: make(map[string]float64)}
 		for team, val := range winsByTeams {
 			result := float64(val) / totalRounds
-			response.Players[player].Teams[team] = float64(int(result*100)) / 100
+			if trunc {
+				response.Players[player].Teams[team] = float64(int(result*100)) / 100
+			} else {
+				response.Players[player].Teams[team] = result
+			}
 		}
 
-		dWin, err := detectiveWinPercentage(player, from, to)
+		dWin, err := detectiveWinPercentage(player, from, to, trunc)
 		if err != nil {
 			return PlayerWinPercentageResponse{Feedback: fmt.Sprintf("Error getting detective win percentage (%s)", player)}, err
 		}
 
 		entry, _ := response.Players[player]
-		entry.Dwin = float64(int(dWin*100)) / 100
+		entry.Dwin = dWin
 
 		if canon && player == "Zylus" {
 			entry.Dwin = 1
@@ -329,7 +333,7 @@ func PlayerWinPercentage(player, from, to string, canon bool) (PlayerWinPercenta
 	return response, nil
 }
 
-func detectiveWinPercentage(player, from, to string) (float64, error) {
+func detectiveWinPercentage(player, from, to string, trunc bool) (float64, error) {
 	query := "SELECT R.winning_team FROM round_participation RP JOIN round R ON RP.id = R.id JOIN role RO ON RP.role = RO.role WHERE RP.player = $1 AND date >= $2 AND date <= $3 AND RO.detective = 'd';"
 
 	type row struct {
@@ -354,7 +358,13 @@ func detectiveWinPercentage(player, from, to string) (float64, error) {
 		}
 	}
 
-	return (wins / float64(len(rows))), nil
+	rate := wins / float64(len(rows))
+
+	if trunc {
+		return float64(int(rate*100)) / 100, nil
+	}
+
+	return rate, nil
 }
 
 type TraitorCombosResponse struct {
@@ -362,7 +372,7 @@ type TraitorCombosResponse struct {
 	Combos map[string]map[string]float64 `json:"combos"`
 }
 
-func TraitorCombos(player, from, to string) (TraitorCombosResponse, error) {
+func TraitorCombos(player, from, to string, trunc bool) (TraitorCombosResponse, error) {
 	players, err := getEntries("player", "name", player)
 	if err != nil {
 		return TraitorCombosResponse{Feedback: "Error getting entries"}, nil
@@ -373,7 +383,7 @@ func TraitorCombos(player, from, to string) (TraitorCombosResponse, error) {
 	for _, player := range players {
 		for _, other := range players {
 			if _, alreadyDone := response.Combos[player][other]; other != player && !alreadyDone {
-				comboWinRate, err, anyCommonRounds := getTraitorWinRate(player, other, from, to)
+				comboWinRate, err, anyCommonRounds := getTraitorWinRate(player, other, from, to, trunc)
 				if err != nil {
 					log.Error().Err(err).Msg("")
 					return TraitorCombosResponse{Feedback: "Error getting combo win %"}, nil
@@ -400,7 +410,7 @@ func TraitorCombos(player, from, to string) (TraitorCombosResponse, error) {
 	return response, nil
 }
 
-func getTraitorWinRate(player1, player2, from, to string) (float64, error, bool) {
+func getTraitorWinRate(player1, player2, from, to string, trunc bool) (float64, error, bool) {
 	player1Rounds, err := getTraitorRounds(player1, from, to)
 	if err != nil {
 		return -1, err, false
@@ -428,7 +438,13 @@ func getTraitorWinRate(player1, player2, from, to string) (float64, error, bool)
 		return 0, nil, false
 	}
 
-	return float64(int((wins / len)*100)) / 100, nil, true
+	rate := wins / len
+
+	if trunc {
+		return float64(int((rate)*100)) / 100, nil, true
+	}
+
+	return rate, nil, true
 }
 
 type traitorRound struct {
