@@ -284,29 +284,34 @@ func PlayerWinPercentage(player, from, to string, canon, trunc bool) (PlayerWinP
 	}
 
 	for _, player := range players {
-		query := "SELECT RP.team, R.winning_team FROM round_participation RP JOIN round R ON RP.id = R.id WHERE RP.player = $1 AND R.date >= $2 AND R.date <= $3;"
-		var rows []row
-		err := db.Select(&rows, query, player, from, to)
+		teams, err := getEntries("team", "team", "*")
 		if err != nil {
-			return PlayerWinPercentageResponse{Feedback: fmt.Sprintf("Error getting player rows (%s)", player)}, err
-		}
-
-		totalRounds := float64(len(rows))
-
-		winsByTeams := make(map[string]int)
-		for _, row := range rows {
-			if _, exists := winsByTeams[row.Team]; !exists {
-				winsByTeams[row.Team] = 0
-			} 
-
-			if row.Team == row.Win {
-				winsByTeams[row.Team]++
-			}
+			return PlayerWinPercentageResponse{Feedback: "Error getting entries"}, nil
 		}
 
 		response.Players[player] = TeamsWinPercentage{Teams: make(map[string]float64)}
-		for team, val := range winsByTeams {
-			result := float64(val) / totalRounds
+		for _, team := range teams {
+			query := "SELECT RP.team, R.winning_team FROM round_participation RP JOIN round R ON RP.id = R.id WHERE RP.player = $1 AND R.date >= $2 AND R.date <= $3 AND RP.team = $4;"
+			var rows []row
+			err = db.Select(&rows, query, player, from, to, team)
+			if err != nil {
+				return PlayerWinPercentageResponse{Feedback: fmt.Sprintf("Error getting player rows (%s)", player)}, err
+			}
+
+			if len(rows) == 0 {
+				continue
+			}
+
+			totalRounds := float64(len(rows))
+
+			wins := 0
+			for _, row := range rows {
+				if row.Team == row.Win {
+					wins++
+				}
+			}
+
+			result := float64(wins) / totalRounds
 			if trunc {
 				response.Players[player].Teams[team] = float64(int(result*100)) / 100
 			} else {
