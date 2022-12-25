@@ -100,6 +100,8 @@ func TeamWinPercentage(rw http.ResponseWriter, req *http.Request) {
 			log.Error().Err(err).Msg("Failed getting team win share.")
 		}
 	}
+
+	delete(response.Response, "none")
 	
 	json.NewEncoder(rw).Encode(response)
 }
@@ -137,6 +139,10 @@ func PlayerWinPercentage(rw http.ResponseWriter, req *http.Request) {
 		if err != nil {
 			log.Error().Err(err).Msg("Failed getting team win share.")
 		}
+	}
+
+	for player := range response.Players {
+		delete(response.Players[player].Teams, "none")
 	}
 	
 	json.NewEncoder(rw).Encode(response)
