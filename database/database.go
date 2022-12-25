@@ -223,32 +223,32 @@ func GetRound(id, from, to string) ([]TTTRound, error) {
 	return rounds, nil
 }
 
-type TeamWinShareResponse struct {
+type TeamWinPercentageResponse struct {
 	Feedback string	`json:"feedback"`
 	Response map[string]float64 `json:"teams"`
 }
 
-func TeamWinShare(team, from, to string) (TeamWinShareResponse, error) {
+func TeamWinPercentage(team, from, to string) (TeamWinPercentageResponse, error) {
 	teams, err := getEntries("team", "team", team)
 	if err != nil {
-		return TeamWinShareResponse{Feedback: "Error getting entries"}, err
+		return TeamWinPercentageResponse{Feedback: "Error getting entries"}, err
 	}
 
 	totalRounds, err := CountRows("round", fmt.Sprintf("date >= '%s' AND date <= '%s'", from, to))
 	if err != nil {
-		return TeamWinShareResponse{Feedback: "Error counting rows"}, err
+		return TeamWinPercentageResponse{Feedback: "Error counting rows"}, err
 	}
 
 	if totalRounds == 0 {
-		return TeamWinShareResponse{Feedback: "No rounds found"}, nil
+		return TeamWinPercentageResponse{Feedback: "No rounds found"}, nil
 	}
 
-	var response TeamWinShareResponse
+	var response TeamWinPercentageResponse
 	response.Response = map[string]float64{}
 	for _, team := range teams {
 		winsOfTeam, err := CountRows("round", fmt.Sprintf("winning_team = '%s' AND date >= '%s' AND date <= '%s'", team, from, to))
 		if err != nil {
-			return TeamWinShareResponse{Feedback: "Internal server erros"}, err
+			return TeamWinPercentageResponse{Feedback: "Internal server error"}, err
 		}
 
 		result := float64(winsOfTeam) / float64(totalRounds)
