@@ -223,12 +223,16 @@ func GetRound(id, from, to string) ([]TTTRound, error) {
 	return rounds, nil
 }
 
+func truncate(f float64) float64 {
+	return float64(int(f*100)) / 100
+}
+
 type TeamWinPercentageResponse struct {
 	Feedback string	`json:"feedback"`
 	Response map[string]float64 `json:"teams"`
 }
 
-func TeamWinPercentage(team, from, to string) (TeamWinPercentageResponse, error) {
+func TeamWinPercentage(team, from, to string, trunc bool) (TeamWinPercentageResponse, error) {
 	teams, err := getEntries("team", "team", team)
 	if err != nil {
 		return TeamWinPercentageResponse{Feedback: "Error getting entries"}, err
@@ -252,7 +256,11 @@ func TeamWinPercentage(team, from, to string) (TeamWinPercentageResponse, error)
 		}
 
 		result := float64(winsOfTeam) / float64(totalRounds)
-		response.Response[team] = float64(int(result*100)) / 100
+		if trunc {
+			response.Response[team] = truncate(result)
+		} else {
+			response.Response[team] = result
+		}
 	}
 
 	response.Feedback = "Successfull request"
@@ -313,7 +321,7 @@ func PlayerWinPercentage(player, from, to string, canon, trunc bool) (PlayerWinP
 
 			result := float64(wins) / totalRounds
 			if trunc {
-				response.Players[player].Teams[team] = float64(int(result*100)) / 100
+				response.Players[player].Teams[team] = truncate(result)
 			} else {
 				response.Players[player].Teams[team] = result
 			}
@@ -366,7 +374,7 @@ func detectiveWinPercentage(player, from, to string, trunc bool) (float64, error
 	rate := wins / float64(len(rows))
 
 	if trunc {
-		return float64(int(rate*100)) / 100, nil
+		return truncate(rate), nil
 	}
 
 	return rate, nil
@@ -446,7 +454,7 @@ func getTraitorWinRate(player1, player2, from, to string, trunc bool) (float64, 
 	rate := wins / len
 
 	if trunc {
-		return float64(int((rate)*100)) / 100, nil, true
+		return truncate(rate), nil, true
 	}
 
 	return rate, nil, true

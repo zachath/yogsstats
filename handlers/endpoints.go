@@ -80,17 +80,22 @@ func TeamWinPercentage(rw http.ResponseWriter, req *http.Request) {
 	from := req.Context().Value("from").(string)
 	to := req.Context().Value("to").(string)
 
+	trunc := false
+	if req.URL.Query().Get("trunc") == "true" {
+		trunc = true
+	}
+
 	setTimeBox(&from, &to)
 
 	var response db.TeamWinPercentageResponse
 	var err error
 	if team == "" {
-		response, err = db.TeamWinPercentage("*", from, to)
+		response, err = db.TeamWinPercentage("*", from, to, trunc)
 		if err != nil {
 			log.Error().Err(err).Msg("Failed getting team win share.")
 		}
 	} else {
-		response, err = db.TeamWinPercentage(team, from, to)
+		response, err = db.TeamWinPercentage(team, from, to, trunc)
 		if err != nil {
 			log.Error().Err(err).Msg("Failed getting team win share.")
 		}
@@ -105,7 +110,7 @@ func PlayerWinPercentage(rw http.ResponseWriter, req *http.Request) {
 	to := req.Context().Value("to").(string)
 
 	trunc := false
-	if req.URL.Query().Get("trunc") != "false" {
+	if req.URL.Query().Get("trunc") == "true" {
 		trunc = true
 	}
 	
@@ -178,7 +183,7 @@ func TraitorCombos(rw http.ResponseWriter, req *http.Request) {
 	setTimeBox(&from, &to)
 
 	trunc := false
-	if req.URL.Query().Get("trunc") != "false" {
+	if req.URL.Query().Get("trunc") == "true" {
 		trunc = true
 	}
 
