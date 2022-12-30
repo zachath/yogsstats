@@ -35,10 +35,10 @@ func initDB(connectionString string) *sqlx.DB {
 func addPlayer(name string, tx *sql.Tx) error {
 	stmt, err := tx.Prepare("INSERT INTO player (name) VALUES ($1) ON CONFLICT (name) DO NOTHING;")
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "Failed to add player %s to database", name)
 	}
 	_, err = stmt.Exec(name)
-	return err
+	return errors.Wrapf(err, "Failed to add player %s to database", name)
 }
 
 func getEntries(table, column, value string) ([]string, error) {
@@ -52,7 +52,7 @@ func getEntries(table, column, value string) ([]string, error) {
 	var rows []string
 	err := db.Select(&rows, query)
 	if err != nil {
-		return nil, errors.Wrap(err, query)
+		return nil, errors.Wrapf(err, "Failed getting entries with query: %s", query)
 	}
 
 	var entries []string
@@ -75,7 +75,7 @@ func CountRows(table, whereClause string) (int, error) {
 
 	err := db.Select(&count, query)
 	if err != nil {
-		return -1, errors.Wrap(err, query)
+		return -1, errors.Wrapf(err, "Failed to count rows with query: %s", query)
 	}
 
 	return count[0], nil
@@ -96,7 +96,7 @@ type RoundInfo struct {
 
 func getRoundInfo(sort string) (RoundInfo, error) {
 	if sort != "ASC" && sort != "DESC" {
-		return RoundInfo{}, errors.Errorf("Unknown sort '%s', only accepts 'ASC' or 'DESC'.", sort)
+		return RoundInfo{}, errors.Errorf("Unknown sort '%s', only accepts 'ASC' or 'DESC'", sort)
 	}
 
 	query := fmt.Sprintf("SELECT id, date FROM round ORDER by id %s LIMIT 1", sort)
@@ -104,8 +104,7 @@ func getRoundInfo(sort string) (RoundInfo, error) {
 	var info []RoundInfo
 	err := db.Select(&info, query)
 	if err != nil {
-		log.Error().Err(err).Msg("")
-		return RoundInfo{}, err
+		return RoundInfo{}, errors.Wrapf(err, "Failed to get round info")
 	}
 
 	return info[0], nil
@@ -114,56 +113,48 @@ func getRoundInfo(sort string) (RoundInfo, error) {
 func InsertRound(round *TTTRound) error {
 	tx, err := db.Begin()
 	if err != nil {
-		log.Error().Err(err).Str("round", round.Id).Msg("Failed to initialize transaction.")
-		return err
+		return errors.Wrapf(err, "Failed to initialize transaction of round with id %s", round.Id)
 	}
 
 	defer tx.Rollback()
 
 	stmt, err := tx.Prepare("INSERT INTO video (title, vid) VALUES ($1, $2) ON CONFLICT DO NOTHING;")
 	if err != nil {
-		log.Error().Err(err).Str("id", round.Id).Msg("Failed to prepare insert video statment.")
-		return err
+		return errors.Wrapf(err, "Failed to prepare insert video statment of round with id %s", round.Id)
 	}
 	_, err = stmt.Exec(round.Title, round.Vid)
 	if err != nil {
-		log.Error().Err(err).Str("round", round.Id).Str("Video", round.Vid).Msg("Failed to insert video.")
-		return err
+		return errors.Wrapf(err, "Failed to insert video with id: %s of round with id %s", round.Vid, round.Id)
 	}
 
 	stmt, err = tx.Prepare("INSERT INTO round (id, date, winning_team, video, vid_start, vid_end) VALUES ($1, $2, $3, $4, $5, $6);")
 	if err != nil {
-		log.Error().Err(err).Str("id", round.Id).Msg("Failed to prepare insert round statment.")
-		return err
+		return errors.Wrapf(err, "Failed to prepare insert round statment of round with id %s", round.Id)
 	}
 	_, err = stmt.Exec(round.Id, round.Date, round.WinningTeam, round.Vid, round.Start, round.End)
 	if err != nil {
-		log.Error().Err(err).Str("id", round.Id).Msg("Failed to insert round.")
-		return err
+		return errors.Wrapf(err, "Failed to insert round with id %s", round.Id)
 	}
 
 	for _, player := range round.Players {
 		err := addPlayer(player.Name, tx)
 		if err != nil {
-			log.Error().Err(err).Str("player", player.Name).Msg("Failed to insert player.")
-			return err
+			return errors.Wrapf(err, "Failed to insert round with id %s", round.Id)
 		}
 
 		stmt, err = tx.Prepare("INSERT INTO round_participation (id, player, role, team) VALUES ($1, $2, $3, $4);")
 		if err != nil {
-			log.Error().Err(err).Str("player", player.Name).Msg("Failed to prepare round participation statment.")
-			return err
+			return errors.Wrapf(err, "Failed to prepare round participation statment, player = %s", player.Name)
 		}
 		_, err = stmt.Exec(round.Id, player.Name, player.Role, player.Team)
 		if err != nil {
-			log.Error().Err(err).Str("player", player.Name).Msg("Failed to insert round participation.")
-			return err
+			return errors.Wrapf(err, "Failed to insert round participation, player = %s", player.Name)
 		}
 	}
 
 	tx.Commit()
 
-	log.Info().Str("round", round.Id).Msgf("Inserted round into database.")
+	log.Info().Str("round", round.Id).Msgf("Inserted round into database")
 	return nil
 }
 
@@ -196,12 +187,11 @@ func GetRound(id, from, to string) ([]TTTRound, error) {
 	}
 
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to query the database.")
-		return nil, err
+		return nil, errors.Wrapf(err, "Failed to query the database, round id = %s", id)
 	}
 
 	if len(rows) == 0 {
-		log.Debug().Msg("No rows found.")
+		log.Debug().Msg("No rows found")
 		return nil, nil
 	}
 
@@ -220,6 +210,7 @@ func GetRound(id, from, to string) ([]TTTRound, error) {
 
 	rounds = append(rounds, round)
 
+	log.Info().Msg("Returning rounds")
 	return rounds, nil
 }
 
@@ -235,12 +226,12 @@ type TeamWinPercentageResponse struct {
 func TeamWinPercentage(team, from, to string, trunc bool) (TeamWinPercentageResponse, error) {
 	teams, err := getEntries("team", "team", team)
 	if err != nil {
-		return TeamWinPercentageResponse{Feedback: "Error getting entries"}, err
+		return TeamWinPercentageResponse{Feedback: "Error getting entries."}, errors.Wrap(err, "Error getting entries")
 	}
 
 	totalRounds, err := CountRows("round", fmt.Sprintf("date >= '%s' AND date <= '%s'", from, to))
 	if err != nil {
-		return TeamWinPercentageResponse{Feedback: "Error counting rows"}, err
+		return TeamWinPercentageResponse{Feedback: "Error counting rows."}, errors.Wrap(err, "Error counting rows")
 	}
 
 	if totalRounds == 0 {
@@ -252,7 +243,7 @@ func TeamWinPercentage(team, from, to string, trunc bool) (TeamWinPercentageResp
 	for _, team := range teams {
 		winsOfTeam, err := CountRows("round", fmt.Sprintf("winning_team = '%s' AND date >= '%s' AND date <= '%s'", team, from, to))
 		if err != nil {
-			return TeamWinPercentageResponse{Feedback: "Internal server error"}, err
+			return TeamWinPercentageResponse{Feedback: "Internal server error"}, errors.Wrap(err, "Failed counting team wins")
 		}
 
 		result := float64(winsOfTeam) / float64(totalRounds)
@@ -263,6 +254,7 @@ func TeamWinPercentage(team, from, to string, trunc bool) (TeamWinPercentageResp
 		}
 	}
 
+	log.Info().Msg("Team win percentage request")
 	response.Feedback = "Successfull request"
 	return response, nil
 }
@@ -279,7 +271,7 @@ type PlayerWinPercentageResponse struct {
 func PlayerWinPercentage(player, from, to string, canon, trunc bool) (PlayerWinPercentageResponse, error) {
 	players, err := getEntries("player", "name", player)
 	if err != nil {
-		return PlayerWinPercentageResponse{Feedback: "Error getting entries"}, nil
+		return PlayerWinPercentageResponse{Feedback: "Error getting entries"}, errors.Wrap(err, "Error getting entries")
 	}
 
 	type row struct {
@@ -294,7 +286,7 @@ func PlayerWinPercentage(player, from, to string, canon, trunc bool) (PlayerWinP
 	for _, player := range players {
 		teams, err := getEntries("team", "team", "*")
 		if err != nil {
-			return PlayerWinPercentageResponse{Feedback: "Error getting entries"}, nil
+			return PlayerWinPercentageResponse{Feedback: "Error getting entries"}, errors.Wrap(err, "Error getting entries")
 		}
 
 		response.Players[player] = TeamsWinPercentage{Teams: make(map[string]float64)}
@@ -303,7 +295,7 @@ func PlayerWinPercentage(player, from, to string, canon, trunc bool) (PlayerWinP
 			var rows []row
 			err = db.Select(&rows, query, player, from, to, team)
 			if err != nil {
-				return PlayerWinPercentageResponse{Feedback: fmt.Sprintf("Error getting player rows (%s)", player)}, err
+				return PlayerWinPercentageResponse{Feedback: fmt.Sprintf("Error getting player rows (%s)", player)}, errors.Wrapf(err, "Error getting player rows (%s)", player)
 			}
 
 			if len(rows) == 0 {
@@ -329,19 +321,21 @@ func PlayerWinPercentage(player, from, to string, canon, trunc bool) (PlayerWinP
 
 		dWin, err := detectiveWinPercentage(player, from, to, trunc)
 		if err != nil {
-			return PlayerWinPercentageResponse{Feedback: fmt.Sprintf("Error getting detective win percentage (%s)", player)}, err
+			return PlayerWinPercentageResponse{Feedback: fmt.Sprintf("Error getting detective win percentage (%s)", player)}, errors.Wrap(err, "Error getting detective win percentage")
 		}
 
 		entry, _ := response.Players[player]
 		entry.Dwin = dWin
 
 		if canon && player == "Zylus" {
+			log.Info().Msg("Setting detective win percentage of Zylus to 1.")
 			entry.Dwin = 1
 		}
 
 		response.Players[player] = entry
 	}
 
+	log.Info().Msg("Player win percentage request")
 	response.Feedback = "Successfull request"
 	return response, nil
 }
@@ -357,7 +351,7 @@ func detectiveWinPercentage(player, from, to string, trunc bool) (float64, error
 	var rows []row
 	err := db.Select(&rows, query, player, from, to)
 	if err != nil {
-		return -1, err
+		return -1, errors.Wrap(err, "Error selecting with detective query")
 	}
 
 	if len(rows) == 0 {
@@ -388,7 +382,7 @@ type TraitorCombosResponse struct {
 func TraitorCombos(player, from, to string, trunc bool) (TraitorCombosResponse, error) {
 	players, err := getEntries("player", "name", player)
 	if err != nil {
-		return TraitorCombosResponse{Feedback: "Error getting entries"}, nil
+		return TraitorCombosResponse{Feedback: "Error getting entries"}, errors.Wrapf(err, "Error getting entries, player = %s", player)
 	}
 
 	response := TraitorCombosResponse{Combos: make(map[string]map[string]float64)}
@@ -399,7 +393,7 @@ func TraitorCombos(player, from, to string, trunc bool) (TraitorCombosResponse, 
 				comboWinRate, err, anyCommonRounds := getTraitorWinRate(player, other, from, to, trunc)
 				if err != nil {
 					log.Error().Err(err).Msg("")
-					return TraitorCombosResponse{Feedback: "Error getting combo win %"}, nil
+					return TraitorCombosResponse{Feedback: "Error getting combo win %"}, errors.Wrapf(err, "Error getting combo win percentage, player = %s & other = %s", player, other)
 				}
 
 				if !anyCommonRounds {
@@ -419,6 +413,7 @@ func TraitorCombos(player, from, to string, trunc bool) (TraitorCombosResponse, 
 		}
 	}
 
+	log.Info().Msg("Traitor combo request")
 	response.Feedback = "Successfull request"
 	return response, nil
 }

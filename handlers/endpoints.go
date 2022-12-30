@@ -46,7 +46,7 @@ func GetTTTRound(rw http.ResponseWriter, req *http.Request) {
 	rounds, err = db.GetRound(id, from, to)
 
 	if err != nil {
-		log.Error().Err(err).Msgf("Failed to get TTT round")
+		log.Error().Stack().Err(err).Msgf("Failed to get TTT round")
 		http.Error(rw, fmt.Sprintf("Failed to get TTT round: %s", err.Error()), http.StatusInternalServerError)
 		return
 	}
@@ -67,7 +67,7 @@ func PostTTTRound(rw http.ResponseWriter, req *http.Request) {
 
 	err := db.InsertRound(&round)
 	if err != nil {
-		log.Error().Msg("Round insertion failed.")
+		log.Error().Stack().Err(err).Msg("Round insertion failed.")
 		http.Error(rw, fmt.Sprintf("Failed to add POSTed round to database: %s", err.Error()), http.StatusInternalServerError)
 		return
 	}
@@ -92,12 +92,12 @@ func TeamWinPercentage(rw http.ResponseWriter, req *http.Request) {
 	if team == "" {
 		response, err = db.TeamWinPercentage("*", from, to, trunc)
 		if err != nil {
-			log.Error().Err(err).Msg("Failed getting team win share.")
+			log.Error().Stack().Err(err).Msg("Failed getting team win share.")
 		}
 	} else {
 		response, err = db.TeamWinPercentage(team, from, to, trunc)
 		if err != nil {
-			log.Error().Err(err).Msg("Failed getting team win share.")
+			log.Error().Stack().Err(err).Msg("Failed getting team win share.")
 		}
 	}
 
@@ -132,12 +132,12 @@ func PlayerWinPercentage(rw http.ResponseWriter, req *http.Request) {
 	if player == "" {
 		response, err = db.PlayerWinPercentage("*", from, to, canon, trunc)
 		if err != nil {
-			log.Error().Err(err).Msg("Failed getting team win share.")
+			log.Error().Stack().Err(err).Msg("Failed getting team win share.")
 		}
 	} else {
 		response, err = db.PlayerWinPercentage(player, from, to, canon, trunc)
 		if err != nil {
-			log.Error().Err(err).Msg("Failed getting team win share.")
+			log.Error().Stack().Err(err).Msg("Failed getting team win share.")
 		}
 	}
 
@@ -197,7 +197,7 @@ func TraitorCombos(rw http.ResponseWriter, req *http.Request) {
 	var err error
 	response, err = db.TraitorCombos("*", from, to, trunc)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed getting team win share.")
+		log.Error().Stack().Err(err).Msg("Failed getting team win share.")
 	}
 	
 	json.NewEncoder(rw).Encode(response)

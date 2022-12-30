@@ -11,13 +11,16 @@ import (
 	mux "github.com/gorilla/mux"
 	"github.com/rs/zerolog"
 	log "github.com/rs/zerolog/log"
+	"github.com/rs/zerolog/pkgerrors"
 
 	//Local packages
 	. "yogsstats/handlers"
+	//. "yogsstats/util"
 )
 
 func init() {
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+	zerolog.ErrorStackMarshaler = pkgerrors.MarshalStack
 }
 
 func main() {
