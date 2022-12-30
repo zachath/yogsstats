@@ -11,7 +11,6 @@ import (
 
 	//External dependencies
 	log "github.com/rs/zerolog/log"
-	"github.com/pkg/errors"
 	"github.com/gomarkdown/markdown"
 	"github.com/gomarkdown/markdown/html"
 
@@ -47,7 +46,7 @@ func GetTTTRound(rw http.ResponseWriter, req *http.Request) {
 
 	if err != nil {
 		log.Error().Stack().Err(err).Msgf("Failed to get TTT round")
-		http.Error(rw, fmt.Sprintf("Failed to get TTT round: %s", err.Error()), http.StatusInternalServerError)
+		http.Error(rw, fmt.Sprintf("Failed to get TTT round: %s", id), http.StatusInternalServerError)
 		return
 	}
 
@@ -68,7 +67,7 @@ func PostTTTRound(rw http.ResponseWriter, req *http.Request) {
 	err := db.InsertRound(&round)
 	if err != nil {
 		log.Error().Stack().Err(err).Msg("Round insertion failed.")
-		http.Error(rw, fmt.Sprintf("Failed to add POSTed round to database: %s", err.Error()), http.StatusInternalServerError)
+		http.Error(rw, fmt.Sprintf("Failed to add POSTed round with id %s to database", round.Id), http.StatusInternalServerError)
 		return
 	}
 
@@ -92,12 +91,16 @@ func TeamWinPercentage(rw http.ResponseWriter, req *http.Request) {
 	if team == "" {
 		response, err = db.TeamWinPercentage("*", from, to, trunc)
 		if err != nil {
-			log.Error().Stack().Err(err).Msg("Failed getting team win share.")
+			log.Error().Stack().Err(err).Msg("Failed getting team win percentage.")
+			http.Error(rw, "Failed getting team win percentage.", http.StatusInternalServerError)
+			return
 		}
 	} else {
 		response, err = db.TeamWinPercentage(team, from, to, trunc)
 		if err != nil {
-			log.Error().Stack().Err(err).Msg("Failed getting team win share.")
+			log.Error().Stack().Err(err).Msg("Failed getting team win percentage.")
+			http.Error(rw, "Failed getting team win percentage.", http.StatusInternalServerError)
+			return
 		}
 	}
 
@@ -121,7 +124,6 @@ func PlayerWinPercentage(rw http.ResponseWriter, req *http.Request) {
 	if req.URL.Query().Has("canon") {
 		canon, err = strconv.ParseBool(req.URL.Query().Get("canon"))
 		if err != nil {
-			io.WriteString(rw, "Cannot parse 'canon' paramter, reverting to default\n")
 			canon = false
 		}
 	}
@@ -132,12 +134,16 @@ func PlayerWinPercentage(rw http.ResponseWriter, req *http.Request) {
 	if player == "" {
 		response, err = db.PlayerWinPercentage("*", from, to, canon, trunc)
 		if err != nil {
-			log.Error().Stack().Err(err).Msg("Failed getting team win share.")
+			log.Error().Stack().Err(err).Msg("Failed getting player win percentage.")
+			http.Error(rw, "Failed getting player win percentage.", http.StatusInternalServerError)
+			return
 		}
 	} else {
 		response, err = db.PlayerWinPercentage(player, from, to, canon, trunc)
 		if err != nil {
-			log.Error().Stack().Err(err).Msg("Failed getting team win share.")
+			log.Error().Stack().Err(err).Msg("Failed getting player win percentage.")
+			http.Error(rw, "Failed getting player win percentage.", http.StatusInternalServerError)
+			return
 		}
 	}
 
@@ -157,19 +163,19 @@ func APIMetaData(rw http.ResponseWriter, req *http.Request) {
 
 	count, err := db.CountRows("round", "")
 	if err != nil {
-		http.Error(rw, errors.Wrap(err, "Failed to count round rows").Error(), http.StatusInternalServerError)
+		http.Error(rw, "Failed to count round rows", http.StatusInternalServerError)
 		return
 	}
 
 	oldestRound, err := db.GetOldestRoundInfo()
 	if err != nil {
-		http.Error(rw, errors.Wrap(err, "Failed to get oldest round info").Error(), http.StatusInternalServerError)
+		http.Error(rw, "Failed to get oldest round info", http.StatusInternalServerError)
 		return
 	}
 
 	newestRound, err := db.GetNewestRoundInfo()
 	if err != nil {
-		http.Error(rw, errors.Wrap(err, "Faailed to get newest round info").Error(), http.StatusInternalServerError)
+		http.Error(rw, "Failed to get newest round info", http.StatusInternalServerError)
 		return
 	}
 
@@ -197,7 +203,9 @@ func TraitorCombos(rw http.ResponseWriter, req *http.Request) {
 	var err error
 	response, err = db.TraitorCombos("*", from, to, trunc)
 	if err != nil {
-		log.Error().Stack().Err(err).Msg("Failed getting team win share.")
+		log.Error().Stack().Err(err).Msg("Failed getting traitor combos.")
+		http.Error(rw, "Failed getting traitor combos", http.StatusInternalServerError)
+		return
 	}
 	
 	json.NewEncoder(rw).Encode(response)
