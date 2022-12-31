@@ -2,17 +2,17 @@ package handlers
 
 import (
 	//Go packages
-	"net/http"
 	"encoding/json"
-	"strconv"
+	"fmt"
 	"io"
 	"io/ioutil"
-	"fmt"
+	"net/http"
+	"strconv"
 
 	//External dependencies
-	log "github.com/rs/zerolog/log"
 	"github.com/gomarkdown/markdown"
 	"github.com/gomarkdown/markdown/html"
+	log "github.com/rs/zerolog/log"
 
 	//Local packages
 	db "yogsstats/database"
@@ -163,18 +163,21 @@ func APIMetaData(rw http.ResponseWriter, req *http.Request) {
 
 	count, err := db.CountRows("round", "")
 	if err != nil {
+		log.Error().Stack().Err(err).Msg("")
 		http.Error(rw, "Failed to count round rows", http.StatusInternalServerError)
 		return
 	}
 
 	oldestRound, err := db.GetOldestRoundInfo()
 	if err != nil {
+		log.Error().Stack().Err(err).Msg("")
 		http.Error(rw, "Failed to get oldest round info", http.StatusInternalServerError)
 		return
 	}
 
 	newestRound, err := db.GetNewestRoundInfo()
 	if err != nil {
+		log.Error().Stack().Err(err).Msg("")
 		http.Error(rw, "Failed to get newest round info", http.StatusInternalServerError)
 		return
 	}

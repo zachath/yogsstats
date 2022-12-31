@@ -1,10 +1,10 @@
 package database
 
 import (
+	"database/sql"
 	"fmt"
 	"os"
 	"strconv"
-	"database/sql"
 
 	//External dependencies
 	"github.com/jmoiron/sqlx"
@@ -18,7 +18,7 @@ import (
 var (
 	user = "postgres"
 	password = os.Getenv("PQ_PASS")
-	dbIp = "localhost:5432"
+	dbIp = os.Getenv("HOST") + ":5432"
 	connectionStringTTT = fmt.Sprintf("postgresql://%s:%s@%s/%s", user, password, dbIp, "ttt")
 	db *sqlx.DB = initDB(connectionStringTTT)
 )

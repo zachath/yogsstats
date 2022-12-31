@@ -4,9 +4,11 @@ LABEL maintainer="Zacharias Thorell <zachariasthorell@gmail.com>"
 
 ARG POSTGRES_PASSWORD
 ARG POST_PASSWORD
+ARG HOST_IP
 
 ENV PQ_PASS=${POSTGRES_PASSWORD}
 ENV POST_PASS=${POST_PASSWORD}
+ENV HOST=${HOST_IP}
 
 WORKDIR /app
 
