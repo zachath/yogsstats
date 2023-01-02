@@ -15,7 +15,6 @@ import (
 
 	//Local packages
 	. "yogsstats/handlers"
-	//. "yogsstats/util"
 )
 
 func init() {
@@ -41,5 +40,6 @@ func main() {
 	}
 
 	log.Info().Msgf("Server listening on port: %s", s.Addr)
-	s.ListenAndServe()
+	err := s.ListenAndServe()
+	log.Error().Err(err).Msg("Server exited.")
 }

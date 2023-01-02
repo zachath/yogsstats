@@ -29,6 +29,9 @@ func HomeHandler(rw http.ResponseWriter, req *http.Request) {
 	md := []byte(content)
 	flags := html.CommonFlags | html.HrefTargetBlank
 	html := markdown.ToHTML(md, nil, html.NewRenderer(html.RendererOptions{Flags: flags}))
+
+	log.Info().Msg("Served home request!")
+
 	rw.Write(html)
 }
 
@@ -58,6 +61,8 @@ func GetTTTRound(rw http.ResponseWriter, req *http.Request) {
 	rw.Header().Set("Content-Type", "application/json")
 	rw.WriteHeader(http.StatusOK)
 
+	log.Info().Msg("Served Get TTT round request!")
+
 	json.NewEncoder(rw).Encode(rounds)
 }
 
@@ -70,6 +75,8 @@ func PostTTTRound(rw http.ResponseWriter, req *http.Request) {
 		http.Error(rw, fmt.Sprintf("Failed to add POSTed round with id %s to database", round.Id), http.StatusInternalServerError)
 		return
 	}
+
+	log.Info().Msg("Served POST request!")
 
 	io.WriteString(rw, "POSTed round successfully")
 }
@@ -105,6 +112,8 @@ func TeamWinPercentage(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	delete(response.Response, "none")
+
+	log.Info().Msg("Served Team Win Percentage request!")
 	
 	json.NewEncoder(rw).Encode(response)
 }
@@ -151,6 +160,8 @@ func PlayerWinPercentage(rw http.ResponseWriter, req *http.Request) {
 		delete(response.Players[player].Teams, "none")
 	}
 	
+	log.Info().Msg("Served player win percentage request!")
+
 	json.NewEncoder(rw).Encode(response)
 }
 
@@ -188,6 +199,8 @@ func APIMetaData(rw http.ResponseWriter, req *http.Request) {
 		NewestRound: newestRound,
 	}
 
+	log.Info().Int("code", http.StatusOK).Msg("API meta request served.")
+
 	json.NewEncoder(rw).Encode(response)
 }
 
@@ -211,5 +224,7 @@ func TraitorCombos(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 	
+	log.Info().Msg("Served Traitor Combos request request!")
+
 	json.NewEncoder(rw).Encode(response)
 }
