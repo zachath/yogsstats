@@ -204,11 +204,28 @@ func APIMetaData(rw http.ResponseWriter, req *http.Request) {
 	json.NewEncoder(rw).Encode(response)
 }
 
-func TraitorCombos(rw http.ResponseWriter, req *http.Request) {
-	from := req.Context().Value("from").(string)
-	to := req.Context().Value("to").(string)
+//The cached response always holds the untruncated data and is truncated if specified in the request.
+type cachedTraitorCombosStruct struct {
+	Response 	db.TraitorCombosResponse
+	LatestRound	int
+}
 
-	setTimeBox(&from, &to)
+var cachedTraitorCombosResponse = cachedTraitorCombosStruct{LatestRound: -1}
+
+func TraitorCombos(rw http.ResponseWriter, req *http.Request) {
+	newestRound, err := db.GetNewestRoundInfo()
+	if err != nil {
+		log.Error().Stack().Err(err).Msg("")
+		http.Error(rw, "Failed to get newest round info", http.StatusInternalServerError)
+		return
+	}
+
+	newestRoundId, err := strconv.Atoi(newestRound.Id)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		http.Error(rw, "Failed to parse round id", http.StatusInternalServerError)
+		return
+	}
 
 	trunc := false
 	if req.URL.Query().Get("trunc") == "true" {
@@ -216,15 +233,40 @@ func TraitorCombos(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	var response db.TraitorCombosResponse
-	var err error
-	response, err = db.TraitorCombos("*", from, to, trunc)
-	if err != nil {
-		log.Error().Stack().Err(err).Msg("Failed getting traitor combos.")
-		http.Error(rw, "Failed getting traitor combos", http.StatusInternalServerError)
-		return
+	if cachedTraitorCombosResponse.LatestRound == -1 || newestRoundId > cachedTraitorCombosResponse.LatestRound {
+		log.Debug().Msg("No Traitor Combos cached or newer round has been added since last, performing new calculations...")
+		from := req.Context().Value("from").(string)
+		to := req.Context().Value("to").(string)
+
+		setTimeBox(&from, &to)
+
+		var err error
+		response, err = db.TraitorCombos("*", from, to, false)
+		if err != nil {
+			log.Error().Stack().Err(err).Msg("Failed getting traitor combos.")
+			http.Error(rw, "Failed getting traitor combos", http.StatusInternalServerError)
+			return
+		}
+
+		log.Info().Msg("Served Traitor Combos request request!")
+
+		cachedTraitorCombosResponse.Response = response
+		cachedTraitorCombosResponse.LatestRound = newestRoundId
+
+	} else {
+		log.Debug().Msg("Traitor combos has already been cached and no new round has been added since latest cache, responding with cached response...")
+		response = cachedTraitorCombosResponse.Response
 	}
-	
-	log.Info().Msg("Served Traitor Combos request request!")
+
+	if trunc {
+		log.Debug().Msg("Truncating data in Traitor combos.")
+		for traitor := range response.Combos {
+			for buddie := range response.Combos[traitor] {
+				val := response.Combos[traitor][buddie]
+				response.Combos[traitor][buddie] = db.Truncate(val)
+			}
+		}
+	}
 
 	json.NewEncoder(rw).Encode(response)
 }
