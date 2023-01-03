@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  yogsstats:
+    build:
+      context: .
+      args:
+        POSTGRES_PASSWORD: <password>
+        POST_PASSWORD: <password>
+        HOST_IP: <IP>
+    network_mode: "host"
+    restart: always
+    ports:
+      - 5001:5001
