@@ -388,9 +388,13 @@ func TraitorCombos(player, from, to string, trunc bool) (TraitorCombosResponse, 
 	response := TraitorCombosResponse{Combos: make(map[string]map[string]float64)}
 
 	for _, player := range players {
+		playerRounds, err := getTraitorRounds(player, from, to)
+		if err != nil {
+			return TraitorCombosResponse{Feedback: "Error getting combo win %"}, errors.Wrapf(err, "Error getting combo win percentage, player = %s, player")
+		}
 		for _, other := range players {
 			if _, alreadyDone := response.Combos[player][other]; other != player && !alreadyDone {
-				comboWinRate, err, anyCommonRounds := getTraitorWinRate(player, other, from, to, trunc)
+				comboWinRate, err, anyCommonRounds := getTraitorWinRate(playerRounds, other, from, to, trunc)
 				if err != nil {
 					log.Error().Err(err).Msg("")
 					return TraitorCombosResponse{Feedback: "Error getting combo win %"}, errors.Wrapf(err, "Error getting combo win percentage, player = %s & other = %s", player, other)
@@ -418,12 +422,7 @@ func TraitorCombos(player, from, to string, trunc bool) (TraitorCombosResponse, 
 	return response, nil
 }
 
-func getTraitorWinRate(player1, player2, from, to string, trunc bool) (float64, error, bool) {
-	player1Rounds, err := getTraitorRounds(player1, from, to)
-	if err != nil {
-		return -1, err, false
-	}
-
+func getTraitorWinRate(player1Rounds []traitorRound, player2, from, to string, trunc bool) (float64, error, bool) {
 	player2Rounds, err := getTraitorRounds(player2, from, to)
 	if err != nil {
 		return -1, err, false
