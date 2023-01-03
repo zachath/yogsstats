@@ -214,7 +214,7 @@ func GetRound(id, from, to string) ([]TTTRound, error) {
 	return rounds, nil
 }
 
-func Truncate(f float64) float64 {
+func truncate(f float64) float64 {
 	return float64(int(f*100)) / 100
 }
 
@@ -248,7 +248,7 @@ func TeamWinPercentage(team, from, to string, trunc bool) (TeamWinPercentageResp
 
 		result := float64(winsOfTeam) / float64(totalRounds)
 		if trunc {
-			response.Response[team] = Truncate(result)
+			response.Response[team] = truncate(result)
 		} else {
 			response.Response[team] = result
 		}
@@ -313,7 +313,7 @@ func PlayerWinPercentage(player, from, to string, canon, trunc bool) (PlayerWinP
 
 			result := float64(wins) / totalRounds
 			if trunc {
-				response.Players[player].Teams[team] = Truncate(result)
+				response.Players[player].Teams[team] = truncate(result)
 			} else {
 				response.Players[player].Teams[team] = result
 			}
@@ -368,7 +368,7 @@ func detectiveWinPercentage(player, from, to string, trunc bool) (float64, error
 	rate := wins / float64(len(rows))
 
 	if trunc {
-		return Truncate(rate), nil
+		return truncate(rate), nil
 	}
 
 	return rate, nil
@@ -449,7 +449,7 @@ func getTraitorWinRate(player1, player2, from, to string, trunc bool) (float64, 
 	rate := wins / len
 
 	if trunc {
-		return Truncate(rate), nil, true
+		return truncate(rate), nil, true
 	}
 
 	return rate, nil, true
