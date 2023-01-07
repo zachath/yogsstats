@@ -109,3 +109,10 @@ func DateValidation(next http.HandlerFunc) http.HandlerFunc {
 		next(rw, req)
 	})
 }
+
+func SetHeaders(next http.HandlerFunc) http.HandlerFunc {
+	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		rw.Header().Set("Access-Control-Allow-Origin", "*")
+		next(rw, req)
+	})
+}

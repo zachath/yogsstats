@@ -24,13 +24,13 @@ func init() {
 
 func main() {
 	r := mux.NewRouter()
-	r.HandleFunc("/", HomeHandler).Methods(http.MethodGet)
-	r.HandleFunc("/stats/ttt", ValidatePost(ValidateTTTInput(PostTTTRound))).Methods(http.MethodPost)
-	r.HandleFunc("/stats/ttt", DateValidation(GetTTTRound)).Methods(http.MethodGet)
-	r.HandleFunc("/stats/ttt/meta", APIMetaData).Methods(http.MethodGet)
-	r.HandleFunc("/stats/ttt/teamWinPercentage", DateValidation(TeamWinPercentage)).Methods(http.MethodGet)
-	r.HandleFunc("/stats/ttt/playerWinPercentage", DateValidation(PlayerWinPercentage)).Methods(http.MethodGet)
-	r.HandleFunc("/stats/ttt/traitorCombos", DateValidation(TraitorCombos)).Methods(http.MethodGet)
+	r.HandleFunc("/", SetHeaders(HomeHandler)).Methods(http.MethodGet)
+	r.HandleFunc("/stats/ttt", SetHeaders(ValidatePost(ValidateTTTInput(PostTTTRound)))).Methods(http.MethodPost)
+	r.HandleFunc("/stats/ttt", SetHeaders(DateValidation(GetTTTRound))).Methods(http.MethodGet)
+	r.HandleFunc("/stats/ttt/meta", SetHeaders(APIMetaData)).Methods(http.MethodGet)
+	r.HandleFunc("/stats/ttt/teamWinPercentage", SetHeaders(DateValidation(TeamWinPercentage))).Methods(http.MethodGet)
+	r.HandleFunc("/stats/ttt/playerWinPercentage", SetHeaders(DateValidation(PlayerWinPercentage))).Methods(http.MethodGet)
+	r.HandleFunc("/stats/ttt/traitorCombos", SetHeaders(DateValidation(TraitorCombos))).Methods(http.MethodGet)
 
 	s := &http.Server{
 		Handler: r,
