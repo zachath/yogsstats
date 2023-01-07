@@ -81,29 +81,24 @@ func PostTTTRound(rw http.ResponseWriter, req *http.Request) {
 	io.WriteString(rw, "POSTed round successfully")
 }
 
-func TeamWinPercentage(rw http.ResponseWriter, req *http.Request) {
+func TeamWins(rw http.ResponseWriter, req *http.Request) {
 	team := req.URL.Query().Get("team")
 	from := req.Context().Value("from").(string)
 	to := req.Context().Value("to").(string)
-
-	trunc := false
-	if req.URL.Query().Get("trunc") == "true" {
-		trunc = true
-	}
 
 	setTimeBox(&from, &to)
 
 	var response db.TeamWinPercentageResponse
 	var err error
 	if team == "" {
-		response, err = db.TeamWinPercentage("*", from, to, trunc)
+		response, err = db.TeamWins("*", from, to)
 		if err != nil {
 			log.Error().Stack().Err(err).Msg("Failed getting team win percentage.")
 			http.Error(rw, "Failed getting team win percentage.", http.StatusInternalServerError)
 			return
 		}
 	} else {
-		response, err = db.TeamWinPercentage(team, from, to, trunc)
+		response, err = db.TeamWins(team, from, to)
 		if err != nil {
 			log.Error().Stack().Err(err).Msg("Failed getting team win percentage.")
 			http.Error(rw, "Failed getting team win percentage.", http.StatusInternalServerError)

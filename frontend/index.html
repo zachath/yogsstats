@@ -15,8 +15,7 @@
 
                 const json = await response.json()
 
-                dataArray = [["Team", "Win percentage"]]
-
+                dataArray = [["Team", "Wins"]]
                 for (var key in json['teams']) {
                     dataArray.push([key, json['teams'][key]])
                 }
@@ -24,7 +23,7 @@
                 var data = google.visualization.arrayToDataTable(dataArray);
 
                 var options = {
-                title: 'Team win percentages',
+                title: 'Wins by teams',
                 titleTextStyle: {
                     color: "white"
                 },

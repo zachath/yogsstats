@@ -28,7 +28,7 @@ func main() {
 	r.HandleFunc("/stats/ttt", SetHeaders(ValidatePost(ValidateTTTInput(PostTTTRound)))).Methods(http.MethodPost)
 	r.HandleFunc("/stats/ttt", SetHeaders(DateValidation(GetTTTRound))).Methods(http.MethodGet)
 	r.HandleFunc("/stats/ttt/meta", SetHeaders(APIMetaData)).Methods(http.MethodGet)
-	r.HandleFunc("/stats/ttt/teamWinPercentage", SetHeaders(DateValidation(TeamWinPercentage))).Methods(http.MethodGet)
+	r.HandleFunc("/stats/ttt/teamWins", SetHeaders(DateValidation(TeamWins))).Methods(http.MethodGet)
 	r.HandleFunc("/stats/ttt/playerWinPercentage", SetHeaders(DateValidation(PlayerWinPercentage))).Methods(http.MethodGet)
 	r.HandleFunc("/stats/ttt/traitorCombos", SetHeaders(DateValidation(TraitorCombos))).Methods(http.MethodGet)
 
