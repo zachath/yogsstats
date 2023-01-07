@@ -17,6 +17,7 @@ import (
 	//Local packages
 	db "yogsstats/database"
 	. "yogsstats/models"
+	stupid "yogsstats/stupid"
 )
 
 func HomeHandler(rw http.ResponseWriter, req *http.Request) {
@@ -56,6 +57,10 @@ func GetTTTRound(rw http.ResponseWriter, req *http.Request) {
 	if rounds == nil {
 		http.Error(rw, fmt.Sprint("No rounds found."), http.StatusNotFound)
 		return
+	}
+
+	for index := range rounds {
+		rounds[index].Date = stupid.FixStupidDate(rounds[index].Date)
 	}
 
 	rw.Header().Set("Content-Type", "application/json")
@@ -187,6 +192,9 @@ func APIMetaData(rw http.ResponseWriter, req *http.Request) {
 		http.Error(rw, "Failed to get newest round info", http.StatusInternalServerError)
 		return
 	}
+
+	newestRound.Date = stupid.FixStupidDate(newestRound.Date)
+	oldestRound.Date = stupid.FixStupidDate(oldestRound.Date)
 
 	response := MetaResponse{
 		Count: count,

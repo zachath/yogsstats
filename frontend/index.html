@@ -8,7 +8,7 @@
         google.charts.load('current', {'packages': ['corechart']}).then(
             async function drawChart() {
                 console.log("Fetching API meta data")
-                        const response = await fetch("http://localhost:5001/stats/ttt/teamWinPercentage", {
+                        const response = await fetch("http://localhost:5001/stats/ttt/teamWins", {
                         method: 'GET',
                         mode: 'cors',
                     })
