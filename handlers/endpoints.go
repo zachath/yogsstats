@@ -123,9 +123,9 @@ func PlayerWinPercentage(rw http.ResponseWriter, req *http.Request) {
 	from := req.Context().Value("from").(string)
 	to := req.Context().Value("to").(string)
 
-	trunc := false
-	if req.URL.Query().Get("trunc") == "true" {
-		trunc = true
+	round := false
+	if req.URL.Query().Get("round") == "true" {
+		round = true
 	}
 	
 	canon := false
@@ -141,14 +141,14 @@ func PlayerWinPercentage(rw http.ResponseWriter, req *http.Request) {
 
 	var response db.PlayerWinPercentageResponse
 	if player == "" {
-		response, err = db.PlayerWinPercentage("*", from, to, canon, trunc)
+		response, err = db.PlayerWinPercentage("*", from, to, canon, round)
 		if err != nil {
 			log.Error().Stack().Err(err).Msg("Failed getting player win percentage.")
 			http.Error(rw, "Failed getting player win percentage.", http.StatusInternalServerError)
 			return
 		}
 	} else {
-		response, err = db.PlayerWinPercentage(player, from, to, canon, trunc)
+		response, err = db.PlayerWinPercentage(player, from, to, canon, round)
 		if err != nil {
 			log.Error().Stack().Err(err).Msg("Failed getting player win percentage.")
 			http.Error(rw, "Failed getting player win percentage.", http.StatusInternalServerError)
@@ -213,14 +213,14 @@ func TraitorCombos(rw http.ResponseWriter, req *http.Request) {
 
 	setTimeBox(&from, &to)
 
-	trunc := false
-	if req.URL.Query().Get("trunc") == "true" {
-		trunc = true
+	round := false
+	if req.URL.Query().Get("round") == "true" {
+		round = true
 	}
 
 	var response db.TraitorCombosResponse
 	var err error
-	response, err = db.TraitorCombos("*", from, to, trunc)
+	response, err = db.TraitorCombos("*", from, to, round)
 	if err != nil {
 		log.Error().Stack().Err(err).Msg("Failed getting traitor combos.")
 		http.Error(rw, "Failed getting traitor combos", http.StatusInternalServerError)

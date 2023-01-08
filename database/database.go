@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"math"
 	"os"
 	"strconv"
 
@@ -214,8 +215,8 @@ func GetRound(id, from, to string) ([]TTTRound, error) {
 	return rounds, nil
 }
 
-func truncate(f float64) float64 {
-	return float64(int(f*100)) / 100
+func roundup(f float64) (float64, error) {
+	return strconv.ParseFloat(fmt.Sprintf("%.3f", (math.Round(f/0.001) * 0.001)), 64)
 }
 
 type TeamWinPercentageResponse struct {
@@ -267,7 +268,7 @@ type PlayerWinPercentageResponse struct {
 	Players map[string]TeamsWinPercentage 	`json:"players"`
 }
 
-func PlayerWinPercentage(player, from, to string, canon, trunc bool) (PlayerWinPercentageResponse, error) {
+func PlayerWinPercentage(player, from, to string, canon, round bool) (PlayerWinPercentageResponse, error) {
 	players, err := getEntries("player", "name", player)
 	if err != nil {
 		return PlayerWinPercentageResponse{Feedback: "Error getting entries"}, errors.Wrap(err, "Error getting entries")
@@ -311,14 +312,19 @@ func PlayerWinPercentage(player, from, to string, canon, trunc bool) (PlayerWinP
 			}
 
 			result := float64(wins) / totalRounds
-			if trunc {
-				response.Players[player].Teams[team] = truncate(result)
+			if round {
+				f, err := roundup(result)
+				if err != nil {
+					log.Error().Err(err).Msg("Failed to round result.")
+					response.Players[player].Teams[team] = result
+				}
+				response.Players[player].Teams[team] = f
 			} else {
 				response.Players[player].Teams[team] = result
 			}
 		}
 
-		dWin, err := detectiveWinPercentage(player, from, to, trunc)
+		dWin, err := detectiveWinPercentage(player, from, to, round)
 		if err != nil {
 			return PlayerWinPercentageResponse{Feedback: fmt.Sprintf("Error getting detective win percentage (%s)", player)}, errors.Wrap(err, "Error getting detective win percentage")
 		}
@@ -339,7 +345,7 @@ func PlayerWinPercentage(player, from, to string, canon, trunc bool) (PlayerWinP
 	return response, nil
 }
 
-func detectiveWinPercentage(player, from, to string, trunc bool) (float64, error) {
+func detectiveWinPercentage(player, from, to string, round bool) (float64, error) {
 	query := "SELECT R.winning_team FROM round_participation RP JOIN round R ON RP.id = R.id JOIN role RO ON RP.role = RO.role WHERE RP.player = $1 AND date >= $2 AND date <= $3 AND RO.detective = 'd';"
 
 	type row struct {
@@ -366,8 +372,8 @@ func detectiveWinPercentage(player, from, to string, trunc bool) (float64, error
 
 	rate := wins / float64(len(rows))
 
-	if trunc {
-		return truncate(rate), nil
+	if round {
+		return roundup(rate)
 	}
 
 	return rate, nil
@@ -378,7 +384,7 @@ type TraitorCombosResponse struct {
 	Combos map[string]map[string]float64 `json:"combos"`
 }
 
-func TraitorCombos(player, from, to string, trunc bool) (TraitorCombosResponse, error) {
+func TraitorCombos(player, from, to string, round bool) (TraitorCombosResponse, error) {
 	players, err := getEntries("player", "name", player)
 	if err != nil {
 		return TraitorCombosResponse{Feedback: "Error getting entries"}, errors.Wrapf(err, "Error getting entries, player = %s", player)
@@ -393,7 +399,7 @@ func TraitorCombos(player, from, to string, trunc bool) (TraitorCombosResponse, 
 		}
 		for _, other := range players {
 			if _, alreadyDone := response.Combos[player][other]; other != player && !alreadyDone {
-				comboWinRate, err, anyCommonRounds := getTraitorWinRate(playerRounds, other, from, to, trunc)
+				comboWinRate, err, anyCommonRounds := getTraitorWinRate(playerRounds, other, from, to, round)
 				if err != nil {
 					log.Error().Err(err).Msg("")
 					return TraitorCombosResponse{Feedback: "Error getting combo win %"}, errors.Wrapf(err, "Error getting combo win percentage, player = %s & other = %s", player, other)
@@ -421,7 +427,7 @@ func TraitorCombos(player, from, to string, trunc bool) (TraitorCombosResponse, 
 	return response, nil
 }
 
-func getTraitorWinRate(player1Rounds []traitorRound, player2, from, to string, trunc bool) (float64, error, bool) {
+func getTraitorWinRate(player1Rounds []traitorRound, player2, from, to string, round bool) (float64, error, bool) {
 	player2Rounds, err := getTraitorRounds(player2, from, to)
 	if err != nil {
 		return -1, err, false
@@ -446,8 +452,9 @@ func getTraitorWinRate(player1Rounds []traitorRound, player2, from, to string, t
 
 	rate := wins / len
 
-	if trunc {
-		return truncate(rate), nil, true
+	if round {
+		f, err := roundup(rate)
+		return f, err, true
 	}
 
 	return rate, nil, true
