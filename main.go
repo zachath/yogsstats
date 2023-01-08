@@ -30,6 +30,7 @@ func main() {
 	r.HandleFunc("/stats/ttt/meta", SetHeaders(APIMetaData)).Methods(http.MethodGet)
 	r.HandleFunc("/stats/ttt/teamWins", SetHeaders(DateValidation(TeamWins))).Methods(http.MethodGet)
 	r.HandleFunc("/stats/ttt/playerWinPercentage", SetHeaders(DateValidation(PlayerWinPercentage))).Methods(http.MethodGet)
+	r.HandleFunc("/stats/ttt/detectiveWinPercentage", SetHeaders(DateValidation(DetectiveWinPercentage))).Methods(http.MethodGet)
 	r.HandleFunc("/stats/ttt/traitorCombos", SetHeaders(DateValidation(TraitorCombos))).Methods(http.MethodGet)
 
 	s := &http.Server{

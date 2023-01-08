@@ -128,27 +128,20 @@ func PlayerWinPercentage(rw http.ResponseWriter, req *http.Request) {
 		round = true
 	}
 	
-	canon := false
 	var err error
-	if req.URL.Query().Has("canon") {
-		canon, err = strconv.ParseBool(req.URL.Query().Get("canon"))
-		if err != nil {
-			canon = false
-		}
-	}
 
 	setTimeBox(&from, &to)
 
 	var response db.PlayerWinPercentageResponse
 	if player == "" {
-		response, err = db.PlayerWinPercentage("*", from, to, canon, round)
+		response, err = db.PlayerWinPercentage("*", from, to, round)
 		if err != nil {
 			log.Error().Stack().Err(err).Msg("Failed getting player win percentage.")
 			http.Error(rw, "Failed getting player win percentage.", http.StatusInternalServerError)
 			return
 		}
 	} else {
-		response, err = db.PlayerWinPercentage(player, from, to, canon, round)
+		response, err = db.PlayerWinPercentage(player, from, to, round)
 		if err != nil {
 			log.Error().Stack().Err(err).Msg("Failed getting player win percentage.")
 			http.Error(rw, "Failed getting player win percentage.", http.StatusInternalServerError)
@@ -161,6 +154,48 @@ func PlayerWinPercentage(rw http.ResponseWriter, req *http.Request) {
 	}
 	
 	log.Info().Msg("Served player win percentage request!")
+
+	json.NewEncoder(rw).Encode(response)
+}
+
+func DetectiveWinPercentage(rw http.ResponseWriter, req *http.Request) {
+	player := req.URL.Query().Get("player")
+	from := req.Context().Value("from").(string)
+	to := req.Context().Value("to").(string)
+
+	round := false
+	if req.URL.Query().Get("round") == "true" {
+		round = true
+	}
+
+	setTimeBox(&from, &to)
+	canon := false
+	var err error
+	if req.URL.Query().Has("canon") {
+		canon, err = strconv.ParseBool(req.URL.Query().Get("canon"))
+		if err != nil {
+			canon = false
+		}
+	}
+
+	var response db.DetecitveWinPercentageResponse
+	if player == "" {
+		response, err = db.DetectiveWinPercentage("*", from, to, canon, round)
+		if err != nil {
+			log.Error().Stack().Err(err).Msg("Failed getting detective win percentage.")
+			http.Error(rw, "Failed getting detective win percentage.", http.StatusInternalServerError)
+			return
+		}
+	} else {
+		response, err = db.DetectiveWinPercentage(player, from, to, canon, round)
+		if err != nil {
+			log.Error().Stack().Err(err).Msg("Failed getting detective win percentage.")
+			http.Error(rw, "Failed getting detective win percentage.", http.StatusInternalServerError)
+			return
+		}
+	}
+	
+	log.Info().Msg("Served detective win percentage request!")
 
 	json.NewEncoder(rw).Encode(response)
 }

@@ -261,14 +261,13 @@ func TeamWins(team, from, to string) (TeamWinPercentageResponse, error) {
 
 type TeamsWinPercentage struct {
 	Teams map[string]float64 `json:"teams"`
-	Dwin  float64 `json:"detectiveWinPercentage"`
 }
 type PlayerWinPercentageResponse struct {
 	Feedback string 						`json:"feedback"`
 	Players map[string]TeamsWinPercentage 	`json:"players"`
 }
 
-func PlayerWinPercentage(player, from, to string, canon, round bool) (PlayerWinPercentageResponse, error) {
+func PlayerWinPercentage(player, from, to string, round bool) (PlayerWinPercentageResponse, error) {
 	players, err := getEntries("player", "name", player)
 	if err != nil {
 		return PlayerWinPercentageResponse{Feedback: "Error getting entries"}, errors.Wrap(err, "Error getting entries")
@@ -324,23 +323,44 @@ func PlayerWinPercentage(player, from, to string, canon, round bool) (PlayerWinP
 			}
 		}
 
-		dWin, err := detectiveWinPercentage(player, from, to, round)
-		if err != nil {
-			return PlayerWinPercentageResponse{Feedback: fmt.Sprintf("Error getting detective win percentage (%s)", player)}, errors.Wrap(err, "Error getting detective win percentage")
-		}
-
 		entry, _ := response.Players[player]
-		entry.Dwin = dWin
-
-		if canon && player == "Zylus" {
-			log.Info().Msg("Setting detective win percentage of Zylus to 1.")
-			entry.Dwin = 1
-		}
 
 		response.Players[player] = entry
 	}
 
-	log.Info().Msg("Player win percentage request")
+	response.Feedback = "Successfull request"
+	return response, nil
+}
+
+type DetecitveWinPercentageResponse struct {
+	Feedback string 			`json:"feedback"`
+	Players map[string]float64 	`json:"players"`
+}
+
+func DetectiveWinPercentage(player, from, to string, canon, round bool) (DetecitveWinPercentageResponse, error) {
+	players, err := getEntries("player", "name", player)
+	if err != nil {
+		return DetecitveWinPercentageResponse{Feedback: "Error getting entries"}, errors.Wrap(err, "Error getting entries")
+	}
+
+	response := DetecitveWinPercentageResponse{
+		Players: make(map[string]float64),
+	}
+
+	for _, player := range players {
+		dWin, err := detectiveWinPercentage(player, from, to, round)
+		if err != nil {
+			return DetecitveWinPercentageResponse{Feedback: fmt.Sprintf("Error getting detective win percentage (%s)", player)}, errors.Wrap(err, "Error getting detective win percentage")
+		}
+
+		if canon && player == "Zylus" {
+			log.Info().Msg("Canon rounds, setting detective win percentage of Zylus to 1.")
+			dWin = 1
+		}
+
+		response.Players[player] = dWin
+	}
+
 	response.Feedback = "Successfull request"
 	return response, nil
 }
