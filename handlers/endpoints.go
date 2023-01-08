@@ -242,6 +242,30 @@ func APIMetaData(rw http.ResponseWriter, req *http.Request) {
 	json.NewEncoder(rw).Encode(response)
 }
 
+type traitorComboCache struct {
+	LatestRound	int
+	Response 	db.TraitorCombosResponse
+	From		string
+	To			string
+	Round		bool
+}
+
+var cache = traitorComboCache{LatestRound: -1}
+
+func redoCalculation(from, to string, round bool) (int, bool, error) {
+	newestRound, err := db.GetNewestRoundInfo()
+	if err != nil {
+		return -1, true, err
+	}
+
+	newestRoundID, err := strconv.Atoi(newestRound.Id)
+	if err != nil {
+		return -1, true, err
+	}
+
+	return newestRoundID, cache.LatestRound < newestRoundID || cache.From != from || cache.To != to || cache.Round != round, nil
+}
+
 func TraitorCombos(rw http.ResponseWriter, req *http.Request) {
 	from := req.Context().Value("from").(string)
 	to := req.Context().Value("to").(string)
@@ -254,12 +278,27 @@ func TraitorCombos(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	var response db.TraitorCombosResponse
-	var err error
-	response, err = db.TraitorCombos("*", from, to, round)
+	newestRoundID, redo, err := redoCalculation(from, to, round)
 	if err != nil {
-		log.Error().Stack().Err(err).Msg("Failed getting traitor combos.")
-		http.Error(rw, "Failed getting traitor combos", http.StatusInternalServerError)
-		return
+		log.Error().Err(err).Msg("")
+	}
+	if redo {
+		log.Debug().Msg("Redoing Traitor Combo calculations...")
+		response, err = db.TraitorCombos("*", from, to, round)
+		if err != nil {
+			log.Error().Stack().Err(err).Msg("Failed getting traitor combos.")
+			http.Error(rw, "Failed getting traitor combos", http.StatusInternalServerError)
+			return
+		}
+
+		cache.Response = response
+		cache.LatestRound = newestRoundID
+		cache.From = from
+		cache.To = to
+		cache.Round = round
+	} else {
+		log.Debug().Msg("Using cached Traitor Combo response...")
+		response = cache.Response
 	}
 	
 	log.Info().Msg("Served Traitor Combos request request!")
