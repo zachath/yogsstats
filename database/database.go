@@ -399,9 +399,13 @@ func detectiveWinPercentage(player, from, to string, round bool) (float64, error
 	return rate, nil
 }
 
+type TraitorComboEntry struct {
+	RoundsTogether 	int
+	WinRate			float64
+}
 type TraitorCombosResponse struct {
 	Feedback string	`json:"feedback"`
-	Combos map[string]map[string]float64 `json:"combos"`
+	Combos map[string]map[string]TraitorComboEntry `json:"combos"`
 }
 
 func TraitorCombos(player, from, to string, round bool) (TraitorCombosResponse, error) {
@@ -410,7 +414,7 @@ func TraitorCombos(player, from, to string, round bool) (TraitorCombosResponse, 
 		return TraitorCombosResponse{Feedback: "Error getting entries"}, errors.Wrapf(err, "Error getting entries, player = %s", player)
 	}
 
-	response := TraitorCombosResponse{Combos: make(map[string]map[string]float64)}
+	response := TraitorCombosResponse{Combos: make(map[string]map[string]TraitorComboEntry)}
 
 	for _, player := range players {
 		playerRounds, err := getTraitorRounds(player, from, to)
@@ -419,25 +423,25 @@ func TraitorCombos(player, from, to string, round bool) (TraitorCombosResponse, 
 		}
 		for _, other := range players {
 			if _, alreadyDone := response.Combos[player][other]; other != player && !alreadyDone {
-				comboWinRate, err, anyCommonRounds := getTraitorWinRate(playerRounds, other, from, to, round)
+				comboWinRate, err, commonRounds := getTraitorWinRate(playerRounds, other, from, to, round)
 				if err != nil {
 					log.Error().Err(err).Msg("")
 					return TraitorCombosResponse{Feedback: "Error getting combo win %"}, errors.Wrapf(err, "Error getting combo win percentage, player = %s & other = %s", player, other)
 				}
 
-				if !anyCommonRounds {
+				if commonRounds == 0 {
 					continue
 				}
 				
 				if response.Combos[player] == nil {
-					response.Combos[player] = make(map[string]float64)
+					response.Combos[player] = make(map[string]TraitorComboEntry)
 				}
-				response.Combos[player][other] = comboWinRate
+				response.Combos[player][other] = TraitorComboEntry{WinRate: comboWinRate, RoundsTogether: commonRounds}
 
 				if response.Combos[other] == nil {
-					response.Combos[other] = make(map[string]float64)
+					response.Combos[other] = make(map[string]TraitorComboEntry)
 				}
-				response.Combos[other][player] = comboWinRate
+				response.Combos[other][player] = TraitorComboEntry{WinRate: comboWinRate, RoundsTogether: commonRounds}
 			}
 		}
 	}
@@ -447,13 +451,13 @@ func TraitorCombos(player, from, to string, round bool) (TraitorCombosResponse, 
 	return response, nil
 }
 
-func getTraitorWinRate(player1Rounds []traitorRound, player2, from, to string, round bool) (float64, error, bool) {
+func getTraitorWinRate(player1Rounds []traitorRound, player2, from, to string, round bool) (float64, error, int) {
 	player2Rounds, err := getTraitorRounds(player2, from, to)
 	if err != nil {
-		return -1, err, false
+		return -1, err, 0
 	}
 
-	var len float64
+	var len int
 	var wins float64
 	for _, round := range player1Rounds {
 		for _, otherRound := range player2Rounds {
@@ -467,17 +471,17 @@ func getTraitorWinRate(player1Rounds []traitorRound, player2, from, to string, r
 	}
 
 	if len == 0 {
-		return 0, nil, false
+		return 0, nil, len
 	}
 
-	rate := wins / len
+	rate := wins / float64(len)
 
 	if round {
 		f, err := roundup(rate)
-		return f, err, true
+		return f, err, len
 	}
 
-	return rate, nil, true
+	return rate, nil, len
 }
 
 type traitorRound struct {
