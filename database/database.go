@@ -260,7 +260,8 @@ func TeamWins(team, from, to string) (TeamWinPercentageResponse, error) {
 }
 
 type TeamsWinPercentage struct {
-	Teams map[string]float64 `json:"teams"`
+	Teams 			map[string]float64 `json:"teams"`
+	RoundsPlayed	int					`json:"roundsPlayed"`
 }
 type PlayerWinPercentageResponse struct {
 	Feedback string 						`json:"feedback"`
@@ -283,6 +284,7 @@ func PlayerWinPercentage(player, from, to string, round bool) (PlayerWinPercenta
 	}
 
 	for _, player := range players {
+		roundsPlayed := 0
 		teams, err := getEntries("team", "team", "*")
 		if err != nil {
 			return PlayerWinPercentageResponse{Feedback: "Error getting entries"}, errors.Wrap(err, "Error getting entries")
@@ -297,11 +299,11 @@ func PlayerWinPercentage(player, from, to string, round bool) (PlayerWinPercenta
 				return PlayerWinPercentageResponse{Feedback: fmt.Sprintf("Error getting player rows (%s)", player)}, errors.Wrapf(err, "Error getting player rows (%s)", player)
 			}
 
+			roundsPlayed += len(rows)
+
 			if len(rows) == 0 {
 				continue
 			}
-
-			totalRounds := float64(len(rows))
 
 			wins := 0
 			for _, row := range rows {
@@ -310,7 +312,7 @@ func PlayerWinPercentage(player, from, to string, round bool) (PlayerWinPercenta
 				}
 			}
 
-			result := float64(wins) / totalRounds
+			result := float64(wins) / float64(len(rows))
 			if round {
 				f, err := roundup(result)
 				if err != nil {
@@ -324,7 +326,7 @@ func PlayerWinPercentage(player, from, to string, round bool) (PlayerWinPercenta
 		}
 
 		entry, _ := response.Players[player]
-
+		entry.RoundsPlayed = roundsPlayed
 		response.Players[player] = entry
 	}
 
