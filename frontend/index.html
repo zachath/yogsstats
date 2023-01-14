@@ -5,9 +5,10 @@
     <link rel="stylesheet" href="index.css" type="text/css">
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
     <script type="text/javascript">
-        google.charts.load('current', {'packages': ['corechart']}).then(
-            async function drawChart() {
-                console.log("Fetching API meta data")
+        async function drawTeamWins() {
+            google.charts.load('current', {'packages': ['corechart']}).then(
+            async () => {
+                console.log("Fetching team wins data")
                         const response = await fetch("http://localhost:5001/stats/ttt/teamWins", {
                         method: 'GET',
                         mode: 'cors',
@@ -28,6 +29,7 @@
                     color: "white"
                 },
                 backgroundColor: "#1c2833",
+                colors: ['pink', 'brown', 'green', 'purple', 'red', 'black'],
                 legend: {
                     textStyle: {
                         color: 'white'
@@ -35,11 +37,62 @@
                 }
             };
 
-            var chart = new google.visualization.PieChart(document.getElementById('team-piechart'));
+            var chart = new google.visualization.PieChart(document.getElementById('info-display'));
 
             chart.draw(data, options);
-        }
+            document.getElementById('info-description').innerText = "Percentages of rounds won by each team."
+            }
         )
+        }
+
+        async function detectiveWinPercentages() {
+            console.log("Fetching detective win percentage data")
+            const response = await fetch("http://localhost:5001/stats/ttt/detectiveWinPercentage?round=true", {
+            method: 'GET',
+            mode: 'cors',
+            })
+
+            const json = await response.json()
+            players = json['players']
+            players = new Map([...new Map(Object.entries(players)).entries()].sort((a, b) => b[1] - a[1]))
+            
+            document.getElementById('info-display').innerHTML = "<ol>"
+            for (let [player, rate] of players) {
+                ratePercent = Math.round((rate * 100) *10) / 10
+                document.getElementById('info-display').innerHTML += `<li>${player} : ${ratePercent}%</li>`
+            }
+            document.getElementById('info-display').innerHTML += "</ol>"
+            document.getElementById('info-description').innerText = "The detective win percentages of the players (including non-canon rounds)."
+        }
+
+        async function playerWinPercentages() {
+            console.log("Fetching player win percentage data")
+            const response = await fetch("http://localhost:5001/stats/ttt/playerWinPercentage?round=true", {
+            method: 'GET',
+            mode: 'cors',
+            })
+
+            const json = await response.json()
+            players = json['players']
+            players = new Map(Object.entries(players))
+
+            document.getElementById('info-display').innerHTML = "<ol>"
+
+            for (let [name, entries] of players) {
+                roundsPlayed = entries.roundsPlayed
+                document.getElementById('info-display').innerHTML += `<li>${name}, ${roundsPlayed} rounds: `
+                for (let [team, rate] of new Map(Object.entries(entries.teams))) {
+                    ratePercent = Math.round((rate * 100) *10) / 10
+                    document.getElementById('info-display').innerHTML += ` ${team}: ${ratePercent}% `
+                }
+                document.getElementById('info-display').innerHTML += '</li>'
+            }
+
+            document.getElementById('info-display').innerHTML += "</ol>"
+            document.getElementById('info-description').innerText = "The win percentages of each player for every team they have played as."
+        }
+
+        drawTeamWins()
     </script>
 </head>
 <body>
@@ -71,13 +124,16 @@
     </header>
     <main class="flex-main">
         <nav class="flex-nav">
-            SIDENAV
+            <div class="tab">
+                <button class="tablinks" onclick="drawTeamWins()">Team Wins</button>
+                <button class="tablinks" onclick="detectiveWinPercentages()">Detective Win Percentages</button>
+                <button class="tablinks" onclick="playerWinPercentages()">Player Win Percentages</button>
+                <button class="tablinks" onclick="">Traitor Combos</button>
+            </div>
         </nav>
         <article class="flex-article">
-            <div id="team-piechart" style="width: 900px; height: 500px;"></div>
+            <div id="info-description"></div>
+            <div id="info-display" style="width: 1500px; height: 800px;"></div>
         </article>
     </main>
-    <footer class="flex-footer">
-        FOOTER
-    </footer>
 </body>

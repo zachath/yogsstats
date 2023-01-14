@@ -1,6 +1,7 @@
 * {
     margin: 0px;
     background-color: #1c2833;
+    font-family: Arial !important;
 }
 
 body {
@@ -47,11 +48,32 @@ body {
     flex: 10 10 ;
     display: flex;
     align-items: center;
+    flex-direction: column;
+    margin: 5px;
 }
 
-.flex-footer {
-    padding-top: 3rem;
-    padding-bottom: 3rem;
+.tab {
+    overflow: hidden;
+    background-color: #1c2833;
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+}
+
+.tab button {
+    background-color: inherit;
+    color: white;
+    outline: none;
+    cursor: pointer;
+    padding: 14px 16px;
+}
+
+.tab button:hover {
+    background-color: orange;
+}
+
+li {
+    margin: 10px 0;
 }
 
 @media all and (max-width: 540px) {
