@@ -3,12 +3,20 @@ version: '3.8'
 services:
   yogsstats:
     build:
-      context: .
+      context: backend/
       args:
-        POSTGRES_PASSWORD: <password>
-        POST_PASSWORD: <password>
-        HOST_IP: <IP>
+        POSTGRES_PASSWORD: zacharias00
+        POST_PASSWORD: $$2a$10$$WVgswKX5Lhc/8arsPwesmeDpqZY0KSGPCL5OLrSolAB.ZWhU4smje
+        HOST_IP: 10.0.2.15
     network_mode: "host"
     restart: always
     ports:
       - 5001:5001
+  
+  yogsstats-frontend:
+    build: 
+      context: frontend/
+    network_mode: "host"
+    restart: always
+    ports:
+      - 5002:5002
