@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <title>YogsStats</title>
-    <link rel="stylesheet" href="assets/css/index.css" type="text/css">
+    <link rel="stylesheet" href="/assets/css/index.css" type="text/css">
     <style>
         .selected-row {
             background-color: orange !important;
@@ -29,7 +29,7 @@
             google.charts.load('current', {'packages': ['corechart']}).then(
             async () => {
                 console.log("Fetching team wins data")
-                        const response = await fetch("http://localhost:5001/stats/ttt/teamWins", {
+                        const response = await fetch("http://localhost:80/stats/ttt/teamWins", {
                         method: 'GET',
                         mode: 'cors',
                     })
@@ -68,7 +68,7 @@
         async function detectiveWinPercentages() {
             google.charts.load('current', {'packages': ['table']}).then(
                 async () => {
-                    const response = await fetch("http://localhost:5001/stats/ttt/detectiveWinPercentage?round=true", {
+                    const response = await fetch("http://localhost:80/stats/ttt/detectiveWinPercentage?round=true", {
                         method: 'GET',
                         mode: 'cors',
                     })
@@ -109,7 +109,7 @@
             google.charts.load('current', {'packages': ['table']}).then(
                 async () => {
                     console.log("Fetching player win percentage data")
-                    const response = await fetch("http://localhost:5001/stats/ttt/playerWinPercentage?round=true", {
+                    const response = await fetch("http://localhost:80/stats/ttt/playerWinPercentage?round=true", {
                         method: 'GET',
                         mode: 'cors',
                     })
@@ -166,7 +166,7 @@
             google.charts.load('current', {'packages': ['table']}).then(
                 async () => {
                     console.log("Fetching traitor combo data")
-                    const response = await fetch("http://localhost:5001/stats/ttt/traitorCombos?round=true", {
+                    const response = await fetch("http://localhost:80/stats/ttt/traitorCombos?round=true", {
                         method: 'GET',
                         mode: 'cors',
                     })
@@ -229,7 +229,7 @@
             <script>
                 async function fetchMetaData() {
                     console.log("Fetching API meta data")
-                        const response = await fetch("http://localhost:5001/stats/ttt/meta", {
+                        const response = await fetch("http://localhost:80/stats/ttt/meta", {
                         method: 'GET',
                         mode: 'cors',
                     })

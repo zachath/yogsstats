@@ -24,7 +24,7 @@ func init() {
 
 func main() {
 	r := mux.NewRouter()
-	r.HandleFunc("/", SetHeaders(HomeHandler)).Methods(http.MethodGet)
+	r.HandleFunc("/readme", SetHeaders(HomeHandler)).Methods(http.MethodGet)
 	r.HandleFunc("/stats/ttt", SetHeaders(ValidatePost(ValidateTTTInput(PostTTTRound)))).Methods(http.MethodPost)
 	r.HandleFunc("/stats/ttt", SetHeaders(DateValidation(GetTTTRound))).Methods(http.MethodGet)
 	r.HandleFunc("/stats/ttt/meta", SetHeaders(APIMetaData)).Methods(http.MethodGet)

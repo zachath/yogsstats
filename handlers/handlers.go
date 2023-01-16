@@ -116,3 +116,7 @@ func SetHeaders(next http.HandlerFunc) http.HandlerFunc {
 		next(rw, req)
 	})
 }
+
+func RootHandler(rw http.ResponseWriter, r *http.Request) {
+	http.ServeFile(rw, r, "static/html/index.html")
+}
