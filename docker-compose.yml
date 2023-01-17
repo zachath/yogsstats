@@ -5,8 +5,8 @@ services:
     build:
       context: .
       args:
-        POSTGRES_PASSWORD: pass
-        POST_PASSWORD: pass
+        POSTGRES_PASSWORD: zacharias00
+        POST_PASSWORD: $$2a$10$$WVgswKX5Lhc/8arsPwesmeDpqZY0KSGPCL5OLrSolAB.ZWhU4smje
         HOST_IP: 10.0.2.15
     network_mode: "host"
     restart: always

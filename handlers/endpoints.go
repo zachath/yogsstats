@@ -20,7 +20,7 @@ import (
 	stupid "yogsstats/stupid"
 )
 
-func HomeHandler(rw http.ResponseWriter, req *http.Request) {
+func ReadMeHandler(rw http.ResponseWriter, req *http.Request) {
 	content, err := ioutil.ReadFile("README.md")
 	if err != nil {
 		http.Error(rw, "Error loading page.", http.StatusInternalServerError)
@@ -31,7 +31,7 @@ func HomeHandler(rw http.ResponseWriter, req *http.Request) {
 	flags := html.CommonFlags | html.HrefTargetBlank
 	html := markdown.ToHTML(md, nil, html.NewRenderer(html.RendererOptions{Flags: flags}))
 
-	log.Info().Msg("Served home request!")
+	log.Info().Msg("Served readme request!")
 
 	rw.Write(html)
 }

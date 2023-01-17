@@ -1,9 +1,92 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>YogsStats</title>
-    <link rel="stylesheet" href="/assets/css/index.css" type="text/css">
+    <title>YogsStats</title> 
     <style>
+        * {
+            margin: 0px;
+            background-color: #1c2833;
+            font-family: Arial !important;
+        }
+
+        body {
+            font-size: 18px;
+            color:white;
+            height:100vh;
+            text-align:center;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .flex-header {
+            padding: 1rem;
+            background-color: #2e4053;
+            display: flex;
+            flex: 1;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+            flex-grow: 0;
+        }
+
+        .title {
+            background-color: #2e4053;
+        }
+
+        .meta-info {
+            background-color: #2e4053;
+        }
+
+        .flex-main {
+            display: flex;
+            flex: 1;
+        }
+
+        .flex-nav {
+            padding: 1rem;
+            flex: 1 1 5rem;
+            background-color: #2e4053;
+        }
+
+        .flex-article {
+            padding-top: 3rem;
+            flex: 10 10 ;
+            display: flex;
+            align-items: center;
+            flex-direction: column;
+            margin: 5px;
+        }
+
+        .tab {
+            overflow: hidden;
+            background-color: #1c2833;
+            display: flex;
+            flex: 1;
+            flex-direction: column;
+        }
+
+        .tab button {
+            background-color: inherit;
+            color: white;
+            outline: none;
+            cursor: pointer;
+            padding: 14px 16px;
+        }
+
+        .tab button:hover {
+            background-color: orange;
+        }
+
+        li {
+            margin: 10px 0;
+        }
+
+        @media all and (max-width: 540px) {
+            .flex-main {
+                flex-direction: column;
+            }
+        }
+
         .selected-row {
             background-color: orange !important;
             color: white !important;
@@ -29,7 +112,7 @@
             google.charts.load('current', {'packages': ['corechart']}).then(
             async () => {
                 console.log("Fetching team wins data")
-                        const response = await fetch("http://localhost:80/stats/ttt/teamWins", {
+                        const response = await fetch("http://yogsstats.com/stats/ttt/teamWins", {
                         method: 'GET',
                         mode: 'cors',
                     })
@@ -68,7 +151,7 @@
         async function detectiveWinPercentages() {
             google.charts.load('current', {'packages': ['table']}).then(
                 async () => {
-                    const response = await fetch("http://localhost:80/stats/ttt/detectiveWinPercentage?round=true", {
+                    const response = await fetch("http://yogsstats.com/stats/ttt/detectiveWinPercentage?round=true", {
                         method: 'GET',
                         mode: 'cors',
                     })
@@ -109,7 +192,7 @@
             google.charts.load('current', {'packages': ['table']}).then(
                 async () => {
                     console.log("Fetching player win percentage data")
-                    const response = await fetch("http://localhost:80/stats/ttt/playerWinPercentage?round=true", {
+                    const response = await fetch("http://yogsstats.com/stats/ttt/playerWinPercentage?round=true", {
                         method: 'GET',
                         mode: 'cors',
                     })
@@ -166,7 +249,7 @@
             google.charts.load('current', {'packages': ['table']}).then(
                 async () => {
                     console.log("Fetching traitor combo data")
-                    const response = await fetch("http://localhost:80/stats/ttt/traitorCombos?round=true", {
+                    const response = await fetch("http://yogsstats.com/stats/ttt/traitorCombos?round=true", {
                         method: 'GET',
                         mode: 'cors',
                     })
@@ -229,7 +312,7 @@
             <script>
                 async function fetchMetaData() {
                     console.log("Fetching API meta data")
-                        const response = await fetch("http://localhost:80/stats/ttt/meta", {
+                        const response = await fetch("http://yogsstats.com/stats/ttt/meta", {
                         method: 'GET',
                         mode: 'cors',
                     })
