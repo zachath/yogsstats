@@ -7,7 +7,7 @@ services:
       args:
         POSTGRES_PASSWORD: zacharias00
         POST_PASSWORD: $$2a$10$$WVgswKX5Lhc/8arsPwesmeDpqZY0KSGPCL5OLrSolAB.ZWhU4smje
-        HOST_IP: 10.0.2.15
+        HOST_IP: 127.0.0.1
     network_mode: "host"
     restart: always
     ports:

@@ -334,9 +334,13 @@ func PlayerWinPercentage(player, from, to string, round bool) (PlayerWinPercenta
 	return response, nil
 }
 
+type DetectiveWinPercentageEntry struct {
+	WinRate 		float64
+	RoundsPlayed	int
+}
 type DetecitveWinPercentageResponse struct {
 	Feedback string 			`json:"feedback"`
-	Players map[string]float64 	`json:"players"`
+	Players map[string]DetectiveWinPercentageEntry 	`json:"players"`
 }
 
 func DetectiveWinPercentage(player, from, to string, canon, round bool) (DetecitveWinPercentageResponse, error) {
@@ -346,11 +350,11 @@ func DetectiveWinPercentage(player, from, to string, canon, round bool) (Detecit
 	}
 
 	response := DetecitveWinPercentageResponse{
-		Players: make(map[string]float64),
+		Players: make(map[string]DetectiveWinPercentageEntry),
 	}
 
 	for _, player := range players {
-		dWin, err := detectiveWinPercentage(player, from, to, round)
+		dWin, roundsPlayed, err := detectiveWinPercentage(player, from, to, round)
 		if err != nil {
 			return DetecitveWinPercentageResponse{Feedback: fmt.Sprintf("Error getting detective win percentage (%s)", player)}, errors.Wrap(err, "Error getting detective win percentage")
 		}
@@ -360,14 +364,14 @@ func DetectiveWinPercentage(player, from, to string, canon, round bool) (Detecit
 			dWin = 1
 		}
 
-		response.Players[player] = dWin
+		response.Players[player] = DetectiveWinPercentageEntry{WinRate: dWin, RoundsPlayed: roundsPlayed}
 	}
 
 	response.Feedback = "Successfull request"
 	return response, nil
 }
 
-func detectiveWinPercentage(player, from, to string, round bool) (float64, error) {
+func detectiveWinPercentage(player, from, to string, round bool) (float64, int, error) {
 	query := "SELECT R.winning_team FROM round_participation RP JOIN round R ON RP.id = R.id JOIN role RO ON RP.role = RO.role WHERE RP.player = $1 AND date >= $2 AND date <= $3 AND RO.detective = 'd';"
 
 	type row struct {
@@ -378,11 +382,11 @@ func detectiveWinPercentage(player, from, to string, round bool) (float64, error
 	var rows []row
 	err := db.Select(&rows, query, player, from, to)
 	if err != nil {
-		return -1, errors.Wrap(err, "Error selecting with detective query")
+		return -1, -1, errors.Wrap(err, "Error selecting with detective query")
 	}
 
 	if len(rows) == 0 {
-		return 0, nil
+		return 0, 0, nil
 	}
 
 	var wins float64
@@ -395,10 +399,11 @@ func detectiveWinPercentage(player, from, to string, round bool) (float64, error
 	rate := wins / float64(len(rows))
 
 	if round {
-		return roundup(rate)
+		rate, err := roundup(rate)
+		return rate, len(rows), err
 	}
 
-	return rate, nil
+	return rate, len(rows), nil
 }
 
 type TraitorComboEntry struct {

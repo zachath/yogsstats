@@ -158,15 +158,16 @@
 
                     const json = await response.json()
                     players = json['players']
-                    players = new Map([...new Map(Object.entries(players)).entries()].sort((a, b) => b[1] - a[1]))
+                    players = new Map(Object.entries(players))
 
                     var dataTable = new google.visualization.DataTable()
                     dataTable.addColumn('string', 'Player')
                     dataTable.addColumn('number', '%')
+                    dataTable.addColumn('number', "Rounds played")
 
-                    for (let [player, rate] of players) {
-                        ratePercent = Math.round((rate * 100) *10) / 10
-                        dataTable.addRows([[player, ratePercent]])
+                    for (let [player, entry] of players) {
+                        ratePercent = Math.round((entry.WinRate * 100) * 10) / 10
+                        dataTable.addRow([player, ratePercent, entry.RoundsPlayed])
                     }
 
                     options = {
