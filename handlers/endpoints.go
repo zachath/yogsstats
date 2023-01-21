@@ -96,19 +96,14 @@ func TeamWins(rw http.ResponseWriter, req *http.Request) {
 	var response db.TeamWinPercentageResponse
 	var err error
 	if team == "" {
-		response, err = db.TeamWins("*", from, to)
-		if err != nil {
-			log.Error().Stack().Err(err).Msg("Failed getting team win percentage.")
-			http.Error(rw, "Failed getting team win percentage.", http.StatusInternalServerError)
-			return
-		}
-	} else {
-		response, err = db.TeamWins(team, from, to)
-		if err != nil {
-			log.Error().Stack().Err(err).Msg("Failed getting team win percentage.")
-			http.Error(rw, "Failed getting team win percentage.", http.StatusInternalServerError)
-			return
-		}
+		team = "*"
+	}
+
+	response, err = db.TeamWins(team, from, to)
+	if err != nil {
+		log.Error().Stack().Err(err).Msg("Failed getting team win percentage.")
+		http.Error(rw, "Failed getting team win percentage.", http.StatusInternalServerError)
+		return
 	}
 
 	delete(response.Response, "none")
@@ -134,19 +129,14 @@ func PlayerWinPercentage(rw http.ResponseWriter, req *http.Request) {
 
 	var response db.PlayerWinPercentageResponse
 	if player == "" {
-		response, err = db.PlayerWinPercentage("*", from, to, round)
-		if err != nil {
-			log.Error().Stack().Err(err).Msg("Failed getting player win percentage.")
-			http.Error(rw, "Failed getting player win percentage.", http.StatusInternalServerError)
-			return
-		}
-	} else {
-		response, err = db.PlayerWinPercentage(player, from, to, round)
-		if err != nil {
-			log.Error().Stack().Err(err).Msg("Failed getting player win percentage.")
-			http.Error(rw, "Failed getting player win percentage.", http.StatusInternalServerError)
-			return
-		}
+		player = "*"
+	}
+
+	response, err = db.PlayerWinPercentage(player, from, to, round)
+	if err != nil {
+		log.Error().Stack().Err(err).Msg("Failed getting player win percentage.")
+		http.Error(rw, "Failed getting player win percentage.", http.StatusInternalServerError)
+		return
 	}
 
 	for player := range response.Players {
@@ -180,19 +170,14 @@ func DetectiveWinPercentage(rw http.ResponseWriter, req *http.Request) {
 
 	var response db.DetecitveWinPercentageResponse
 	if player == "" {
-		response, err = db.DetectiveWinPercentage("*", from, to, canon, round)
-		if err != nil {
-			log.Error().Stack().Err(err).Msg("Failed getting detective win percentage.")
-			http.Error(rw, "Failed getting detective win percentage.", http.StatusInternalServerError)
-			return
-		}
-	} else {
-		response, err = db.DetectiveWinPercentage(player, from, to, canon, round)
-		if err != nil {
-			log.Error().Stack().Err(err).Msg("Failed getting detective win percentage.")
-			http.Error(rw, "Failed getting detective win percentage.", http.StatusInternalServerError)
-			return
-		}
+		player = "*"
+	}
+
+	response, err = db.DetectiveWinPercentage(player, from, to, canon, round)
+	if err != nil {
+		log.Error().Stack().Err(err).Msg("Failed getting detective win percentage.")
+		http.Error(rw, "Failed getting detective win percentage.", http.StatusInternalServerError)
+		return
 	}
 	
 	log.Info().Msg("Served detective win percentage request!")
@@ -248,19 +233,24 @@ type traitorComboCache struct {
 	From		string
 	To			string
 	Round		bool
+	Player		string
 }
 
 var cache = traitorComboCache{LatestRound: -1}
 
-func redoCalculation(from, to string, round bool) (int, bool, error) {
+func redoCalculation(from, to, player string, round bool) (int, bool, error) {
 	newestRound, err := db.GetNewestRoundInfo()
 	if err != nil {
-		return -1, true, err
+		return cache.LatestRound, true, err
 	}
 
 	newestRoundID, err := strconv.Atoi(newestRound.Id)
 	if err != nil {
-		return -1, true, err
+		return cache.LatestRound, true, err
+	}
+
+	if player != cache.Player {
+		return newestRoundID, true, nil
 	}
 
 	return newestRoundID, cache.LatestRound < newestRoundID || cache.From != from || cache.To != to || cache.Round != round, nil
@@ -269,6 +259,7 @@ func redoCalculation(from, to string, round bool) (int, bool, error) {
 func TraitorCombos(rw http.ResponseWriter, req *http.Request) {
 	from := req.Context().Value("from").(string)
 	to := req.Context().Value("to").(string)
+	player := req.URL.Query().Get("player")
 
 	setTimeBox(&from, &to)
 
@@ -278,13 +269,20 @@ func TraitorCombos(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	var response db.TraitorCombosResponse
-	newestRoundID, redo, err := redoCalculation(from, to, round)
+	newestRoundID, redo, err := redoCalculation(from, to, player, round)
 	if err != nil {
-		log.Error().Err(err).Msg("")
+		log.Error().Err(err).Msg("Redo check failed.")
+		redo = true
 	}
+
 	if redo {
 		log.Debug().Msg("Redoing Traitor Combo calculations...")
-		response, err = db.TraitorCombos("*", from, to, round)
+		inputPlayer := player
+		if player == "" {
+			inputPlayer = "*"
+		}
+
+		response, err = db.TraitorCombos(inputPlayer, from, to, round)
 		if err != nil {
 			log.Error().Stack().Err(err).Msg("Failed getting traitor combos.")
 			http.Error(rw, "Failed getting traitor combos", http.StatusInternalServerError)
@@ -296,6 +294,7 @@ func TraitorCombos(rw http.ResponseWriter, req *http.Request) {
 		cache.From = from
 		cache.To = to
 		cache.Round = round
+		cache.Player = player
 	} else {
 		log.Debug().Msg("Using cached Traitor Combo response...")
 		response = cache.Response
