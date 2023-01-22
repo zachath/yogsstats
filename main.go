@@ -41,7 +41,15 @@ func main() {
 		ReadTimeout:  15 * time.Second,
 	}
 
+	go func() {
+		log.Fatal().Err(http.ListenAndServe(":80", http.HandlerFunc(redirectToTls))).Msg("")
+	}()
+
 	log.Info().Msgf("Server listening on port: %s", s.Addr)
 	err := s.ListenAndServeTLS("/etc/letsencrypt/live/yogsstats.com/fullchain.pem", "/etc/letsencrypt/live/yogsstats.com/privkey.pem")
 	log.Error().Err(err).Msg("Server exited.")
+}
+
+func redirectToTls(rw http.ResponseWriter, req *http.Request) {
+	http.Redirect(rw, req, "https://" + req.Host + req.RequestURI, http.StatusMovedPermanently)
 }
