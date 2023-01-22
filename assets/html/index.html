@@ -112,7 +112,7 @@
             google.charts.load('current', {'packages': ['corechart']}).then(
             async () => {
                 console.log("Fetching team wins data")
-                        const response = await fetch("http://yogsstats.com/stats/ttt/teamWins", {
+                        const response = await fetch("https://yogsstats.com/stats/ttt/teamWins", {
                         method: 'GET',
                         mode: 'cors',
                     })
@@ -151,7 +151,7 @@
         async function detectiveWinPercentages() {
             google.charts.load('current', {'packages': ['table']}).then(
                 async () => {
-                    const response = await fetch("http://yogsstats.com/stats/ttt/detectiveWinPercentage?round=true", {
+                    const response = await fetch("https://yogsstats.com/stats/ttt/detectiveWinPercentage?round=true", {
                         method: 'GET',
                         mode: 'cors',
                     })
@@ -193,7 +193,7 @@
             google.charts.load('current', {'packages': ['table']}).then(
                 async () => {
                     console.log("Fetching player win percentage data")
-                    const response = await fetch("http://yogsstats.com/stats/ttt/playerWinPercentage?round=true", {
+                    const response = await fetch("https://yogsstats.com/stats/ttt/playerWinPercentage?round=true", {
                         method: 'GET',
                         mode: 'cors',
                     })
@@ -250,7 +250,7 @@
             google.charts.load('current', {'packages': ['table']}).then(
                 async () => {
                     console.log("Fetching traitor combo data")
-                    const response = await fetch("http://yogsstats.com/stats/ttt/traitorCombos?round=true", {
+                    const response = await fetch("https://yogsstats.com/stats/ttt/traitorCombos?round=true", {
                         method: 'GET',
                         mode: 'cors',
                     })
@@ -313,7 +313,7 @@
             <script>
                 async function fetchMetaData() {
                     console.log("Fetching API meta data")
-                        const response = await fetch("http://yogsstats.com/stats/ttt/meta", {
+                        const response = await fetch("https://yogsstats.com/stats/ttt/meta", {
                         method: 'GET',
                         mode: 'cors',
                     })
