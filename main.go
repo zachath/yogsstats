@@ -42,6 +42,6 @@ func main() {
 	}
 
 	log.Info().Msgf("Server listening on port: %s", s.Addr)
-	err := s.ListenAndServe()
+	err := s.ListenAndServeTLS("/etc/letsencrypt/live/yogsstats.com/fullchain.pem", "/etc/letsencrypt/live/yogsstats.com/privkey.pem")
 	log.Error().Err(err).Msg("Server exited.")
 }
