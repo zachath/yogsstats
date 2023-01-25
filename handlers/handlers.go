@@ -94,7 +94,7 @@ func DateValidation(next http.HandlerFunc) http.HandlerFunc {
 
 		to := req.URL.Query().Get("to")
 		if to != "" {
-			err := verifyDate(from)
+			err := verifyDate(to)
 			if err != nil {
 				log.Error().Err(err).Msg("Invalid date format")
 				http.Error(rw, "Invalid date (to)", http.StatusBadRequest)
