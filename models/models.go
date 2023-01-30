@@ -21,4 +21,5 @@ type TTTPlayer struct {
 	Player
 	Role	string	`json:"role" db:"role"`
 	Team	string 	`json:"team" db:"team"`
+	Died	string	`json:"died" db:"died"`
 }
