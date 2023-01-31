@@ -119,20 +119,20 @@ func InsertRound(round *TTTRound) error {
 
 	defer tx.Rollback()
 
-	stmt, err := tx.Prepare("INSERT INTO video (title, vid) VALUES ($1, $2) ON CONFLICT DO NOTHING;")
+	stmt, err := tx.Prepare("INSERT INTO video (title, vid, intro_death) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING;")
 	if err != nil {
 		return errors.Wrapf(err, "Failed to prepare insert video statment of round with id %s", round.Id)
 	}
-	_, err = stmt.Exec(round.Title, round.Vid)
+	_, err = stmt.Exec(round.Title, round.Vid, round.IntroDeath)
 	if err != nil {
 		return errors.Wrapf(err, "Failed to insert video with id: %s of round with id %s", round.Vid, round.Id)
 	}
 
-	stmt, err = tx.Prepare("INSERT INTO round (id, date, winning_team, video, vid_start, vid_end, intro_death) VALUES ($1, $2, $3, $4, $5, $6, $7);")
+	stmt, err = tx.Prepare("INSERT INTO round (id, date, winning_team, video, vid_start, vid_end) VALUES ($1, $2, $3, $4, $5, $6);")
 	if err != nil {
 		return errors.Wrapf(err, "Failed to prepare insert round statment of round with id %s", round.Id)
 	}
-	_, err = stmt.Exec(round.Id, round.Date, round.WinningTeam, round.Vid, round.Start, round.End, round.IntroDeath)
+	_, err = stmt.Exec(round.Id, round.Date, round.WinningTeam, round.Vid, round.Start, round.End)
 	if err != nil {
 		return errors.Wrapf(err, "Failed to insert round with id %s", round.Id)
 	}
@@ -182,10 +182,10 @@ func GetRound(id, from, to string) ([]TTTRound, error) {
 	var query string
 	var err error
 	if id == "" {
-		query = "SELECT R.id, R.date, R.winning_team, R.intro_death, RP.player, RP.role, RP.team, RP.Died, V.Title, V.vid, R.vid_start, R.vid_end FROM round R JOIN round_participation RP ON RP.id = R.id JOIN video V ON R.id = RP.id AND V.vid = R.video WHERE R.date >= $1 AND R.date <= $2 ORDER BY R.id ASC;"
+		query = "SELECT R.id, R.date, R.winning_team, RP.player, RP.role, RP.team, RP.Died, V.Title, V.vid, V.intro_death, R.vid_start, R.vid_end FROM round R JOIN round_participation RP ON RP.id = R.id JOIN video V ON R.id = RP.id AND V.vid = R.video WHERE R.date >= $1 AND R.date <= $2 ORDER BY R.id ASC;"
 		err = db.Select(&rows, query, from, to)
 	} else {
-		query = "SELECT R.id, R.date, R.winning_team, R.intro_death, RP.player, RP.role, RP.team, RP.Died, V.Title, V.vid, R.vid_start, R.vid_end FROM round R JOIN round_participation RP ON RP.id = R.id JOIN video V ON R.id = RP.id AND V.vid = R.video WHERE R.id = $1 AND R.date >= $2 AND R.date <= $3 ORDER BY R.id ASC;"
+		query = "SELECT R.id, R.date, R.winning_team, RP.player, RP.role, RP.team, RP.Died, V.Title, V.vid, V.intro_death, R.vid_start, R.vid_end FROM round R JOIN round_participation RP ON RP.id = R.id JOIN video V ON R.id = RP.id AND V.vid = R.video WHERE R.id = $1 AND R.date >= $2 AND R.date <= $3 ORDER BY R.id ASC;"
 		err = db.Select(&rows, query, id, from, to)
 	}
 
