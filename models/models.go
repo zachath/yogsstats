@@ -12,6 +12,7 @@ type TTTRound struct {
 	Round
 	Players		[]TTTPlayer `json:"players" db:"players"`
 	WinningTeam	string		`json:"winningTeam" db:"winning_team"`
+	IntroDeath	string      `json:"introDeath" db:"intro_death"`
 }
 
 type Player struct {
