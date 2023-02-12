@@ -2,6 +2,7 @@ package main
 
 import (
 	//Go packages
+
 	"fmt"
 	"net/http"
 	"os"
@@ -26,17 +27,19 @@ func main() {
 	r := mux.NewRouter()
 	r.HandleFunc("/", RootHandler)
 	r.HandleFunc("/readme", SetHeaders(ReadMeHandler)).Methods(http.MethodGet)
-	r.HandleFunc("/stats/ttt", SetHeaders(ValidatePost(ValidateTTTInput(PostTTTRound)))).Methods(http.MethodPost)
+	r.HandleFunc("/stats/ttt", SetHeaders(ValidatePost(ValidateTTTRoundPost(PostTTTRound)))).Methods(http.MethodPost)
 	r.HandleFunc("/stats/ttt", SetHeaders(DateValidation(GetTTTRound))).Methods(http.MethodGet)
 	r.HandleFunc("/stats/ttt/meta", SetHeaders(APIMetaData)).Methods(http.MethodGet)
 	r.HandleFunc("/stats/ttt/teamWins", SetHeaders(DateValidation(TeamWins))).Methods(http.MethodGet)
 	r.HandleFunc("/stats/ttt/playerWinPercentage", SetHeaders(DateValidation(PlayerWinPercentage))).Methods(http.MethodGet)
 	r.HandleFunc("/stats/ttt/detectiveWinPercentage", SetHeaders(DateValidation(DetectiveWinPercentage))).Methods(http.MethodGet)
 	r.HandleFunc("/stats/ttt/traitorCombos", SetHeaders(DateValidation(TraitorCombos))).Methods(http.MethodGet)
+	r.HandleFunc("/stats/ttt/videos", SetHeaders(DateValidation(GetVideo))).Methods(http.MethodGet)
+	r.HandleFunc("/stats/ttt/videos", SetHeaders(ValidatePost(ValidateVideoPost(PostVideo)))).Methods(http.MethodPost)
 
 	s := &http.Server{
-		Handler: r,
-		Addr: fmt.Sprintf(":%s", os.Getenv("PORT")),
+		Handler:      r,
+		Addr:         fmt.Sprintf(":%s", os.Getenv("PORT")),
 		WriteTimeout: 15 * time.Second,
 		ReadTimeout:  15 * time.Second,
 	}
@@ -51,5 +54,5 @@ func main() {
 }
 
 func redirectToTls(rw http.ResponseWriter, req *http.Request) {
-	http.Redirect(rw, req, "https://" + req.Host + req.RequestURI, http.StatusMovedPermanently)
+	http.Redirect(rw, req, "https://"+req.Host+req.RequestURI, http.StatusMovedPermanently)
 }

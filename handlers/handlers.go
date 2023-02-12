@@ -20,12 +20,12 @@ import (
 func ValidatePost(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		hashedPass := os.Getenv("POST_PASS")
-		
+
 		err := bcrypt.CompareHashAndPassword([]byte(hashedPass), []byte(req.Header.Get("X-Access-Token")))
 
 		if err != nil {
 			log.Error().Err(err).Msg("POST ATTEMTED USING INVALID PASSWORD!!!")
-			http.Error(rw, "", http.StatusNotFound)
+			http.Error(rw, "", http.StatusForbidden)
 			b, _ := bcrypt.GenerateFromPassword([]byte(req.Header.Get("X-Access-Token")), 10)
 			log.Debug().Str("Got", string(b)).Str("expected", hashedPass).Msg("")
 			return
@@ -35,11 +35,39 @@ func ValidatePost(next http.HandlerFunc) http.HandlerFunc {
 	})
 }
 
-func ValidateTTTInput(next http.HandlerFunc) http.HandlerFunc {
+func ValidateVideoPost(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		ctx := req.Context()
 
-		var round TTTRound
+		var video Video
+		defer req.Body.Close()
+
+		reqBody, err := ioutil.ReadAll(req.Body)
+		if err != nil {
+			log.Error().Err(err).Stack().Msg("Parsing body to video failed")
+			http.Error(rw, "Could not parse input data", http.StatusBadRequest)
+			return
+		}
+
+		err = json.Unmarshal(reqBody, &video)
+		if err != nil {
+			log.Error().Err(err).Stack().Msg("Unmarshaling failed")
+			http.Error(rw, "Could not marshal input data", http.StatusBadRequest)
+			return
+		}
+
+		ctx = context.WithValue(ctx, "video", video)
+		req = req.WithContext(ctx)
+
+		next(rw, req)
+	})
+}
+
+func ValidateTTTRoundPost(next http.HandlerFunc) http.HandlerFunc {
+	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		ctx := req.Context()
+
+		var round Round
 		defer req.Body.Close()
 
 		reqBody, err := ioutil.ReadAll(req.Body)

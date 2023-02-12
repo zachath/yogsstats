@@ -13,15 +13,15 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/rs/zerolog/log"
 
-	. "yogsstats/models"
+	models "yogsstats/models"
 )
 
 var (
-	user = "postgres"
-	password = os.Getenv("PQ_PASS")
-	dbIp = os.Getenv("HOST") + ":5432"
-	connectionStringTTT = fmt.Sprintf("postgresql://%s:%s@%s/%s", user, password, dbIp, "ttt")
-	db *sqlx.DB = initDB(connectionStringTTT)
+	user                         = "postgres"
+	password                     = os.Getenv("PQ_PASS")
+	dbIp                         = os.Getenv("HOST") + ":5432"
+	connectionStringTTT          = fmt.Sprintf("postgresql://%s:%s@%s/%s", user, password, dbIp, "ttt")
+	db                  *sqlx.DB = initDB(connectionStringTTT)
 )
 
 func initDB(connectionString string) *sqlx.DB {
@@ -57,9 +57,7 @@ func getEntries(table, column, value string) ([]string, error) {
 	}
 
 	var entries []string
-	for _, t := range rows {
-		entries = append(entries, t)
-	}
+	entries = append(entries, rows...)
 
 	return entries, nil
 }
@@ -91,8 +89,8 @@ func GetNewestRoundInfo() (RoundInfo, error) {
 }
 
 type RoundInfo struct {
-	Id 		string `json:"id"`
-	Date 	string `json:"date"`
+	Id   string `json:"id"`
+	Date string `json:"date"`
 }
 
 func getRoundInfo(sort string) (RoundInfo, error) {
@@ -111,7 +109,48 @@ func getRoundInfo(sort string) (RoundInfo, error) {
 	return info[0], nil
 }
 
-func InsertRound(round *TTTRound) error {
+func InsertVideo(video *models.Video) error {
+	tx, err := db.Begin()
+	if err != nil {
+		return errors.Wrapf(err, "Failed to initialize transaction of video with Vid %s", video.Vid)
+	}
+
+	defer tx.Rollback()
+
+	stmt, err := tx.Prepare("INSERT INTO video (title, vid, intro_death, date) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING;")
+	if err != nil {
+		return errors.Wrapf(err, "Failed to prepare insert video statment of video with vid %s", video.Vid)
+	}
+	_, err = stmt.Exec(video.Title, video.Vid, video.IntroDeath, video.Date)
+	if err != nil {
+		return errors.Wrapf(err, "Failed to insert video with vid: %s", video.Vid)
+	}
+
+	tx.Commit()
+
+	log.Info().Str("video", video.Vid).Msgf("Inserted video into database")
+	return nil
+}
+
+func checkVideoExists(vid string) error {
+	len, err := CountRows("video", fmt.Sprintf("vid = '%s'", vid))
+	if err != nil {
+		return err
+	}
+
+	if len != 1 {
+		return errors.New("No video found")
+	}
+
+	return nil
+}
+
+func InsertRound(round *models.Round) error {
+	err := checkVideoExists(round.Vid)
+	if err != nil {
+		return errors.Wrapf(err, "Video with vid %s does not exist in database.", round.Vid)
+	}
+
 	tx, err := db.Begin()
 	if err != nil {
 		return errors.Wrapf(err, "Failed to initialize transaction of round with id %s", round.Id)
@@ -119,16 +158,7 @@ func InsertRound(round *TTTRound) error {
 
 	defer tx.Rollback()
 
-	stmt, err := tx.Prepare("INSERT INTO video (title, vid, intro_death) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING;")
-	if err != nil {
-		return errors.Wrapf(err, "Failed to prepare insert video statment of round with id %s", round.Id)
-	}
-	_, err = stmt.Exec(round.Title, round.Vid, round.IntroDeath)
-	if err != nil {
-		return errors.Wrapf(err, "Failed to insert video with id: %s of round with id %s", round.Vid, round.Id)
-	}
-
-	stmt, err = tx.Prepare("INSERT INTO round (id, date, winning_team, video, vid_start, vid_end) VALUES ($1, $2, $3, $4, $5, $6);")
+	stmt, err := tx.Prepare("INSERT INTO round (id, date, winning_team, video, vid_start, vid_end) VALUES ($1, $2, $3, $4, $5, $6);")
 	if err != nil {
 		return errors.Wrapf(err, "Failed to prepare insert round statment of round with id %s", round.Id)
 	}
@@ -159,22 +189,59 @@ func InsertRound(round *TTTRound) error {
 	return nil
 }
 
-func GetRound(id, from, to string) ([]TTTRound, error) {
-	rounds := []TTTRound{}
+func GetVideo(vid, from, to string) ([]models.Video, error) {
+	videos := []models.Video{}
 
 	type row struct {
-		Id				int
-		Date			string
-		WinningTeam		string `db:"winning_team"`
-		Player			string
-		Role			string
-		Team			string
-		Died			string
-		Title			string
-		Vid				string
-		Start			int		`db:"vid_start"`
-		End				int		`db:"vid_end"`
-		IntroDeath		string  `db:"intro_death"`
+		Title      string
+		Date       string
+		Vid        string
+		IntroDeath string `db:"intro_death"`
+	}
+
+	rows := []row{}
+
+	var query string
+	var err error
+	if vid == "" {
+		query = "SELECT * FROM video WHERE date >= $1 AND date <= $2 ORDER BY date DESC;"
+		err = db.Select(&rows, query, from, to)
+	} else {
+		query = "SELECT * FROM video WHERE vid = $1 AND date >= $2 AND date <= $3 ORDER BY date DESC;"
+		err = db.Select(&rows, query, vid, from, to)
+	}
+
+	if err != nil {
+		return nil, errors.Wrapf(err, "Failed to query the database, video vid = %s", vid)
+	}
+
+	if len(rows) == 0 {
+		log.Debug().Msg("No rows found")
+		return nil, nil
+	}
+
+	for _, row := range rows {
+		video := models.Video{Vid: row.Vid, Date: row.Date, IntroDeath: row.IntroDeath, Title: row.Title}
+		videos = append(videos, video)
+	}
+
+	return videos, nil
+}
+
+func GetRound(id, from, to string) ([]models.Round, error) {
+	rounds := []models.Round{}
+
+	type row struct {
+		Id          int
+		Date        string
+		WinningTeam string `db:"winning_team"`
+		Player      string
+		Role        string
+		Team        string
+		Died        string
+		Vid         string
+		Start       int `db:"vid_start"`
+		End         int `db:"vid_end"`
 	}
 
 	rows := []row{}
@@ -182,10 +249,10 @@ func GetRound(id, from, to string) ([]TTTRound, error) {
 	var query string
 	var err error
 	if id == "" {
-		query = "SELECT R.id, R.date, R.winning_team, RP.player, RP.role, RP.team, RP.Died, V.Title, V.vid, V.intro_death, R.vid_start, R.vid_end FROM round R JOIN round_participation RP ON RP.id = R.id JOIN video V ON R.id = RP.id AND V.vid = R.video WHERE R.date >= $1 AND R.date <= $2 ORDER BY R.id ASC;"
+		query = "SELECT R.id, R.date, R.winning_team, RP.player, RP.role, RP.team, RP.Died, V.vid, R.vid_start, R.vid_end FROM round R JOIN round_participation RP ON RP.id = R.id JOIN video V ON R.id = RP.id AND V.vid = R.video WHERE R.date >= $1 AND R.date <= $2 ORDER BY R.id DESC;"
 		err = db.Select(&rows, query, from, to)
 	} else {
-		query = "SELECT R.id, R.date, R.winning_team, RP.player, RP.role, RP.team, RP.Died, V.Title, V.vid, V.intro_death, R.vid_start, R.vid_end FROM round R JOIN round_participation RP ON RP.id = R.id JOIN video V ON R.id = RP.id AND V.vid = R.video WHERE R.id = $1 AND R.date >= $2 AND R.date <= $3 ORDER BY R.id ASC;"
+		query = "SELECT R.id, R.date, R.winning_team, RP.player, RP.role, RP.team, RP.Died, V.vid, R.vid_start, R.vid_end FROM round R JOIN round_participation RP ON RP.id = R.id JOIN video V ON R.id = RP.id AND V.vid = R.video WHERE R.id = $1 AND R.date >= $2 AND R.date <= $3 ORDER BY R.id DESC;"
 		err = db.Select(&rows, query, id, from, to)
 	}
 
@@ -198,17 +265,17 @@ func GetRound(id, from, to string) ([]TTTRound, error) {
 		return nil, nil
 	}
 
-	var round TTTRound
+	var round models.Round
 	for _, row := range rows {
 		if round.Id != strconv.Itoa(row.Id) {
 			if round.Id != "" {
 				rounds = append(rounds, round)
 			}
 
-			round = TTTRound{Round: Round{Id: strconv.Itoa(row.Id), Date: row.Date, Title: row.Title, Vid: row.Vid, Start: row.Start, End: row.End}, WinningTeam: row.WinningTeam, IntroDeath: row.IntroDeath}
+			round = models.Round{Id: strconv.Itoa(row.Id), Date: row.Date, Vid: row.Vid, Start: row.Start, End: row.End, WinningTeam: row.WinningTeam}
 		}
 
-		round.Players = append(round.Players, TTTPlayer{Player: Player{Name: row.Player}, Role: row.Role, Team: row.Team, Died: row.Died})
+		round.Players = append(round.Players, models.Player{Name: row.Player, Role: row.Role, Team: row.Team, Died: row.Died})
 	}
 
 	rounds = append(rounds, round)
@@ -218,12 +285,12 @@ func GetRound(id, from, to string) ([]TTTRound, error) {
 }
 
 func roundup(f float64) (float64, error) {
-	return strconv.ParseFloat(fmt.Sprintf("%.3f", (math.Round(f/0.001) * 0.001)), 64)
+	return strconv.ParseFloat(fmt.Sprintf("%.3f", (math.Round(f/0.001)*0.001)), 64)
 }
 
 type TeamWinPercentageResponse struct {
-	Feedback string	`json:"feedback"`
-	Total	int	`json:"total"`
+	Feedback string         `json:"feedback"`
+	Total    int            `json:"total"`
 	Response map[string]int `json:"teams"`
 }
 
@@ -262,12 +329,12 @@ func TeamWins(team, from, to string) (TeamWinPercentageResponse, error) {
 }
 
 type TeamsWinPercentage struct {
-	Teams 			map[string]float64 `json:"teams"`
-	RoundsPlayed	int					`json:"roundsPlayed"`
+	Teams        map[string]float64 `json:"teams"`
+	RoundsPlayed int                `json:"roundsPlayed"`
 }
 type PlayerWinPercentageResponse struct {
-	Feedback string 						`json:"feedback"`
-	Players map[string]TeamsWinPercentage 	`json:"players"`
+	Feedback string                        `json:"feedback"`
+	Players  map[string]TeamsWinPercentage `json:"players"`
 }
 
 func PlayerWinPercentage(player, from, to string, round bool) (PlayerWinPercentageResponse, error) {
@@ -277,8 +344,8 @@ func PlayerWinPercentage(player, from, to string, round bool) (PlayerWinPercenta
 	}
 
 	type row struct {
-		Team	string
-		Win		string `db:"winning_team"`
+		Team string
+		Win  string `db:"winning_team"`
 	}
 
 	response := PlayerWinPercentageResponse{
@@ -327,7 +394,7 @@ func PlayerWinPercentage(player, from, to string, round bool) (PlayerWinPercenta
 			}
 		}
 
-		entry, _ := response.Players[player]
+		entry := response.Players[player]
 		entry.RoundsPlayed = roundsPlayed
 		response.Players[player] = entry
 	}
@@ -337,12 +404,12 @@ func PlayerWinPercentage(player, from, to string, round bool) (PlayerWinPercenta
 }
 
 type DetectiveWinPercentageEntry struct {
-	WinRate 		float64
-	RoundsPlayed	int
+	WinRate      float64
+	RoundsPlayed int
 }
 type DetecitveWinPercentageResponse struct {
-	Feedback string 			`json:"feedback"`
-	Players map[string]DetectiveWinPercentageEntry 	`json:"players"`
+	Feedback string                                 `json:"feedback"`
+	Players  map[string]DetectiveWinPercentageEntry `json:"players"`
 }
 
 func DetectiveWinPercentage(player, from, to string, canon, round bool) (DetecitveWinPercentageResponse, error) {
@@ -377,8 +444,8 @@ func detectiveWinPercentage(player, from, to string, round bool) (float64, int, 
 	query := "SELECT R.winning_team FROM round_participation RP JOIN round R ON RP.id = R.id JOIN role RO ON RP.role = RO.role WHERE RP.player = $1 AND date >= $2 AND date <= $3 AND RO.detective = 'd';"
 
 	type row struct {
-		Role	string 
-		Win		string `db:"winning_team"`
+		Role string
+		Win  string `db:"winning_team"`
 	}
 
 	var rows []row
@@ -409,12 +476,12 @@ func detectiveWinPercentage(player, from, to string, round bool) (float64, int, 
 }
 
 type TraitorComboEntry struct {
-	RoundsTogether 	int
-	WinRate			float64
+	RoundsTogether int
+	WinRate        float64
 }
 type TraitorCombosResponse struct {
-	Feedback string	`json:"feedback"`
-	Combos map[string]map[string]TraitorComboEntry `json:"combos"`
+	Feedback string                                  `json:"feedback"`
+	Combos   map[string]map[string]TraitorComboEntry `json:"combos"`
 }
 
 func TraitorCombos(player, from, to string, round bool) (TraitorCombosResponse, error) {
@@ -437,7 +504,7 @@ func TraitorCombos(player, from, to string, round bool) (TraitorCombosResponse, 
 		}
 		for _, other := range allPlayers {
 			if _, alreadyDone := response.Combos[player][other]; other != player && !alreadyDone {
-				comboWinRate, err, commonRounds := getTraitorWinRate(playerRounds, other, from, to, round)
+				comboWinRate, commonRounds, err := getTraitorWinRate(playerRounds, other, from, to, round)
 				if err != nil {
 					log.Error().Err(err).Msg("")
 					return TraitorCombosResponse{Feedback: "Error getting combo win %"}, errors.Wrapf(err, "Error getting combo win percentage, player = %s & other = %s", player, other)
@@ -446,7 +513,7 @@ func TraitorCombos(player, from, to string, round bool) (TraitorCombosResponse, 
 				if commonRounds == 0 {
 					continue
 				}
-				
+
 				if response.Combos[player] == nil {
 					response.Combos[player] = make(map[string]TraitorComboEntry)
 				}
@@ -467,10 +534,10 @@ func TraitorCombos(player, from, to string, round bool) (TraitorCombosResponse, 
 	return response, nil
 }
 
-func getTraitorWinRate(player1Rounds []traitorRound, player2, from, to string, round bool) (float64, error, int) {
+func getTraitorWinRate(player1Rounds []traitorRound, player2, from, to string, round bool) (float64, int, error) {
 	player2Rounds, err := getTraitorRounds(player2, from, to)
 	if err != nil {
-		return -1, err, 0
+		return -1, 0, err
 	}
 
 	var len int
@@ -487,21 +554,21 @@ func getTraitorWinRate(player1Rounds []traitorRound, player2, from, to string, r
 	}
 
 	if len == 0 {
-		return 0, nil, len
+		return 0, len, err
 	}
 
 	rate := wins / float64(len)
 
 	if round {
 		f, err := roundup(rate)
-		return f, err, len
+		return f, len, err
 	}
 
-	return rate, nil, len
+	return rate, len, nil
 }
 
 type traitorRound struct {
-	Id string
+	Id  string
 	Win string `db:"winning_team"`
 }
 

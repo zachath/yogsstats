@@ -36,9 +36,59 @@ func ReadMeHandler(rw http.ResponseWriter, req *http.Request) {
 	rw.Write(html)
 }
 
+func GetVideo(rw http.ResponseWriter, req *http.Request) {
+	var videos []Video
+	var err error
+
+	vid := req.URL.Query().Get("vid")
+	from := req.Context().Value("from").(string)
+	to := req.Context().Value("to").(string)
+
+	setTimeBox(&from, &to)
+
+	videos, err = db.GetVideo(vid, from, to)
+
+	if err != nil {
+		log.Error().Stack().Err(err).Msgf("Failed to get video")
+		http.Error(rw, fmt.Sprintf("Failed to get video: %s", vid), http.StatusInternalServerError)
+		return
+	}
+
+	if videos == nil {
+		http.Error(rw, "No rounds found.", http.StatusNotFound)
+		return
+	}
+
+	for index := range videos {
+		videos[index].Date = stupid.FixStupidDate(videos[index].Date)
+	}
+
+	rw.Header().Set("Content-Type", "application/json")
+	rw.WriteHeader(http.StatusOK)
+
+	log.Info().Msg("Served Get videos request!")
+
+	json.NewEncoder(rw).Encode(videos)
+}
+
+func PostVideo(rw http.ResponseWriter, req *http.Request) {
+	video := req.Context().Value("video").(Video)
+
+	err := db.InsertVideo(&video)
+	if err != nil {
+		log.Error().Stack().Err(err).Msg("Round insertion failed.")
+		http.Error(rw, fmt.Sprintf("Failed to add POSTed round with id %s to database", video.Vid), http.StatusInternalServerError)
+		return
+	}
+
+	log.Info().Msg("Served TTT Round POST request!")
+
+	io.WriteString(rw, "POSTed round successfully")
+}
+
 func GetTTTRound(rw http.ResponseWriter, req *http.Request) {
-	var rounds []TTTRound
-	var err	error
+	var rounds []Round
+	var err error
 
 	id := req.URL.Query().Get("id")
 	from := req.Context().Value("from").(string)
@@ -55,7 +105,7 @@ func GetTTTRound(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	if rounds == nil {
-		http.Error(rw, fmt.Sprint("No rounds found."), http.StatusNotFound)
+		http.Error(rw, "No rounds found.", http.StatusNotFound)
 		return
 	}
 
@@ -72,7 +122,7 @@ func GetTTTRound(rw http.ResponseWriter, req *http.Request) {
 }
 
 func PostTTTRound(rw http.ResponseWriter, req *http.Request) {
-	round := req.Context().Value("round").(TTTRound)
+	round := req.Context().Value("round").(Round)
 
 	err := db.InsertRound(&round)
 	if err != nil {
@@ -81,7 +131,7 @@ func PostTTTRound(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	log.Info().Msg("Served POST request!")
+	log.Info().Msg("Served TTT Round POST request!")
 
 	io.WriteString(rw, "POSTed round successfully")
 }
@@ -109,7 +159,7 @@ func TeamWins(rw http.ResponseWriter, req *http.Request) {
 	delete(response.Response, "none")
 
 	log.Info().Msg("Served Team Win Percentage request!")
-	
+
 	json.NewEncoder(rw).Encode(response)
 }
 
@@ -122,7 +172,7 @@ func PlayerWinPercentage(rw http.ResponseWriter, req *http.Request) {
 	if req.URL.Query().Get("round") == "true" {
 		round = true
 	}
-	
+
 	var err error
 
 	setTimeBox(&from, &to)
@@ -142,7 +192,7 @@ func PlayerWinPercentage(rw http.ResponseWriter, req *http.Request) {
 	for player := range response.Players {
 		delete(response.Players[player].Teams, "none")
 	}
-	
+
 	log.Info().Msg("Served player win percentage request!")
 
 	json.NewEncoder(rw).Encode(response)
@@ -179,7 +229,7 @@ func DetectiveWinPercentage(rw http.ResponseWriter, req *http.Request) {
 		http.Error(rw, "Failed getting detective win percentage.", http.StatusInternalServerError)
 		return
 	}
-	
+
 	log.Info().Msg("Served detective win percentage request!")
 
 	json.NewEncoder(rw).Encode(response)
@@ -187,9 +237,9 @@ func DetectiveWinPercentage(rw http.ResponseWriter, req *http.Request) {
 
 func APIMetaData(rw http.ResponseWriter, req *http.Request) {
 	type MetaResponse struct {
-		Count 		int 			`json:"roundCount"`
-		OldestRound db.RoundInfo 	`json:"oldestRound"`
-		NewestRound db.RoundInfo 	`json:"newestRound"`
+		Count       int          `json:"roundCount"`
+		OldestRound db.RoundInfo `json:"oldestRound"`
+		NewestRound db.RoundInfo `json:"newestRound"`
 	}
 
 	count, err := db.CountRows("round", "")
@@ -217,7 +267,7 @@ func APIMetaData(rw http.ResponseWriter, req *http.Request) {
 	oldestRound.Date = stupid.FixStupidDate(oldestRound.Date)
 
 	response := MetaResponse{
-		Count: count,
+		Count:       count,
 		OldestRound: oldestRound,
 		NewestRound: newestRound,
 	}
@@ -228,12 +278,12 @@ func APIMetaData(rw http.ResponseWriter, req *http.Request) {
 }
 
 type traitorComboCache struct {
-	LatestRound	int
-	Response 	db.TraitorCombosResponse
-	From		string
-	To			string
-	Round		bool
-	Player		string
+	LatestRound int
+	Response    db.TraitorCombosResponse
+	From        string
+	To          string
+	Round       bool
+	Player      string
 }
 
 var cache = traitorComboCache{LatestRound: -1}
@@ -299,7 +349,7 @@ func TraitorCombos(rw http.ResponseWriter, req *http.Request) {
 		log.Debug().Msg("Using cached Traitor Combo response...")
 		response = cache.Response
 	}
-	
+
 	log.Info().Msg("Served Traitor Combos request request!")
 
 	json.NewEncoder(rw).Encode(response)
