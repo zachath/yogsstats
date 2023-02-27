@@ -328,9 +328,15 @@ func TeamWins(team, from, to string) (TeamWinPercentageResponse, error) {
 	return response, nil
 }
 
+type PercentageEntry struct {
+	Percentage    float64 `json:"percentage"`
+	Wins          int     `json:"wins"`
+	RoundPlayedAs int     `json:"rounds"`
+}
+
 type TeamsWinPercentage struct {
-	Teams        map[string]float64 `json:"teams"`
-	RoundsPlayed int                `json:"roundsPlayed"`
+	Teams        map[string]PercentageEntry `json:"teams"`
+	RoundsPlayed int                        `json:"roundsPlayed"`
 }
 type PlayerWinPercentageResponse struct {
 	Feedback string                        `json:"feedback"`
@@ -359,7 +365,7 @@ func PlayerWinPercentage(player, from, to string, round bool) (PlayerWinPercenta
 			return PlayerWinPercentageResponse{Feedback: "Error getting entries"}, errors.Wrap(err, "Error getting entries")
 		}
 
-		response.Players[player] = TeamsWinPercentage{Teams: make(map[string]float64)}
+		response.Players[player] = TeamsWinPercentage{Teams: make(map[string]PercentageEntry)}
 		for _, team := range teams {
 			query := "SELECT RP.team, R.winning_team FROM round_participation RP JOIN round R ON RP.id = R.id WHERE RP.player = $1 AND R.date >= $2 AND R.date <= $3 AND RP.team = $4;"
 			var rows []row
@@ -386,11 +392,11 @@ func PlayerWinPercentage(player, from, to string, round bool) (PlayerWinPercenta
 				f, err := roundup(result)
 				if err != nil {
 					log.Error().Err(err).Msg("Failed to round result.")
-					response.Players[player].Teams[team] = result
+					response.Players[player].Teams[team] = PercentageEntry{Percentage: result, Wins: wins, RoundPlayedAs: len(rows)}
 				}
-				response.Players[player].Teams[team] = f
+				response.Players[player].Teams[team] = PercentageEntry{Percentage: f, Wins: wins, RoundPlayedAs: len(rows)}
 			} else {
-				response.Players[player].Teams[team] = result
+				response.Players[player].Teams[team] = PercentageEntry{Percentage: result, Wins: wins, RoundPlayedAs: len(rows)}
 			}
 		}
 

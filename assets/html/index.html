@@ -219,7 +219,7 @@
                         row = [name, roundsPlayed, -1, -1, -1, -1, -1, -1]
 
                         for (let [team, rate] of new Map(Object.entries(entries.teams))) {
-                            ratePercent = Math.round((rate * 100) *10) / 10
+                            ratePercent = Math.round((rate.percentage * 100) *10) / 10
                             row[teams.get(team)] = ratePercent
                         }
 
