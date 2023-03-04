@@ -44,3 +44,12 @@ type TeamWinPercentageResponse struct {
 	Total    int            `json:"total"`
 	Response map[string]int `json:"teams"`
 }
+
+type DetectiveWinPercentageEntry struct {
+	WinRate      float64
+	RoundsPlayed int
+}
+type DetecitveWinPercentageResponse struct {
+	Feedback string                                 `json:"feedback"`
+	Players  map[string]DetectiveWinPercentageEntry `json:"players"`
+}

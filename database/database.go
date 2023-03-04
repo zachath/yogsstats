@@ -305,76 +305,28 @@ func GetRoundParticipationTeamsByPlayer(player, from, to, team string) ([]RoundP
 	return rows, nil
 }
 
-type DetectiveWinPercentageEntry struct {
-	WinRate      float64
-	RoundsPlayed int
-}
-type DetecitveWinPercentageResponse struct {
-	Feedback string                                 `json:"feedback"`
-	Players  map[string]DetectiveWinPercentageEntry `json:"players"`
-}
+func InnocentWinsByPlayer(player, from, to string, round bool) (int, error) {
+	query := "SELECT COUNT(*) FROM round_participation RP JOIN round R ON RP.id = R.id JOIN role RO ON RP.role = RO.role WHERE RP.player = $1 AND date >= $2 AND date <= $3 AND RO.detective = 'd' AND R.winning_team = 'innocents';"
 
-func DetectiveWinPercentage(player, from, to string, canon, round bool) (DetecitveWinPercentageResponse, error) {
-	players, err := GetEntries("player", "name", player)
+	var wins []int
+	err := db.Select(&wins, query, player, from, to)
 	if err != nil {
-		return DetecitveWinPercentageResponse{Feedback: "Error getting entries"}, errors.Wrap(err, "Error getting entries")
+		return -1, errors.Wrap(err, "Error counting innocent wins")
 	}
 
-	response := DetecitveWinPercentageResponse{
-		Players: make(map[string]DetectiveWinPercentageEntry),
-	}
-
-	for _, player := range players {
-		dWin, roundsPlayed, err := detectiveWinPercentage(player, from, to, round)
-		if err != nil {
-			return DetecitveWinPercentageResponse{Feedback: fmt.Sprintf("Error getting detective win percentage (%s)", player)}, errors.Wrap(err, "Error getting detective win percentage")
-		}
-
-		if canon && player == "Zylus" {
-			log.Info().Msg("Canon rounds, setting detective win percentage of Zylus to 1.")
-			dWin = 1
-		}
-
-		response.Players[player] = DetectiveWinPercentageEntry{WinRate: dWin, RoundsPlayed: roundsPlayed}
-	}
-
-	response.Feedback = "Successfull request"
-	return response, nil
+	return wins[0], nil
 }
 
-func detectiveWinPercentage(player, from, to string, round bool) (float64, int, error) {
-	query := "SELECT R.winning_team FROM round_participation RP JOIN round R ON RP.id = R.id JOIN role RO ON RP.role = RO.role WHERE RP.player = $1 AND date >= $2 AND date <= $3 AND RO.detective = 'd';"
+func DetectiveRoundsByPlayer(player, from, to string) (int, error) {
+	query := "SELECT COUNT(*) FROM round_participation RP JOIN round R ON RP.id = R.id JOIN role RO ON RP.role = RO.role WHERE RP.player = $1 AND date >= $2 AND date <= $3 AND RO.detective = 'd';"
 
-	type row struct {
-		Role string
-		Win  string `db:"winning_team"`
-	}
-
-	var rows []row
-	err := db.Select(&rows, query, player, from, to)
+	var rounds []int
+	err := db.Select(&rounds, query, player, from, to)
 	if err != nil {
-		return -1, -1, errors.Wrap(err, "Error selecting with detective query")
+		return -1, errors.Wrap(err, "Error counting innocent wins")
 	}
 
-	if len(rows) == 0 {
-		return 0, 0, nil
-	}
-
-	var wins float64
-	for _, row := range rows {
-		if row.Win == "innocents" {
-			wins++
-		}
-	}
-
-	rate := wins / float64(len(rows))
-
-	if round {
-		rate, err := roundup(rate)
-		return rate, len(rows), err
-	}
-
-	return rate, len(rows), nil
+	return rounds[0], nil
 }
 
 type TraitorComboEntry struct {

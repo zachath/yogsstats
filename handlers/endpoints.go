@@ -218,12 +218,12 @@ func DetectiveWinPercentage(rw http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	var response db.DetecitveWinPercentageResponse
+	var response DetecitveWinPercentageResponse
 	if player == "" {
 		player = "*"
 	}
 
-	response, err = db.DetectiveWinPercentage(player, from, to, canon, round)
+	response, err = CalculateDetectiveWinPercentage(player, from, to, canon, round)
 	if err != nil {
 		log.Error().Stack().Err(err).Msg("Failed getting detective win percentage.")
 		http.Error(rw, "Failed getting detective win percentage.", http.StatusInternalServerError)

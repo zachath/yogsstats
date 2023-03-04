@@ -108,6 +108,52 @@ func CalculateTeamWins(team, from, to string) (TeamWinPercentageResponse, error)
 	return response, nil
 }
 
+func CalculateDetectiveWinPercentage(player, from, to string, canon, round bool) (DetecitveWinPercentageResponse, error) {
+	players, err := db.GetEntries("player", "name", player)
+	if err != nil {
+		return DetecitveWinPercentageResponse{Feedback: "Error getting entries"}, errors.Wrap(err, "Error getting entries")
+	}
+
+	response := DetecitveWinPercentageResponse{
+		Players: make(map[string]DetectiveWinPercentageEntry),
+	}
+
+	for _, player := range players {
+		dWins, err := db.InnocentWinsByPlayer(player, from, to, round)
+		if err != nil {
+			return DetecitveWinPercentageResponse{Feedback: fmt.Sprintf("Error getting detective win percentage (%s)", player)}, errors.Wrap(err, "Error getting detective win percentage")
+		}
+
+		roundsPlayed, err := db.DetectiveRoundsByPlayer(player, from, to)
+		if err != nil {
+			return DetecitveWinPercentageResponse{Feedback: fmt.Sprintf("Error getting detective win percentage (%s)", player)}, errors.Wrap(err, "Error getting detective win percentage")
+		}
+
+		if roundsPlayed == 0 {
+			return DetecitveWinPercentageResponse{Feedback: "Successfull request"}, nil
+		}
+
+		dWin := float64(dWins) / float64(roundsPlayed)
+
+		if round {
+			dWin, err = roundup(dWin)
+			if err != nil {
+				return DetecitveWinPercentageResponse{Feedback: "Failed roduning results"}, errors.Wrap(err, "failed rouding results")
+			}
+		}
+
+		if canon && player == "Zylus" {
+			log.Info().Msg("Canon flag set to true, setting detective win percentage of Zylus to 1.")
+			dWin = 1
+		}
+
+		response.Players[player] = DetectiveWinPercentageEntry{WinRate: dWin, RoundsPlayed: roundsPlayed}
+	}
+
+	response.Feedback = "Successfull request"
+	return response, nil
+}
+
 func roundup(f float64) (float64, error) {
 	return strconv.ParseFloat(fmt.Sprintf("%.3f", (math.Round(f/0.001)*0.001)), 64)
 }
