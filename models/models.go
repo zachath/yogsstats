@@ -38,3 +38,9 @@ type PlayerWinPercentageResponse struct {
 	Feedback string                        `json:"feedback"`
 	Players  map[string]TeamsWinPercentage `json:"players"`
 }
+
+type TeamWinPercentageResponse struct {
+	Feedback string         `json:"feedback"`
+	Total    int            `json:"total"`
+	Response map[string]int `json:"teams"`
+}

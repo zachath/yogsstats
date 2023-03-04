@@ -288,46 +288,6 @@ func roundup(f float64) (float64, error) {
 	return strconv.ParseFloat(fmt.Sprintf("%.3f", (math.Round(f/0.001)*0.001)), 64)
 }
 
-type TeamWinPercentageResponse struct {
-	Feedback string         `json:"feedback"`
-	Total    int            `json:"total"`
-	Response map[string]int `json:"teams"`
-}
-
-func TeamWins(team, from, to string) (TeamWinPercentageResponse, error) {
-	teams, err := GetEntries("team", "team", team)
-	if err != nil {
-		return TeamWinPercentageResponse{Feedback: "Error getting entries."}, errors.Wrap(err, "Error getting entries")
-	}
-
-	totalRounds, err := CountRows("round", fmt.Sprintf("date >= '%s' AND date <= '%s'", from, to))
-	if err != nil {
-		return TeamWinPercentageResponse{Feedback: "Error counting rows."}, errors.Wrap(err, "Error counting rows")
-	}
-
-	var response TeamWinPercentageResponse
-	response.Response = map[string]int{}
-
-	response.Total = totalRounds
-
-	if totalRounds == 0 {
-		return TeamWinPercentageResponse{Feedback: "No rounds found"}, nil
-	}
-
-	for _, team := range teams {
-		winsOfTeam, err := CountRows("round", fmt.Sprintf("winning_team = '%s' AND date >= '%s' AND date <= '%s'", team, from, to))
-		if err != nil {
-			return TeamWinPercentageResponse{Feedback: "Internal server error"}, errors.Wrap(err, "Failed counting team wins")
-		}
-
-		response.Response[team] = winsOfTeam
-	}
-
-	log.Info().Msg("Team win percentage request")
-	response.Feedback = "Successfull request"
-	return response, nil
-}
-
 type RoundParticipationTeams struct {
 	Team string
 	Win  string `db:"winning_team"`

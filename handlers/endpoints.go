@@ -143,13 +143,13 @@ func TeamWins(rw http.ResponseWriter, req *http.Request) {
 
 	setTimeBox(&from, &to)
 
-	var response db.TeamWinPercentageResponse
+	var response TeamWinPercentageResponse
 	var err error
 	if team == "" {
 		team = "*"
 	}
 
-	response, err = db.TeamWins(team, from, to)
+	response, err = CalculateTeamWins(team, from, to)
 	if err != nil {
 		log.Error().Stack().Err(err).Msg("Failed getting team win percentage.")
 		http.Error(rw, "Failed getting team win percentage.", http.StatusInternalServerError)
