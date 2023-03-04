@@ -9,14 +9,14 @@ import (
 	db "yogsstats/database"
 	. "yogsstats/models"
 
-	"github.com/pkg/errors"
+	"github.com/pingcap/errors"
 	log "github.com/rs/zerolog/log"
 )
 
 func CalculatePlayerWinPercentage(player, from, to string, round bool) (PlayerWinPercentageResponse, error) {
 	players, err := db.GetEntries("player", "name", player)
 	if err != nil {
-		return PlayerWinPercentageResponse{Feedback: "Error getting entries"}, errors.Wrap(err, "Error getting entries")
+		return PlayerWinPercentageResponse{Feedback: "Error getting entries"}, errors.Annotate(err, "Error getting entries")
 	}
 
 	response := PlayerWinPercentageResponse{
@@ -27,14 +27,14 @@ func CalculatePlayerWinPercentage(player, from, to string, round bool) (PlayerWi
 		roundsPlayed := 0
 		teams, err := db.GetEntries("team", "team", "*")
 		if err != nil {
-			return PlayerWinPercentageResponse{Feedback: "Error getting entries"}, errors.Wrap(err, "Error getting entries")
+			return PlayerWinPercentageResponse{Feedback: "Error getting entries"}, errors.Annotate(err, "Error getting entries")
 		}
 
 		response.Players[player] = TeamsWinPercentage{Teams: make(map[string]PercentageEntry)}
 		for _, team := range teams {
 			tt, err := db.GetRoundParticipationTeamsByPlayer(player, from, to, team)
 			if err != nil {
-				return PlayerWinPercentageResponse{Feedback: "Error getting team participation info"}, errors.Wrap(err, "Error getting team participation info")
+				return PlayerWinPercentageResponse{Feedback: "Error getting team participation info"}, errors.Annotate(err, "Error getting team participation info")
 			}
 
 			roundsPlayed += len(tt)
@@ -75,7 +75,7 @@ func CalculatePlayerWinPercentage(player, from, to string, round bool) (PlayerWi
 func CalculateTeamWins(team, from, to string) (TeamWinPercentageResponse, error) {
 	teams, err := db.GetEntries("team", "team", team)
 	if err != nil {
-		return TeamWinPercentageResponse{Feedback: "Error getting entries."}, errors.Wrap(err, "Error getting entries")
+		return TeamWinPercentageResponse{Feedback: "Error getting entries."}, errors.Annotate(err, "Error getting entries")
 	}
 
 	totalRounds, err := db.CountRows("round", fmt.Sprintf("date >= '%s' AND date <= '%s'", from, to))
@@ -95,7 +95,7 @@ func CalculateTeamWins(team, from, to string) (TeamWinPercentageResponse, error)
 	for _, team := range teams {
 		winsOfTeam, err := db.CountRows("round", fmt.Sprintf("winning_team = '%s' AND date >= '%s' AND date <= '%s'", team, from, to))
 		if err != nil {
-			return TeamWinPercentageResponse{Feedback: "Internal server error"}, errors.Wrap(err, "Failed counting team wins")
+			return TeamWinPercentageResponse{Feedback: "Internal server error"}, errors.Annotate(err, "Failed counting team wins")
 		}
 
 		response.Response[team] = winsOfTeam
@@ -109,7 +109,7 @@ func CalculateTeamWins(team, from, to string) (TeamWinPercentageResponse, error)
 func CalculateDetectiveWinPercentage(player, from, to string, canon, round bool) (DetecitveWinPercentageResponse, error) {
 	players, err := db.GetEntries("player", "name", player)
 	if err != nil {
-		return DetecitveWinPercentageResponse{Feedback: "Error getting entries"}, errors.Wrap(err, "Error getting entries")
+		return DetecitveWinPercentageResponse{Feedback: "Error getting entries"}, errors.Annotate(err, "Error getting entries")
 	}
 
 	response := DetecitveWinPercentageResponse{
@@ -119,12 +119,12 @@ func CalculateDetectiveWinPercentage(player, from, to string, canon, round bool)
 	for _, player := range players {
 		dWins, err := db.InnocentWinsByPlayer(player, from, to, round)
 		if err != nil {
-			return DetecitveWinPercentageResponse{Feedback: fmt.Sprintf("Error getting detective win percentage (%s)", player)}, errors.Wrap(err, "Error getting detective win percentage")
+			return DetecitveWinPercentageResponse{Feedback: fmt.Sprintf("Error getting detective win percentage (%s)", player)}, errors.Annotate(err, "Error getting detective win percentage")
 		}
 
 		roundsPlayed, err := db.DetectiveRoundsByPlayer(player, from, to)
 		if err != nil {
-			return DetecitveWinPercentageResponse{Feedback: fmt.Sprintf("Error getting detective win percentage (%s)", player)}, errors.Wrap(err, "Error getting detective win percentage")
+			return DetecitveWinPercentageResponse{Feedback: fmt.Sprintf("Error getting detective win percentage (%s)", player)}, errors.Annotate(err, "Error getting detective win percentage")
 		}
 
 		if roundsPlayed == 0 {
@@ -136,7 +136,7 @@ func CalculateDetectiveWinPercentage(player, from, to string, canon, round bool)
 		if round {
 			dWin, err = roundup(dWin)
 			if err != nil {
-				return DetecitveWinPercentageResponse{Feedback: "Failed roduning results"}, errors.Wrap(err, "failed rouding results")
+				return DetecitveWinPercentageResponse{Feedback: "Failed roduning results"}, errors.Annotate(err, "failed rouding results")
 			}
 		}
 
@@ -155,12 +155,12 @@ func CalculateDetectiveWinPercentage(player, from, to string, canon, round bool)
 func CalculateTraitorCombos(player, from, to string, round bool) (TraitorCombosResponse, error) {
 	selectedPlayers, err := db.GetEntries("player", "name", player)
 	if err != nil {
-		return TraitorCombosResponse{Feedback: "Error getting entries"}, errors.Wrapf(err, "Error getting entries, player = %s", player)
+		return TraitorCombosResponse{Feedback: "Error getting entries"}, errors.Annotatef(err, "Error getting entries, player = %s", player)
 	}
 
 	allPlayers, err := db.GetEntries("player", "name", "*")
 	if err != nil {
-		return TraitorCombosResponse{Feedback: "Error getting entries"}, errors.Wrapf(err, "Error getting entries, player = %s", player)
+		return TraitorCombosResponse{Feedback: "Error getting entries"}, errors.Annotatef(err, "Error getting entries, player = %s", player)
 	}
 
 	response := TraitorCombosResponse{Combos: make(map[string]map[string]TraitorComboEntry)}
@@ -168,7 +168,7 @@ func CalculateTraitorCombos(player, from, to string, round bool) (TraitorCombosR
 	for _, player := range selectedPlayers {
 		playerRounds, err := db.GetTraitorRounds(player, from, to)
 		if err != nil {
-			return TraitorCombosResponse{Feedback: "Error getting combo win %"}, errors.Wrapf(err, "Error getting combo win percentage, player = %s, player")
+			return TraitorCombosResponse{Feedback: "Error getting combo win %"}, errors.Annotatef(err, "Error getting combo win percentage, player = %s, player")
 		}
 
 		for _, other := range allPlayers {
@@ -176,7 +176,7 @@ func CalculateTraitorCombos(player, from, to string, round bool) (TraitorCombosR
 				comboWinRate, commonRounds, err := getTraitorWinRate(playerRounds, other, from, to, round)
 				if err != nil {
 					log.Error().Err(err).Msg("")
-					return TraitorCombosResponse{Feedback: "Error getting combo win %"}, errors.Wrapf(err, "Error getting combo win percentage, player = %s & other = %s", player, other)
+					return TraitorCombosResponse{Feedback: "Error getting combo win %"}, errors.Annotatef(err, "Error getting combo win percentage, player = %s & other = %s", player, other)
 				}
 
 				if commonRounds == 0 {
@@ -230,7 +230,7 @@ func getTraitorWinRate(player1Rounds []TraitorRound, player2, from, to string, r
 
 	if round {
 		f, err := roundup(rate)
-		return f, len, err
+		return f, len, errors.Wrap(err, "failed rounding")
 	}
 
 	return rate, len, nil

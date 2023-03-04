@@ -9,7 +9,7 @@ import (
 	//External dependencies
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
-	"github.com/pkg/errors"
+	"github.com/pingcap/errors"
 	log "github.com/rs/zerolog/log"
 
 	models "yogsstats/models"
@@ -26,6 +26,7 @@ var (
 func initDB(connectionString string) *sqlx.DB {
 	db, err := sqlx.Open("postgres", connectionString)
 	if err != nil {
+		log.Panic().Err(err).Msg("Failed to init database, exiting...")
 		os.Exit(1)
 	}
 
