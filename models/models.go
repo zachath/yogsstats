@@ -53,3 +53,17 @@ type DetecitveWinPercentageResponse struct {
 	Feedback string                                 `json:"feedback"`
 	Players  map[string]DetectiveWinPercentageEntry `json:"players"`
 }
+
+type TraitorComboEntry struct {
+	RoundsTogether int
+	WinRate        float64
+}
+type TraitorCombosResponse struct {
+	Feedback string                                  `json:"feedback"`
+	Combos   map[string]map[string]TraitorComboEntry `json:"combos"`
+}
+
+type TraitorRound struct {
+	Id  string
+	Win string `db:"winning_team"`
+}

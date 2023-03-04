@@ -279,7 +279,7 @@ func APIMetaData(rw http.ResponseWriter, req *http.Request) {
 
 type traitorComboCache struct {
 	LatestRound int
-	Response    db.TraitorCombosResponse
+	Response    TraitorCombosResponse
 	From        string
 	To          string
 	Round       bool
@@ -318,7 +318,7 @@ func TraitorCombos(rw http.ResponseWriter, req *http.Request) {
 		round = true
 	}
 
-	var response db.TraitorCombosResponse
+	var response TraitorCombosResponse
 	newestRoundID, redo, err := redoCalculation(from, to, player, round)
 	if err != nil {
 		log.Error().Err(err).Msg("Redo check failed.")
@@ -332,7 +332,7 @@ func TraitorCombos(rw http.ResponseWriter, req *http.Request) {
 			inputPlayer = "*"
 		}
 
-		response, err = db.TraitorCombos(inputPlayer, from, to, round)
+		response, err = CalculateTraitorCombos(inputPlayer, from, to, round)
 		if err != nil {
 			log.Error().Stack().Err(err).Msg("Failed getting traitor combos.")
 			http.Error(rw, "Failed getting traitor combos", http.StatusInternalServerError)

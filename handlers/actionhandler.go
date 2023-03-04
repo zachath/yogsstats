@@ -13,8 +13,6 @@ import (
 	log "github.com/rs/zerolog/log"
 )
 
-//TODO: Where all the calculations should actually happen, you fat fuck
-
 func CalculatePlayerWinPercentage(player, from, to string, round bool) (PlayerWinPercentageResponse, error) {
 	players, err := db.GetEntries("player", "name", player)
 	if err != nil {
@@ -152,6 +150,90 @@ func CalculateDetectiveWinPercentage(player, from, to string, canon, round bool)
 
 	response.Feedback = "Successfull request"
 	return response, nil
+}
+
+func CalculateTraitorCombos(player, from, to string, round bool) (TraitorCombosResponse, error) {
+	selectedPlayers, err := db.GetEntries("player", "name", player)
+	if err != nil {
+		return TraitorCombosResponse{Feedback: "Error getting entries"}, errors.Wrapf(err, "Error getting entries, player = %s", player)
+	}
+
+	allPlayers, err := db.GetEntries("player", "name", "*")
+	if err != nil {
+		return TraitorCombosResponse{Feedback: "Error getting entries"}, errors.Wrapf(err, "Error getting entries, player = %s", player)
+	}
+
+	response := TraitorCombosResponse{Combos: make(map[string]map[string]TraitorComboEntry)}
+
+	for _, player := range selectedPlayers {
+		playerRounds, err := db.GetTraitorRounds(player, from, to)
+		if err != nil {
+			return TraitorCombosResponse{Feedback: "Error getting combo win %"}, errors.Wrapf(err, "Error getting combo win percentage, player = %s, player")
+		}
+
+		for _, other := range allPlayers {
+			if _, alreadyDone := response.Combos[player][other]; other != player && !alreadyDone {
+				comboWinRate, commonRounds, err := getTraitorWinRate(playerRounds, other, from, to, round)
+				if err != nil {
+					log.Error().Err(err).Msg("")
+					return TraitorCombosResponse{Feedback: "Error getting combo win %"}, errors.Wrapf(err, "Error getting combo win percentage, player = %s & other = %s", player, other)
+				}
+
+				if commonRounds == 0 {
+					continue
+				}
+
+				if response.Combos[player] == nil {
+					response.Combos[player] = make(map[string]TraitorComboEntry)
+				}
+				response.Combos[player][other] = TraitorComboEntry{WinRate: comboWinRate, RoundsTogether: commonRounds}
+
+				if player == "*" {
+					if response.Combos[other] == nil {
+						response.Combos[other] = make(map[string]TraitorComboEntry)
+					}
+					response.Combos[other][player] = TraitorComboEntry{WinRate: comboWinRate, RoundsTogether: commonRounds}
+				}
+			}
+		}
+	}
+
+	log.Info().Msg("Traitor combo request")
+	response.Feedback = "Successfull request"
+	return response, nil
+}
+
+func getTraitorWinRate(player1Rounds []TraitorRound, player2, from, to string, round bool) (float64, int, error) {
+	player2Rounds, err := db.GetTraitorRounds(player2, from, to)
+	if err != nil {
+		return -1, 0, err
+	}
+
+	var len int
+	var wins float64
+	for _, round := range player1Rounds {
+		for _, otherRound := range player2Rounds {
+			if round.Id == otherRound.Id {
+				len++
+				if round.Win == "traitors" {
+					wins++
+				}
+			}
+		}
+	}
+
+	if len == 0 {
+		return 0, len, err
+	}
+
+	rate := wins / float64(len)
+
+	if round {
+		f, err := roundup(rate)
+		return f, len, err
+	}
+
+	return rate, len, nil
 }
 
 func roundup(f float64) (float64, error) {
