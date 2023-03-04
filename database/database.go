@@ -3,7 +3,6 @@ package database
 import (
 	"database/sql"
 	"fmt"
-	"math"
 	"os"
 	"strconv"
 
@@ -282,10 +281,6 @@ func GetRound(id, from, to string) ([]models.Round, error) {
 
 	log.Info().Msg("Returning rounds")
 	return rounds, nil
-}
-
-func roundup(f float64) (float64, error) {
-	return strconv.ParseFloat(fmt.Sprintf("%.3f", (math.Round(f/0.001)*0.001)), 64)
 }
 
 type RoundParticipationTeams struct {
