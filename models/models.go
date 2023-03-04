@@ -23,3 +23,18 @@ type Player struct {
 	Team string `json:"team" db:"team"`
 	Died string `json:"died" db:"died"`
 }
+
+type PercentageEntry struct {
+	Percentage    float64 `json:"percentage"`
+	Wins          int     `json:"wins"`
+	RoundPlayedAs int     `json:"rounds"`
+}
+
+type TeamsWinPercentage struct {
+	Teams        map[string]PercentageEntry `json:"teams"`
+	RoundsPlayed int                        `json:"roundsPlayed"`
+}
+type PlayerWinPercentageResponse struct {
+	Feedback string                        `json:"feedback"`
+	Players  map[string]TeamsWinPercentage `json:"players"`
+}

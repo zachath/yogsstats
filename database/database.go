@@ -42,7 +42,7 @@ func addPlayer(name string, tx *sql.Tx) error {
 	return errors.Wrapf(err, "Failed to add player %s to database", name)
 }
 
-func getEntries(table, column, value string) ([]string, error) {
+func GetEntries(table, column, value string) ([]string, error) {
 	var query string
 	if value == "*" {
 		query = fmt.Sprintf("SELECT * FROM %s;", table)
@@ -295,7 +295,7 @@ type TeamWinPercentageResponse struct {
 }
 
 func TeamWins(team, from, to string) (TeamWinPercentageResponse, error) {
-	teams, err := getEntries("team", "team", team)
+	teams, err := GetEntries("team", "team", team)
 	if err != nil {
 		return TeamWinPercentageResponse{Feedback: "Error getting entries."}, errors.Wrap(err, "Error getting entries")
 	}
@@ -328,85 +328,21 @@ func TeamWins(team, from, to string) (TeamWinPercentageResponse, error) {
 	return response, nil
 }
 
-type PercentageEntry struct {
-	Percentage    float64 `json:"percentage"`
-	Wins          int     `json:"wins"`
-	RoundPlayedAs int     `json:"rounds"`
+type RoundParticipationTeams struct {
+	Team string
+	Win  string `db:"winning_team"`
 }
 
-type TeamsWinPercentage struct {
-	Teams        map[string]PercentageEntry `json:"teams"`
-	RoundsPlayed int                        `json:"roundsPlayed"`
-}
-type PlayerWinPercentageResponse struct {
-	Feedback string                        `json:"feedback"`
-	Players  map[string]TeamsWinPercentage `json:"players"`
-}
+func GetRoundParticipationTeamsByPlayer(player, from, to, team string) ([]RoundParticipationTeams, error) {
+	query := "SELECT RP.team, R.winning_team FROM round_participation RP JOIN round R ON RP.id = R.id WHERE RP.player = $1 AND R.date >= $2 AND R.date <= $3 AND RP.team = $4;"
 
-func PlayerWinPercentage(player, from, to string, round bool) (PlayerWinPercentageResponse, error) {
-	players, err := getEntries("player", "name", player)
+	var rows []RoundParticipationTeams
+	err := db.Select(&rows, query, player, from, to, team)
 	if err != nil {
-		return PlayerWinPercentageResponse{Feedback: "Error getting entries"}, errors.Wrap(err, "Error getting entries")
+		return []RoundParticipationTeams{}, errors.Wrapf(err, "Error getting player rows (%s)", player)
 	}
 
-	type row struct {
-		Team string
-		Win  string `db:"winning_team"`
-	}
-
-	response := PlayerWinPercentageResponse{
-		Players: make(map[string]TeamsWinPercentage),
-	}
-
-	for _, player := range players {
-		roundsPlayed := 0
-		teams, err := getEntries("team", "team", "*")
-		if err != nil {
-			return PlayerWinPercentageResponse{Feedback: "Error getting entries"}, errors.Wrap(err, "Error getting entries")
-		}
-
-		response.Players[player] = TeamsWinPercentage{Teams: make(map[string]PercentageEntry)}
-		for _, team := range teams {
-			query := "SELECT RP.team, R.winning_team FROM round_participation RP JOIN round R ON RP.id = R.id WHERE RP.player = $1 AND R.date >= $2 AND R.date <= $3 AND RP.team = $4;"
-			var rows []row
-			err = db.Select(&rows, query, player, from, to, team)
-			if err != nil {
-				return PlayerWinPercentageResponse{Feedback: fmt.Sprintf("Error getting player rows (%s)", player)}, errors.Wrapf(err, "Error getting player rows (%s)", player)
-			}
-
-			roundsPlayed += len(rows)
-
-			if len(rows) == 0 {
-				continue
-			}
-
-			wins := 0
-			for _, row := range rows {
-				if row.Team == row.Win {
-					wins++
-				}
-			}
-
-			result := float64(wins) / float64(len(rows))
-			if round {
-				f, err := roundup(result)
-				if err != nil {
-					log.Error().Err(err).Msg("Failed to round result.")
-					response.Players[player].Teams[team] = PercentageEntry{Percentage: result, Wins: wins, RoundPlayedAs: len(rows)}
-				}
-				response.Players[player].Teams[team] = PercentageEntry{Percentage: f, Wins: wins, RoundPlayedAs: len(rows)}
-			} else {
-				response.Players[player].Teams[team] = PercentageEntry{Percentage: result, Wins: wins, RoundPlayedAs: len(rows)}
-			}
-		}
-
-		entry := response.Players[player]
-		entry.RoundsPlayed = roundsPlayed
-		response.Players[player] = entry
-	}
-
-	response.Feedback = "Successfull request"
-	return response, nil
+	return rows, nil
 }
 
 type DetectiveWinPercentageEntry struct {
@@ -419,7 +355,7 @@ type DetecitveWinPercentageResponse struct {
 }
 
 func DetectiveWinPercentage(player, from, to string, canon, round bool) (DetecitveWinPercentageResponse, error) {
-	players, err := getEntries("player", "name", player)
+	players, err := GetEntries("player", "name", player)
 	if err != nil {
 		return DetecitveWinPercentageResponse{Feedback: "Error getting entries"}, errors.Wrap(err, "Error getting entries")
 	}
@@ -491,12 +427,12 @@ type TraitorCombosResponse struct {
 }
 
 func TraitorCombos(player, from, to string, round bool) (TraitorCombosResponse, error) {
-	selectedPlayers, err := getEntries("player", "name", player)
+	selectedPlayers, err := GetEntries("player", "name", player)
 	if err != nil {
 		return TraitorCombosResponse{Feedback: "Error getting entries"}, errors.Wrapf(err, "Error getting entries, player = %s", player)
 	}
 
-	allPlayers, err := getEntries("player", "name", "*")
+	allPlayers, err := GetEntries("player", "name", "*")
 	if err != nil {
 		return TraitorCombosResponse{Feedback: "Error getting entries"}, errors.Wrapf(err, "Error getting entries, player = %s", player)
 	}

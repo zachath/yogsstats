@@ -177,12 +177,12 @@ func PlayerWinPercentage(rw http.ResponseWriter, req *http.Request) {
 
 	setTimeBox(&from, &to)
 
-	var response db.PlayerWinPercentageResponse
+	var response PlayerWinPercentageResponse
 	if player == "" {
 		player = "*"
 	}
 
-	response, err = db.PlayerWinPercentage(player, from, to, round)
+	response, err = CalculatePlayerWinPercentage(player, from, to, round)
 	if err != nil {
 		log.Error().Stack().Err(err).Msg("Failed getting player win percentage.")
 		http.Error(rw, "Failed getting player win percentage.", http.StatusInternalServerError)
