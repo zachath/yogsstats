@@ -146,5 +146,5 @@ func SetHeaders(next http.HandlerFunc) http.HandlerFunc {
 }
 
 func RootHandler(rw http.ResponseWriter, r *http.Request) {
-	http.ServeFile(rw, r, "assets/html/index.html")
+	http.ServeFile(rw, r, "static/index.html")
 }

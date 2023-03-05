@@ -6,10 +6,8 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"time"
 
 	//External dependencies
-	mux "github.com/gorilla/mux"
 	"github.com/rs/zerolog"
 	log "github.com/rs/zerolog/log"
 	"github.com/rs/zerolog/pkgerrors"
@@ -24,33 +22,33 @@ func init() {
 }
 
 func main() {
-	r := mux.NewRouter()
-	r.HandleFunc("/", RootHandler)
-	r.HandleFunc("/readme", SetHeaders(ReadMeHandler)).Methods(http.MethodGet)
-	r.HandleFunc("/stats/ttt", SetHeaders(ValidatePost(ValidateTTTRoundPost(PostTTTRound)))).Methods(http.MethodPost)
-	r.HandleFunc("/stats/ttt", SetHeaders(DateValidation(GetTTTRound))).Methods(http.MethodGet)
-	r.HandleFunc("/stats/ttt/meta", SetHeaders(APIMetaData)).Methods(http.MethodGet)
-	r.HandleFunc("/stats/ttt/teamWins", SetHeaders(DateValidation(TeamWins))).Methods(http.MethodGet)
-	r.HandleFunc("/stats/ttt/playerWinPercentage", SetHeaders(DateValidation(PlayerWinPercentage))).Methods(http.MethodGet)
-	r.HandleFunc("/stats/ttt/detectiveWinPercentage", SetHeaders(DateValidation(DetectiveWinPercentage))).Methods(http.MethodGet)
-	r.HandleFunc("/stats/ttt/traitorCombos", SetHeaders(DateValidation(TraitorCombos))).Methods(http.MethodGet)
-	r.HandleFunc("/stats/ttt/videos", SetHeaders(DateValidation(GetVideo))).Methods(http.MethodGet)
-	r.HandleFunc("/stats/ttt/videos", SetHeaders(ValidatePost(ValidateVideoPost(PostVideo)))).Methods(http.MethodPost)
+	http.HandleFunc("/", RootHandler)
+	http.HandleFunc("/readme", SetHeaders(ReadMeHandler))
+	http.HandleFunc("/stats/ttt/post", SetHeaders(ValidatePost(ValidateTTTRoundPost(PostTTTRound))))
+	http.HandleFunc("/stats/ttt", SetHeaders(DateValidation(GetTTTRound)))
+	http.HandleFunc("/stats/ttt/meta", SetHeaders(APIMetaData))
+	http.HandleFunc("/stats/ttt/teamWins", SetHeaders(DateValidation(TeamWins)))
+	http.HandleFunc("/stats/ttt/playerWinPercentage", SetHeaders(DateValidation(PlayerWinPercentage)))
+	http.HandleFunc("/stats/ttt/detectiveWinPercentage", SetHeaders(DateValidation(DetectiveWinPercentage)))
+	http.HandleFunc("/stats/ttt/traitorCombos", SetHeaders(DateValidation(TraitorCombos)))
+	http.HandleFunc("/stats/ttt/videos", SetHeaders(DateValidation(GetVideo)))
+	http.HandleFunc("/stats/ttt/videos/post", SetHeaders(ValidatePost(ValidateVideoPost(PostVideo))))
 
-	s := &http.Server{
-		Handler:      r,
-		Addr:         fmt.Sprintf(":%s", os.Getenv("PORT")),
-		WriteTimeout: 15 * time.Second,
-		ReadTimeout:  15 * time.Second,
-	}
+	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 
 	go func() {
 		log.Fatal().Err(http.ListenAndServe(":80", http.HandlerFunc(redirectToTls))).Msg("")
 	}()
 
-	log.Info().Msgf("Server listening on port: %s", s.Addr)
-	err := s.ListenAndServeTLS("/etc/letsencrypt/live/yogsstats.com/fullchain.pem", "/etc/letsencrypt/live/yogsstats.com/privkey.pem")
+	port := fmt.Sprintf(":%s", os.Getenv("PORT"))
+	log.Info().Msgf("Server listening on port: %s", port)
+	err := http.ListenAndServeTLS(port, "/etc/letsencrypt/live/yogsstats.com/fullchain.pem", "/etc/letsencrypt/live/yogsstats.com/privkey.pem", nil)
 	log.Error().Err(err).Msg("Server exited.")
+
+	//When running locally.
+	//log.Info().Msgf("Running on port %s", s.Addr)
+	//err := http.ListenAndServe(":8080", nil)
+	//log.Error().Err(err).Msg("")
 }
 
 func redirectToTls(rw http.ResponseWriter, req *http.Request) {
