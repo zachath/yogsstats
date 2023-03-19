@@ -17,6 +17,19 @@ import (
 	. "yogsstats/models"
 )
 
+func GetOrPost(get, post http.HandlerFunc) http.HandlerFunc {
+	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		if req.Method == http.MethodGet {
+			get(rw, req)
+		} else if req.Method == http.MethodPost {
+			post(rw, req)
+		} else {
+			http.Error(rw, "Unsupported method", http.StatusBadRequest)
+			return
+		}
+	})
+}
+
 func ValidatePost(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		hashedPass := os.Getenv("POST_PASS")
@@ -147,4 +160,16 @@ func SetHeaders(next http.HandlerFunc) http.HandlerFunc {
 
 func RootHandler(rw http.ResponseWriter, r *http.Request) {
 	http.ServeFile(rw, r, "static/index.html")
+}
+
+func TraitorCombosPage(rw http.ResponseWriter, r *http.Request) {
+	http.ServeFile(rw, r, "static/traitors.html")
+}
+
+func DetectivePercentagesPage(rw http.ResponseWriter, r *http.Request) {
+	http.ServeFile(rw, r, "static/detective.html")
+}
+
+func PlayerPercetnagesPage(rw http.ResponseWriter, r *http.Request) {
+	http.ServeFile(rw, r, "static/player.html")
 }

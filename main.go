@@ -23,21 +23,25 @@ func init() {
 
 func main() {
 	http.HandleFunc("/", RootHandler)
+	http.HandleFunc("/traitor-combos", TraitorCombosPage)
+	http.HandleFunc("/detective-win-percentages", DetectivePercentagesPage)
+	http.HandleFunc("/player-win-percentages", PlayerPercetnagesPage)
+
 	http.HandleFunc("/readme", SetHeaders(ReadMeHandler))
-	http.HandleFunc("/stats/ttt/post", SetHeaders(ValidatePost(ValidateTTTRoundPost(PostTTTRound))))
-	http.HandleFunc("/stats/ttt", SetHeaders(DateValidation(GetTTTRound)))
+	http.HandleFunc("/stats/ttt", SetHeaders(DateValidation(GetOrPost(GetTTTRound, ValidatePost(ValidateTTTRoundPost(PostTTTRound))))))
 	http.HandleFunc("/stats/ttt/meta", SetHeaders(APIMetaData))
 	http.HandleFunc("/stats/ttt/teamWins", SetHeaders(DateValidation(TeamWins)))
 	http.HandleFunc("/stats/ttt/playerWinPercentage", SetHeaders(DateValidation(PlayerWinPercentage)))
 	http.HandleFunc("/stats/ttt/detectiveWinPercentage", SetHeaders(DateValidation(DetectiveWinPercentage)))
 	http.HandleFunc("/stats/ttt/traitorCombos", SetHeaders(DateValidation(TraitorCombos)))
-	http.HandleFunc("/stats/ttt/videos", SetHeaders(DateValidation(GetVideo)))
-	http.HandleFunc("/stats/ttt/videos/post", SetHeaders(ValidatePost(ValidateVideoPost(PostVideo))))
+	http.HandleFunc("/stats/ttt/videos", SetHeaders(DateValidation(GetOrPost(GetVideo, ValidatePost(ValidateVideoPost(PostVideo))))))
 
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 
 	go func() {
-		log.Fatal().Err(http.ListenAndServe(":80", http.HandlerFunc(redirectToTls))).Msg("")
+		log.Fatal().Err(http.ListenAndServe(":80", http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+			http.Redirect(rw, req, "https://"+req.Host+req.RequestURI, http.StatusMovedPermanently)
+		}))).Msg("")
 	}()
 
 	port := fmt.Sprintf(":%s", os.Getenv("PORT"))
@@ -46,11 +50,6 @@ func main() {
 	log.Error().Err(err).Msg("Server exited.")
 
 	//When running locally.
-	//log.Info().Msgf("Running on port %s", s.Addr)
-	//err := http.ListenAndServe(":8080", nil)
-	//log.Error().Err(err).Msg("")
-}
-
-func redirectToTls(rw http.ResponseWriter, req *http.Request) {
-	http.Redirect(rw, req, "https://"+req.Host+req.RequestURI, http.StatusMovedPermanently)
+	/*err := http.ListenAndServe(":8080", nil)
+	log.Error().Err(err).Msg("")*/
 }

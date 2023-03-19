@@ -1,0 +1,63 @@
+async function playerWinPercentages() {
+    google.charts.load('current', {'packages': ['table']}).then(
+        async () => {
+            console.log("Fetching player win percentage data")
+            const response = await fetch("https://yogsstats.com/stats/ttt/playerWinPercentage?round=true", {
+                method: 'GET',
+                mode: 'cors',
+            })
+
+            const json = await response.json()
+            var players = json['players']
+            var players = new Map(Object.entries(players))
+
+            var dataTable = new google.visualization.DataTable()
+            var teams = new Map(Object.entries({'clown':2, 'elves':3, 'innocents':4, 'jester':5, 'traitors':6, 'zombies':7}))
+            var cols = ['Player', 'Rounds Played']
+            var cols = cols.concat(...[...teams.keys()])
+            for (var col of cols) {
+                if (col == 'Player') {
+                    dataTable.addColumn('string', col)
+                } else {
+                    dataTable.addColumn('number', col)
+                }
+            }
+
+            for (let [name, entries] of players) {
+                var roundsPlayed = entries.roundsPlayed
+                var row = [name, roundsPlayed, -1, -1, -1, -1, -1, -1]
+
+                for (let [team, rate] of new Map(Object.entries(entries.teams))) {
+                    var ratePercent = Math.round((rate.percentage * 100) *10) / 10
+                    row[teams.get(team)] = ratePercent
+                }
+
+                dataTable.addRow(row)
+            }
+
+            var options = {
+                height: '75%',
+                width: '75%',
+                showRowNumber: false,
+                allowHtml: true,
+                cssClassNames: {
+                'headerRow': 'main-color-background',
+                'tableRow': 'table-row',
+                'selectedTableRow':'selected-row',
+                'oddTableRow': 'odd'
+                }
+            }
+
+            new google.visualization.Table(document.getElementById('info-display')).draw(dataTable, options)
+
+            document.getElementById('info-description').innerText = "The win percentages of each player for every team they have played as (-1 => not played as that team)."
+        }
+    )
+}
+
+import { fetchMetaData } from "./site-wide.js";
+
+window.onload = function() {
+    fetchMetaData()
+    playerWinPercentages()
+}
