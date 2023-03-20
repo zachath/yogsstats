@@ -13,16 +13,14 @@ async function detectiveWinPercentages() {
             var dataTable = new google.visualization.DataTable()
             dataTable.addColumn('string', 'Player')
             dataTable.addColumn('number', '%')
-            dataTable.addColumn('number', "Rounds played")
 
             for (let [player, entry] of players) {
-                var ratePercent = Math.round((entry.WinRate * 100) * 10) / 10
-                dataTable.addRow([player, ratePercent, entry.RoundsPlayed])
+                dataTable.addRow([player, {v:entry.WinRate, f:(entry.WinRate * 100).toFixed(1) + "% (" + entry.RoundsPlayed + ")"}])
             }
 
             var options = {
-                height: '75%',
-                width: '75%',
+                height: '50%',
+                width: '50%',
                 showRowNumber: false,
                 allowHtml: true,
                 cssClassNames: {

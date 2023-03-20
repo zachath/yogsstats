@@ -25,17 +25,17 @@ async function traitorCombos() {
             for (let [player, entries] of combos) {
                 var row = [player]
                 for (let i = 0; i < combos.size; i++) {
-                    row.push(-1)
+                    row.push({v:-1, f:"∅"})
                 }
                 for (let [other, entry] of new Map(Object.entries(entries))) {
-                    row[playerColIndex.get(other)] = entry.WinRate
+                    row[playerColIndex.get(other)] = {v:entry.WinRate, f:(entry.WinRate * 100).toFixed(1)+"% (" + entry.RoundsTogether + ")"}
                 }
                 dataTable.addRow(row)
             }
 
             var options = {
-                height: '75%',
-                width: '75%',
+                height: '100%',
+                width: '100%',
                 showRowNumber: false,
                 allowHtml: true,
                 cssClassNames: {
@@ -48,7 +48,7 @@ async function traitorCombos() {
 
             new google.visualization.Table(document.getElementById('info-display')).draw(dataTable, options)
 
-            document.getElementById('info-description').innerText = "The win rate of traitor combinations (-1 => They have not been traitor buddies)"
+            document.getElementById('info-description').innerText = "The win rate of traitor combinations (number of rounds played together), ∅ - never been 'buddies'"
         }
     )
 }

@@ -25,11 +25,10 @@ async function playerWinPercentages() {
 
             for (let [name, entries] of players) {
                 var roundsPlayed = entries.roundsPlayed
-                var row = [name, roundsPlayed, -1, -1, -1, -1, -1, -1]
+                var row = [name, roundsPlayed, {v:-1, f:"∅"}, {v:-1, f:"∅"}, {v:-1, f:"∅"}, {v:-1, f:"∅"}, {v:-1, f:"∅"}, {v:-1, f:"∅"}]
 
                 for (let [team, rate] of new Map(Object.entries(entries.teams))) {
-                    var ratePercent = Math.round((rate.percentage * 100) *10) / 10
-                    row[teams.get(team)] = ratePercent
+                    row[teams.get(team)] = {v: rate.percentage, f: (rate.percentage * 100).toFixed(1) + "% (" + rate.rounds + ")"}
                 }
 
                 dataTable.addRow(row)
@@ -50,7 +49,7 @@ async function playerWinPercentages() {
 
             new google.visualization.Table(document.getElementById('info-display')).draw(dataTable, options)
 
-            document.getElementById('info-description').innerText = "The win percentages of each player for every team they have played as (-1 => not played as that team)."
+            document.getElementById('info-description').innerText = "The win percentages of each player for every team they have played as (number of rounds played as that team), ∅ - never been that team."
         }
     )
 }
