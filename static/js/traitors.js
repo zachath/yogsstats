@@ -2,7 +2,7 @@ async function traitorCombos(from, to) {
     google.charts.load('current', {'packages': ['table']}).then(
         async () => {
             console.log("Fetching traitor combo data")
-            const response = await fetch("https://yogsstats.com/stats/ttt/traitorCombos?round=true&from="+from+"&to=", {
+            const response = await fetch("https://yogsstats.com/stats/ttt/traitorCombos?round=true&from="+from+"&to="+to, {
                 method: 'GET',
                 mode: 'cors',
             })
