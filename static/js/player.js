@@ -1,8 +1,8 @@
-async function playerWinPercentages() {
+async function playerWinPercentages(from, to) {
     google.charts.load('current', {'packages': ['table']}).then(
         async () => {
             console.log("Fetching player win percentage data")
-            const response = await fetch("https://yogsstats.com/stats/ttt/playerWinPercentage?round=true", {
+            const response = await fetch("https://yogsstats.com/stats/ttt/playerWinPercentage?round=true&from="+from+"&to="+to, {
                 method: 'GET',
                 mode: 'cors',
             })
@@ -54,9 +54,14 @@ async function playerWinPercentages() {
     )
 }
 
-import { fetchMetaData } from "./site-wide.js";
+import { fetchMetaData, getDate } from "./site-wide.js";
+
+window.getDate = getDate;
+window.playerWinPercentages = playerWinPercentages
 
 window.onload = function() {
+    var today = getDate()
+    document.getElementById("to").setAttribute("value", today);
     fetchMetaData()
-    playerWinPercentages()
+    playerWinPercentages("2022-10-23", today)
 }

@@ -1,7 +1,7 @@
-async function detectiveWinPercentages() {
+async function detectiveWinPercentages(from, to) {
     google.charts.load('current', {'packages': ['table']}).then(
         async () => {
-            const response = await fetch("https://yogsstats.com/stats/ttt/detectiveWinPercentage?round=true", {
+            const response = await fetch("https://yogsstats.com/stats/ttt/detectiveWinPercentage?round=true&from="+from+"&to="+to, {
                 method: 'GET',
                 mode: 'cors',
             })
@@ -37,9 +37,14 @@ async function detectiveWinPercentages() {
     )
 }
 
-import { fetchMetaData } from "./site-wide.js";
+import { fetchMetaData, getDate } from "./site-wide.js";
+
+window.getDate = getDate;
+window.detectiveWinPercentages = detectiveWinPercentages;
 
 window.onload = function() {
+    var today = getDate()
+    document.getElementById("to").setAttribute("value", today);
     fetchMetaData()
-    detectiveWinPercentages()
+    detectiveWinPercentages("2022-10-23", today)
 }

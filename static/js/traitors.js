@@ -1,8 +1,8 @@
-async function traitorCombos() {
+async function traitorCombos(from, to) {
     google.charts.load('current', {'packages': ['table']}).then(
         async () => {
             console.log("Fetching traitor combo data")
-            const response = await fetch("https://yogsstats.com/stats/ttt/traitorCombos?round=true", {
+            const response = await fetch("https://yogsstats.com/stats/ttt/traitorCombos?round=true&from="+from+"&to=", {
                 method: 'GET',
                 mode: 'cors',
             })
@@ -53,9 +53,14 @@ async function traitorCombos() {
     )
 }
 
-import { fetchMetaData } from "./site-wide.js";
+import { fetchMetaData, getDate } from "./site-wide.js";
+
+window.getDate = getDate;
+window.traitorCombos = traitorCombos;
 
 window.onload = function() {
+    var today = getDate()
+    document.getElementById("to").setAttribute("value", today);
     fetchMetaData()
-    traitorCombos()
+    traitorCombos("2022-10-23", today)
 }

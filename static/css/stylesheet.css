@@ -72,6 +72,23 @@ body {
     background-color: orange;
 }
 
+.data-button {
+    color: white;
+    outline: none;
+    cursor: pointer;
+    padding: 14px 16px;
+    height: 25;
+    width: 75px;
+}
+
+.data-button:hover {
+    background-color: orange;
+}
+
+.button-container {
+    margin: 15px;
+}
+
 li {
     margin: 10px 0;
 }

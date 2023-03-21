@@ -1,8 +1,8 @@
-async function drawTeamWins() {
+async function drawTeamWins(from, to) {
     google.charts.load('current', {'packages': ['corechart']}).then(
     async () => {
         console.log("Fetching team wins data")
-                const response = await fetch("https://yogsstats.com/stats/ttt/teamWins", {
+                const response = await fetch("https://yogsstats.com/stats/ttt/teamWins?from="+from+"&to="+to, {
                 method: 'GET',
                 mode: 'cors',
             })
@@ -38,9 +38,15 @@ async function drawTeamWins() {
 )
 }
 
-import { fetchMetaData } from "./site-wide.js";
+window.drawTeamWins = drawTeamWins;
+
+import { fetchMetaData, getDate } from "./site-wide.js";
+
+window.getDate = getDate;
 
 window.onload = function() {
     fetchMetaData()
-    drawTeamWins()
+    var today = getDate()
+    document.getElementById("to").setAttribute("value", today);
+    drawTeamWins("2022-10-23", today)
 }
