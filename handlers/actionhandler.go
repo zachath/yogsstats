@@ -128,7 +128,8 @@ func CalculateDetectiveWinPercentage(player, from, to string, canon, round bool)
 		}
 
 		if roundsPlayed == 0 {
-			return DetecitveWinPercentageResponse{Feedback: "Successfull request"}, nil
+			response.Players[player] = DetectiveWinPercentageEntry{WinRate: 0, RoundsPlayed: 0}
+			continue
 		}
 
 		dWin := float64(dWins) / float64(roundsPlayed)
