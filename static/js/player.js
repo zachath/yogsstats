@@ -12,7 +12,7 @@ async function playerWinPercentages(from, to) {
             var players = new Map(Object.entries(players))
 
             var dataTable = new google.visualization.DataTable()
-            var teams = new Map(Object.entries({'clown':2, 'elves':3, 'innocents':4, 'jester':5, 'traitors':6, 'zombies':7}))
+            var teams = new Map(Object.entries({'clown':2, 'elves':3, 'innocents':4, 'jester':5, 'traitors':6, 'zombies':7, 'lovers': 8, 'communists': 9}))
             var cols = ['Player', 'Rounds Played']
             var cols = cols.concat(...[...teams.keys()])
             for (var col of cols) {
@@ -25,7 +25,7 @@ async function playerWinPercentages(from, to) {
 
             for (let [name, entries] of players) {
                 var roundsPlayed = entries.roundsPlayed
-                var row = [name, roundsPlayed, {v:-1, f:"∅"}, {v:-1, f:"∅"}, {v:-1, f:"∅"}, {v:-1, f:"∅"}, {v:-1, f:"∅"}, {v:-1, f:"∅"}]
+                var row = [name, roundsPlayed, {v:-1, f:"∅"}, {v:-1, f:"∅"}, {v:-1, f:"∅"}, {v:-1, f:"∅"}, {v:-1, f:"∅"}, {v:-1, f:"∅"}, {v:-1, f:"∅"}, {v:-1, f:"∅"}]
 
                 for (let [team, rate] of new Map(Object.entries(entries.teams))) {
                     row[teams.get(team)] = {v: rate.percentage, f: (rate.percentage * 100).toFixed(1) + "% (" + rate.rounds + ")"}

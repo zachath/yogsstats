@@ -22,7 +22,7 @@ async function drawTeamWins(from, to) {
             color: "white"
         },
         backgroundColor: "#1c2833",
-        colors: ['pink', 'brown', 'green', 'purple', 'red', 'black'],
+        colors: ['pink', '#8b0000', 'brown', 'green', 'purple', '#FF69B4', 'red', 'black'],
         legend: {
             textStyle: {
                 color: 'white'
