@@ -1,7 +1,7 @@
-async function detectiveWinPercentages(from, to) {
+async function detectiveWinPercentages(from, to, canon) {
     google.charts.load('current', {'packages': ['table']}).then(
         async () => {
-            const response = await fetch("https://yogsstats.com/stats/ttt/detectiveWinPercentage?round=true&from="+from+"&to="+to, {
+            const response = await fetch("https://yogsstats.com/stats/ttt/detectiveWinPercentage?round=true&from="+from+"&to="+to+"&canon="+canon, {
                 method: 'GET',
                 mode: 'cors',
             })

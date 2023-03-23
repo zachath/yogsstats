@@ -11,6 +11,7 @@
             document.getElementById("from").value = "2022-10-23"
             var today = getDate()
             document.getElementById("to").value = today
+            document.getElementById("canon").checked = false
             detectiveWinPercentages(document.getElementById('from').value, document.getElementById('to').value)
         }
     </script>
@@ -36,11 +37,15 @@
             <div id="input-container">
                 <label for="from">From date:</label>
                 <input type="date" id="from" value="2022-10-23" min="2022-10-23" style="background-color:white">
+
                 <label for="to">To date:</label>
                 <input type="date" id="to" min="2022-10-24" style="background-color:white">
+
+                <label for="canon">Only "canon" rounds:</label>
+                <input type="checkbox" id="canon">
             </div>
             <div class="button-container">
-                <button class="data-button" onclick="detectiveWinPercentages(document.getElementById('from').value, document.getElementById('to').value)">Refresh</button>
+                <button class="data-button" onclick="detectiveWinPercentages(document.getElementById('from').value, document.getElementById('to').value, document.getElementById('canon').checked.toString())">Refresh</button>
                 <button class="data-button" onclick="reset()">Reset</button>
             </div>
             <div id="info-display" style="width: 1500px; height: 800px;"></div>
