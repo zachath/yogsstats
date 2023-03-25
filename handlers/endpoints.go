@@ -153,6 +153,16 @@ func GetTeams(rw http.ResponseWriter, req *http.Request) {
 	json.NewEncoder(rw).Encode(TeamsResponse{Teams: teams})
 }
 
+func GetRoles(rw http.ResponseWriter, req *http.Request) {
+	roles, err := db.GetEntries("role", "role", "role", "*")
+	if err != nil {
+		log.Error().Stack().Err(err).Msg("Failed to get roles")
+		return
+	}
+
+	json.NewEncoder(rw).Encode(RolesResponse{Roles: roles})
+}
+
 func TeamWins(rw http.ResponseWriter, req *http.Request) {
 	team := req.URL.Query().Get("team")
 	from := req.Context().Value("from").(string)

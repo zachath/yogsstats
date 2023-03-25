@@ -170,6 +170,10 @@ func DetectivePercentagesPage(rw http.ResponseWriter, r *http.Request) {
 	http.ServeFile(rw, r, "static/detective.html")
 }
 
-func PlayerPercetnagesPage(rw http.ResponseWriter, r *http.Request) {
+func PlayerPercentagesPage(rw http.ResponseWriter, r *http.Request) {
 	http.ServeFile(rw, r, "static/player.html")
+}
+
+func RolePercentagesPage(rw http.ResponseWriter, r *http.Request) {
+	http.ServeFile(rw, r, "static/role.html")
 }

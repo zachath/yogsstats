@@ -80,3 +80,7 @@ type TraitorRound struct {
 type TeamsResponse struct {
 	Teams []string `json:"teams"`
 }
+
+type RolesResponse struct {
+	Roles []string `json:"roles"`
+}
