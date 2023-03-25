@@ -262,7 +262,7 @@ func DetectiveWinPercentage(rw http.ResponseWriter, req *http.Request) {
 	json.NewEncoder(rw).Encode(response)
 }
 
-func RoleWinPercentage(rw http.ResponseWriter, req *http.Request) {
+func RoleWinPercentageHandler(rw http.ResponseWriter, req *http.Request) {
 	player := req.URL.Query().Get("player")
 	from := req.Context().Value("from").(string)
 	to := req.Context().Value("to").(string)

@@ -159,16 +159,16 @@ func CalculateRoleWins(player, from, to string, round bool) (RoleWinsResponse, e
 	}
 
 	response := RoleWinsResponse{
-		Players: make(map[string]map[string]RoleWinsEntry),
+		Players: make(map[string]RoleWinPercentage),
 	}
 
-	roles, err := db.GetEntries("role", "role", "role", "*")
+	roles, err := db.GetEntries("role", "role", "win", "true")
 	if err != nil {
 		return RoleWinsResponse{Feedback: "Error getting entries"}, errors.Annotate(err, "Error getting entries")
 	}
 
 	for _, p := range players {
-		response.Players[p] = make(map[string]RoleWinsEntry)
+		response.Players[p] = RoleWinPercentage{Roles: make(map[string]PercentageEntry)}
 		for _, role := range roles {
 			wins, roundsPlayed, err := db.WinsByRole(p, role, from, to)
 			if err != nil {
@@ -188,7 +188,7 @@ func CalculateRoleWins(player, from, to string, round bool) (RoleWinsResponse, e
 				}
 			}
 
-			response.Players[p][role] = RoleWinsEntry{WinRate: rate, RoundsPlayed: roundsPlayed}
+			response.Players[p].Roles[role] = PercentageEntry{Percentage: rate, RoundPlayedAs: roundsPlayed, Wins: wins}
 		}
 	}
 

@@ -58,9 +58,13 @@ type RoleWinsEntry struct {
 	WinRate      float64
 	RoundsPlayed int
 }
+
+type RoleWinPercentage struct {
+	Roles map[string]PercentageEntry `json:"roles"`
+}
 type RoleWinsResponse struct {
-	Feedback string                              `json:"feedback"`
-	Players  map[string]map[string]RoleWinsEntry `json:"players"` //"player": {"role": {"rate": e, "played": e}}
+	Feedback string                       `json:"feedback"`
+	Players  map[string]RoleWinPercentage `json:"players"`
 }
 
 type TraitorComboEntry struct {

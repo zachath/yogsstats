@@ -26,6 +26,7 @@ func main() {
 	http.HandleFunc("/traitor-combos", TraitorCombosPage)
 	http.HandleFunc("/detective-win-percentages", DetectivePercentagesPage)
 	http.HandleFunc("/player-win-percentages", PlayerPercentagesPage)
+	http.HandleFunc("/role-win-percentages", RolePercentagesPage)
 
 	http.HandleFunc("/readme", SetHeaders(ReadMeHandler))
 	http.HandleFunc("/stats/ttt", SetHeaders(DateValidation(GetOrPost(GetTTTRound, ValidatePost(ValidateTTTRoundPost(PostTTTRound))))))
@@ -35,7 +36,7 @@ func main() {
 	http.HandleFunc("/stats/ttt/detectiveWinPercentage", SetHeaders(DateValidation(DetectiveWinPercentage)))
 	http.HandleFunc("/stats/ttt/traitorCombos", SetHeaders(DateValidation(TraitorCombos)))
 	http.HandleFunc("/stats/ttt/videos", SetHeaders(DateValidation(GetOrPost(GetVideo, ValidatePost(ValidateVideoPost(PostVideo))))))
-	http.HandleFunc("/stats/ttt/roleWinPercentage", SetHeaders(DateValidation(RoleWinPercentage)))
+	http.HandleFunc("/stats/ttt/roleWinPercentage", SetHeaders(DateValidation(RoleWinPercentageHandler)))
 	http.HandleFunc("/stats/ttt/teams", SetHeaders(GetTeams))
 	http.HandleFunc("/stats/ttt/roles", SetHeaders(GetRoles))
 
