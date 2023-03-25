@@ -36,6 +36,7 @@ func main() {
 	http.HandleFunc("/stats/ttt/traitorCombos", SetHeaders(DateValidation(TraitorCombos)))
 	http.HandleFunc("/stats/ttt/videos", SetHeaders(DateValidation(GetOrPost(GetVideo, ValidatePost(ValidateVideoPost(PostVideo))))))
 	http.HandleFunc("/stats/ttt/roleWinPercentage", SetHeaders(DateValidation(RoleWinPercentage)))
+	http.HandleFunc("/stats/ttt/teams", SetHeaders(GetTeams))
 
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 

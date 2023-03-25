@@ -136,6 +136,23 @@ func PostTTTRound(rw http.ResponseWriter, req *http.Request) {
 	io.WriteString(rw, "POSTed round successfully")
 }
 
+func GetTeams(rw http.ResponseWriter, req *http.Request) {
+	db, err := db.GetEntries("team", "team", "team", "*")
+	if err != nil {
+		log.Error().Stack().Err(err).Msg("Failed to get teams")
+		return
+	}
+
+	var teams []string
+	for _, d := range db {
+		if d != "none" {
+			teams = append(teams, d)
+		}
+	}
+
+	json.NewEncoder(rw).Encode(TeamsResponse{Teams: teams})
+}
+
 func TeamWins(rw http.ResponseWriter, req *http.Request) {
 	team := req.URL.Query().Get("team")
 	from := req.Context().Value("from").(string)

@@ -76,3 +76,7 @@ type TraitorRound struct {
 	Id  string
 	Win string `db:"winning_team"`
 }
+
+type TeamsResponse struct {
+	Teams []string `json:"teams"`
+}
