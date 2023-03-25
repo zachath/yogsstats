@@ -42,12 +42,12 @@ func addPlayer(name string, tx *sql.Tx) error {
 	return errors.Wrapf(err, "Failed to add player %s to database", name)
 }
 
-func GetEntries(table, column, value string) ([]string, error) {
+func GetEntries(cols, table, column, value string) ([]string, error) {
 	var query string
 	if value == "*" {
-		query = fmt.Sprintf("SELECT * FROM %s;", table)
+		query = fmt.Sprintf("SELECT %s FROM %s;", cols, table)
 	} else {
-		query = fmt.Sprintf("SELECT * FROM %s WHERE %s = '%s';", table, column, value)
+		query = fmt.Sprintf("SELECT %s FROM %s WHERE %s = '%s';", cols, table, column, value)
 	}
 
 	var rows []string
@@ -335,4 +335,29 @@ func GetTraitorRounds(player, from, to string) ([]models.TraitorRound, error) {
 	}
 
 	return rounds, nil
+}
+
+func WinsByRole(player, role, from, to string) (int, int, error) {
+	query := "SELECT R.winning_team, RP.team FROM round_participation RP JOIN round R ON RP.id = R.id WHERE RP.player = $1 AND R.date >= $2 AND R.date <= $3 AND RP.role = $4;"
+
+	type row struct {
+		WinningTeam string `db:"winning_team"`
+		Team        string
+	}
+
+	var rows []row
+	err := db.Select(&rows, query, player, from, to, role)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	roundsPlayed := len(rows)
+	wins := 0
+	for _, row := range rows {
+		if row.WinningTeam == row.Team {
+			wins++
+		}
+	}
+
+	return wins, roundsPlayed, nil
 }

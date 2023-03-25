@@ -14,7 +14,7 @@ import (
 )
 
 func CalculatePlayerWinPercentage(player, from, to string, round bool) (PlayerWinPercentageResponse, error) {
-	players, err := db.GetEntries("player", "name", player)
+	players, err := db.GetEntries("*", "player", "name", player)
 	if err != nil {
 		return PlayerWinPercentageResponse{Feedback: "Error getting entries"}, errors.Annotate(err, "Error getting entries")
 	}
@@ -25,7 +25,7 @@ func CalculatePlayerWinPercentage(player, from, to string, round bool) (PlayerWi
 
 	for _, player := range players {
 		roundsPlayed := 0
-		teams, err := db.GetEntries("team", "team", "*")
+		teams, err := db.GetEntries("*", "team", "team", "*")
 		if err != nil {
 			return PlayerWinPercentageResponse{Feedback: "Error getting entries"}, errors.Annotate(err, "Error getting entries")
 		}
@@ -73,7 +73,7 @@ func CalculatePlayerWinPercentage(player, from, to string, round bool) (PlayerWi
 }
 
 func CalculateTeamWins(team, from, to string) (TeamWinPercentageResponse, error) {
-	teams, err := db.GetEntries("team", "team", team)
+	teams, err := db.GetEntries("*", "team", "team", team)
 	if err != nil {
 		return TeamWinPercentageResponse{Feedback: "Error getting entries."}, errors.Annotate(err, "Error getting entries")
 	}
@@ -107,7 +107,7 @@ func CalculateTeamWins(team, from, to string) (TeamWinPercentageResponse, error)
 }
 
 func CalculateDetectiveWinPercentage(player, from, to string, canon, round bool) (DetecitveWinPercentageResponse, error) {
-	players, err := db.GetEntries("player", "name", player)
+	players, err := db.GetEntries("*", "player", "name", player)
 	if err != nil {
 		return DetecitveWinPercentageResponse{Feedback: "Error getting entries"}, errors.Annotate(err, "Error getting entries")
 	}
@@ -128,7 +128,6 @@ func CalculateDetectiveWinPercentage(player, from, to string, canon, round bool)
 		}
 
 		if roundsPlayed == 0 {
-			response.Players[player] = DetectiveWinPercentageEntry{WinRate: 0, RoundsPlayed: 0}
 			continue
 		}
 
@@ -153,13 +152,57 @@ func CalculateDetectiveWinPercentage(player, from, to string, canon, round bool)
 	return response, nil
 }
 
+func CalculateRoleWins(player, from, to string, round bool) (RoleWinsResponse, error) {
+	players, err := db.GetEntries("*", "player", "name", player)
+	if err != nil {
+		return RoleWinsResponse{Feedback: "Error getting entries"}, errors.Annotate(err, "Error getting entries")
+	}
+
+	response := RoleWinsResponse{
+		Players: make(map[string]map[string]RoleWinsEntry),
+	}
+
+	roles, err := db.GetEntries("role", "role", "role", "*")
+	if err != nil {
+		return RoleWinsResponse{Feedback: "Error getting entries"}, errors.Annotate(err, "Error getting entries")
+	}
+
+	for _, p := range players {
+		response.Players[p] = make(map[string]RoleWinsEntry)
+		for _, role := range roles {
+			wins, roundsPlayed, err := db.WinsByRole(p, role, from, to)
+			if err != nil {
+				return RoleWinsResponse{Feedback: "Error calculating winrate by role"}, errors.Annotatef(err, "Failed calculation for role %s", role)
+			}
+
+			if roundsPlayed == 0 {
+				continue
+			}
+
+			rate := float64(wins) / float64(roundsPlayed)
+
+			if round {
+				rate, err = roundup(rate)
+				if err != nil {
+					return RoleWinsResponse{Feedback: "Failed roduning results"}, errors.Annotate(err, "failed rouding results")
+				}
+			}
+
+			response.Players[p][role] = RoleWinsEntry{WinRate: rate, RoundsPlayed: roundsPlayed}
+		}
+	}
+
+	response.Feedback = "Successfull request"
+	return response, nil
+}
+
 func CalculateTraitorCombos(player, from, to string, round bool) (TraitorCombosResponse, error) {
-	selectedPlayers, err := db.GetEntries("player", "name", player)
+	selectedPlayers, err := db.GetEntries("*", "player", "name", player)
 	if err != nil {
 		return TraitorCombosResponse{Feedback: "Error getting entries"}, errors.Annotatef(err, "Error getting entries, player = %s", player)
 	}
 
-	allPlayers, err := db.GetEntries("player", "name", "*")
+	allPlayers, err := db.GetEntries("*", "player", "name", "*")
 	if err != nil {
 		return TraitorCombosResponse{Feedback: "Error getting entries"}, errors.Annotatef(err, "Error getting entries, player = %s", player)
 	}

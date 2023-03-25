@@ -81,9 +81,9 @@ func PostVideo(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	log.Info().Msg("Served TTT Round POST request!")
+	log.Info().Msg("Served TTT video POST request!")
 
-	io.WriteString(rw, "POSTed round successfully")
+	io.WriteString(rw, "POSTed video successfully")
 }
 
 func GetTTTRound(rw http.ResponseWriter, req *http.Request) {
@@ -231,6 +231,36 @@ func DetectiveWinPercentage(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	log.Info().Msg("Served detective win percentage request!")
+
+	json.NewEncoder(rw).Encode(response)
+}
+
+func RoleWinPercentage(rw http.ResponseWriter, req *http.Request) {
+	player := req.URL.Query().Get("player")
+	from := req.Context().Value("from").(string)
+	to := req.Context().Value("to").(string)
+
+	round := false
+	if req.URL.Query().Get("round") == "true" {
+		round = true
+	}
+
+	setTimeBox(&from, &to)
+	var err error
+
+	var response RoleWinsResponse
+	if player == "" {
+		player = "*"
+	}
+
+	response, err = CalculateRoleWins(player, from, to, round)
+	if err != nil {
+		log.Error().Stack().Err(err).Msg("Failed getting role win percentage.")
+		http.Error(rw, "Failed getting role win percentage.", http.StatusInternalServerError)
+		return
+	}
+
+	log.Info().Msg("Served role win percentage request!")
 
 	json.NewEncoder(rw).Encode(response)
 }
