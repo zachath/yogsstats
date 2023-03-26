@@ -2,7 +2,7 @@ async function roleWin(from, to) {
     google.charts.load('current', {'packages': ['table']}).then(
         async () => {
             console.log("Fetching role win percentage data")
-            const response = await fetch("https://yogscast.com/stats/ttt/roleWinPercentage?round=true&from="+from+"&to="+to, {
+            const response = await fetch("https://yogsstats.com/stats/ttt/roleWinPercentage?round=true&from="+from+"&to="+to, {
                 method: 'GET',
                 mode: 'cors',
             })
@@ -12,7 +12,7 @@ async function roleWin(from, to) {
             var players = new Map(Object.entries(players))
 
             console.log("Fetching roles")
-            const rolesResponse = await fetch("https://yogscast.com/stats/ttt/roles", {
+            const rolesResponse = await fetch("https://yogsstats.com/stats/ttt/roles", {
                 method: 'GET',
                 mode: 'cors'
             })
