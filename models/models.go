@@ -8,13 +8,14 @@ type Video struct {
 }
 
 type Round struct {
-	Id          string   `json:"id" db:"id"`
-	Date        string   `json:"date" db:"date"`
-	Players     []Player `json:"players" db:"players"`
-	WinningTeam string   `json:"winningTeam" db:"winning_team"`
-	Vid         string   `json:"vid" db:"id"`
-	Start       int      `json:"start" db:"vid_start"`
-	End         int      `json:"end" db:"vid_end"`
+	Id           string   `json:"id" db:"id"`
+	Date         string   `json:"date" db:"date"`
+	Players      []Player `json:"players" db:"players"`
+	WinningTeam  string   `json:"winningTeam" db:"winning_team"`
+	Vid          string   `json:"vid" db:"id"`
+	Start        int      `json:"start" db:"vid_start"`
+	End          int      `json:"end" db:"vid_end"`
+	JesterKiller string   `json:"jesterKiller" db:"jester_killer"`
 }
 
 type Player struct {

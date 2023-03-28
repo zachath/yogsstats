@@ -158,11 +158,11 @@ func InsertRound(round *models.Round) error {
 
 	defer tx.Rollback()
 
-	stmt, err := tx.Prepare("INSERT INTO round (id, date, winning_team, video, vid_start, vid_end) VALUES ($1, $2, $3, $4, $5, $6);")
+	stmt, err := tx.Prepare("INSERT INTO round (id, date, winning_team, video, vid_start, vid_end, jester_killer) VALUES ($1, $2, $3, $4, $5, $6, $7);")
 	if err != nil {
 		return errors.Wrapf(err, "Failed to prepare insert round statment of round with id %s", round.Id)
 	}
-	_, err = stmt.Exec(round.Id, round.Date, round.WinningTeam, round.Vid, round.Start, round.End)
+	_, err = stmt.Exec(round.Id, round.Date, round.WinningTeam, round.Vid, round.Start, round.End, round.JesterKiller)
 	if err != nil {
 		return errors.Wrapf(err, "Failed to insert round with id %s", round.Id)
 	}
@@ -240,8 +240,9 @@ func GetRound(id, from, to string) ([]models.Round, error) {
 		Team        string
 		Died        string
 		Vid         string
-		Start       int `db:"vid_start"`
-		End         int `db:"vid_end"`
+		Start       int    `db:"vid_start"`
+		End         int    `db:"vid_end"`
+		J_K         string `db:"jester_killer"`
 	}
 
 	rows := []row{}
@@ -272,7 +273,7 @@ func GetRound(id, from, to string) ([]models.Round, error) {
 				rounds = append(rounds, round)
 			}
 
-			round = models.Round{Id: strconv.Itoa(row.Id), Date: row.Date, Vid: row.Vid, Start: row.Start, End: row.End, WinningTeam: row.WinningTeam}
+			round = models.Round{Id: strconv.Itoa(row.Id), Date: row.Date, Vid: row.Vid, Start: row.Start, End: row.End, WinningTeam: row.WinningTeam, JesterKiller: row.J_K}
 		}
 
 		round.Players = append(round.Players, models.Player{Name: row.Player, Role: row.Role, Team: row.Team, Died: row.Died})

@@ -1,0 +1,1 @@
+alter table round add column jester_killer text;
