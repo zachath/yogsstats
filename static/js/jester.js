@@ -22,11 +22,8 @@ async function jesterKills(from, to) {
             color: "white"
         },
         backgroundColor: "#1c2833",
-        legend: {
-            textStyle: {
-                color: 'white'
-            }
-        }
+        legend: 'none',
+        pieSliceText: 'label'
     };
 
     var chart = new google.visualization.PieChart(document.getElementById('info-display'));

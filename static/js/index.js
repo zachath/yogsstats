@@ -23,11 +23,8 @@ async function drawTeamWins(from, to) {
         },
         backgroundColor: "#1c2833",
         colors: ['pink', '#8b0000', 'brown', 'green', 'purple', '#FF69B4', 'red', 'black'],
-        legend: {
-            textStyle: {
-                color: 'white'
-            }
-        }
+        legend: 'none',
+        pieSliceText: 'label'
     };
 
     var chart = new google.visualization.PieChart(document.getElementById('info-display'));
