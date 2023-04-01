@@ -37,6 +37,7 @@ func main() {
 	http.HandleFunc("/stats/ttt/traitorCombos", SetHeaders(DateValidation(TraitorCombos)))
 	http.HandleFunc("/stats/ttt/videos", SetHeaders(DateValidation(GetOrPost(GetVideo, ValidatePost(ValidateVideoPost(PostVideo))))))
 	http.HandleFunc("/stats/ttt/roleWinPercentage", SetHeaders(DateValidation(RoleWinPercentageHandler)))
+	http.HandleFunc("/stats/ttt/jesterKills", SetHeaders(DateValidation(JesterKills)))
 	http.HandleFunc("/stats/ttt/teams", SetHeaders(GetTeams))
 	http.HandleFunc("/stats/ttt/roles", SetHeaders(GetRoles))
 

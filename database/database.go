@@ -332,7 +332,7 @@ func GetTraitorRounds(player, from, to string) ([]models.TraitorRound, error) {
 	var rounds []models.TraitorRound
 	err := db.Select(&rounds, query, player, from, to)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "Error getting traitor rounds")
 	}
 
 	return rounds, nil
@@ -349,7 +349,7 @@ func WinsByRole(player, role, from, to string) (int, int, error) {
 	var rows []row
 	err := db.Select(&rows, query, player, from, to, role)
 	if err != nil {
-		return 0, 0, err
+		return 0, 0, errors.Wrap(err, "Error getting wins by role")
 	}
 
 	roundsPlayed := len(rows)
@@ -361,4 +361,21 @@ func WinsByRole(player, role, from, to string) (int, int, error) {
 	}
 
 	return wins, roundsPlayed, nil
+}
+
+func GetJesterKills(jesterWins int, player, from, to string) (int, float64, error) {
+	query := "select K.kills, trunc(K.kills / ($1)::numeric,3) as rate from (select count(*) as kills from round where jester_killer = $2 AND date >= $3 AND date <= $4) as K;"
+
+	type row struct {
+		Kills int
+		Rate  float64
+	}
+
+	var rows []row
+	err := db.Select(&rows, query, jesterWins, player, from, to)
+	if err != nil {
+		return 0, 0, errors.Wrap(err, "Error getting jeser kills")
+	}
+
+	return rows[0].Kills, rows[0].Rate, nil
 }

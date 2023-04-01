@@ -89,3 +89,14 @@ type TeamsResponse struct {
 type RolesResponse struct {
 	Roles []string `json:"roles"`
 }
+
+type JesterKillsResponse struct {
+	Feedback        string                      `json:"feedback"`
+	TotalJesterWins int                         `json:"totalJesterWins"`
+	Players         map[string]JesterKillsEntry `json:"players"`
+}
+
+type JesterKillsEntry struct {
+	Kills int     `json:"kills"`
+	Rate  float64 `json:"rate"`
+}

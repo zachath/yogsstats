@@ -411,3 +411,21 @@ func TraitorCombos(rw http.ResponseWriter, req *http.Request) {
 
 	json.NewEncoder(rw).Encode(response)
 }
+
+func JesterKills(rw http.ResponseWriter, req *http.Request) {
+	from := req.Context().Value("from").(string)
+	to := req.Context().Value("to").(string)
+
+	setTimeBox(&from, &to)
+
+	response, err := calculateJesterKills(from, to)
+	if err != nil {
+		log.Error().Stack().Err(err).Msg("Failed getting jester kills")
+		http.Error(rw, "Failed getting jester kills.", http.StatusInternalServerError)
+		return
+	}
+
+	log.Info().Msg("Served jester kills request!")
+
+	json.NewEncoder(rw).Encode(response)
+}

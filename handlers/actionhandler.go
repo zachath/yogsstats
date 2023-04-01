@@ -280,6 +280,34 @@ func getTraitorWinRate(player1Rounds []TraitorRound, player2, from, to string, r
 	return rate, len, nil
 }
 
+func calculateJesterKills(from, to string) (JesterKillsResponse, error) {
+	numJesterWins, err := db.CountRows("round", fmt.Sprintf("winning_team = 'jester' AND date >= '%s' AND date <= '%s';", from, to))
+	if err != nil {
+		return JesterKillsResponse{Feedback: "failed counting jester wins"}, errors.Annotate(err, "failed counting jester wins")
+	}
+
+	allPlayers, err := db.GetEntries("*", "player", "name", "*")
+	if err != nil {
+		return JesterKillsResponse{Feedback: "Error getting entries"}, errors.Annotate(err, "Error getting entries, players")
+	}
+
+	var response = JesterKillsResponse{TotalJesterWins: numJesterWins, Players: make(map[string]JesterKillsEntry)}
+	for _, player := range allPlayers {
+		kills, rate, err := db.GetJesterKills(numJesterWins, player, from, to)
+		if err != nil {
+			return JesterKillsResponse{Feedback: "failed getting jester kills"}, errors.Annotatef(err, "Error getting jester kills, player: %s", player)
+		}
+
+		if kills != 0 {
+			response.Players[player] = JesterKillsEntry{Kills: kills, Rate: rate}
+		}
+	}
+
+	log.Info().Msg("jester kills request")
+	response.Feedback = "Successfull request"
+	return response, nil
+}
+
 func roundup(f float64) (float64, error) {
 	return strconv.ParseFloat(fmt.Sprintf("%.3f", (math.Round(f/0.001)*0.001)), 64)
 }
