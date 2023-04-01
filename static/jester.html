@@ -5,13 +5,13 @@
     <link rel="stylesheet" href="/static/css/stylesheet.css">
     <title>YogsStats</title> 
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
-    <script type="module" src="/static/js/traitors.js"></script>
+    <script type="module" src="/static/js/jester.js"></script>
     <script>
         function reset() {
             document.getElementById("from").value = "2022-10-23"
             var today = getDate()
             document.getElementById("to").value = today
-            traitorCombos(document.getElementById('from').value, document.getElementById('to').value)
+            jesterKills(document.getElementById('from').value, document.getElementById('to').value)
         }
     </script>
 </head>
@@ -42,7 +42,7 @@
                 <input type="date" id="to" min="2022-10-24" style="background-color:white">
             </div>
             <div class="button-container">
-                <button class="data-button" onclick="traitorCombos(document.getElementById('from').value, document.getElementById('to').value)">Refresh</button>
+                <button class="data-button" onclick="drawTeamWins(document.getElementById('from').value, document.getElementById('to').value)">Refresh</button>
                 <button class="data-button" onclick="reset()">Reset</button>
             </div>
             <div id="info-display" style="width: 1500px; height: 800px;"></div>

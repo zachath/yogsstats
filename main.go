@@ -27,6 +27,7 @@ func main() {
 	http.HandleFunc("/detective-win-percentages", DetectivePercentagesPage)
 	http.HandleFunc("/player-win-percentages", PlayerPercentagesPage)
 	http.HandleFunc("/role-win-percentages", RolePercentagesPage)
+	http.HandleFunc("/jester-kills", JesterKillsPage)
 
 	http.HandleFunc("/readme", SetHeaders(ReadMeHandler))
 	http.HandleFunc("/stats/ttt", SetHeaders(DateValidation(GetOrPost(GetTTTRound, ValidatePost(ValidateTTTRoundPost(PostTTTRound))))))

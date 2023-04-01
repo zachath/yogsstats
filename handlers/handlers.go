@@ -177,3 +177,7 @@ func PlayerPercentagesPage(rw http.ResponseWriter, r *http.Request) {
 func RolePercentagesPage(rw http.ResponseWriter, r *http.Request) {
 	http.ServeFile(rw, r, "static/role.html")
 }
+
+func JesterKillsPage(rw http.ResponseWriter, r *http.Request) {
+	http.ServeFile(rw, r, "static/jester.html")
+}
