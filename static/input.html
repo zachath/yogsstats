@@ -31,27 +31,27 @@
         <div class="post-round">
             <h1>Post round:</h1>
             <label>Id</label>
-            <input type="text" id="title" style="background-color:white">
+            <input type="text" id="id" style="background-color:white">
             <label>Date:</label>
             <input type="date" id="round-date" style="background-color:white">
             <label>Video id:</label>
-            <input type="text" id="round-id" style="background-color:white">
+            <input type="text" id="round-vid" style="background-color:white">
             <label>start:</label>
             <input type="text" id="start" style="background-color:white">
             <label>end:</label>
             <input type="text" id="end" style="background-color:white">
             <label>Winning Team:</label>
-            <select id="winning-team" style="background-color:white">
+            <select id="winning-team" style="background-color:white"></select>
             <label>Jester killer:</label>
             <input type="text" id="jester-killer" style="background-color:white">
+
             <div id="players">
                 <h3>Players: </h3>
                 <button type="button" onClick="add()">Add</button>
-                <div id="player_list">
-                    
-                </div>
+                <div id="player_list"></div>
             </div>
-            <button>POST</button>
+            <button onclick="postRound()">POST</button>
+            <label id="round-status">Status: </label>
         </div>
     </main>
 </body>

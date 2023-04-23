@@ -24,6 +24,7 @@ function remove(ev) {
     div.removeChild(teamL)
     div.removeChild(diedL)
     div.removeChild(button)
+    div.remove()
 }
 
 function add() {
@@ -102,6 +103,7 @@ async function getTeams() {
     var winSelect = document.getElementById('winning-team')
     let response = await fetch("https://yogsstats.com/stats/ttt/teams")
     let json = await response.json()
+    teams.push("none")
     for (var idx in json['teams']) {
         var team = json['teams'][idx]
         teams.push(team)
@@ -144,7 +146,58 @@ async function postVideo() {
     })
 }
 
+async function postRound() {
+    let data = {
+        id: document.getElementById("id").value,
+        date: document.getElementById("round-date").value,
+        vid: document.getElementById("round-vid").value,
+        start: Number(document.getElementById("start").value),
+        end: Number(document.getElementById("end").value),
+        winningTeam: document.getElementById("winning-team").value,
+        jesterKiller: document.getElementById("jester-killer").value,
+        players: []
+    }
 
+    //Hacky
+    for (const child of document.getElementById('player_list').children) {
+        let values = []
+        for (const childchild of child.children) {
+            let value = childchild.value
+            if (typeof value !== "undefined") {
+                if (value == "on") {
+                    if (childchild.checked) {
+                        values.push("yes")
+                    } else {
+                        values.push("no")
+                    }
+                } else {
+                    values.push(value)
+                }
+            }
+        }
+
+        if (values.length > 0) {
+            data.players.push({
+                "name": values[0],
+                "role": values[1],
+                "team": values[2],
+                "died": values[3]
+            })
+        }
+    }
+
+    fetch("http://localhost:8080/stats/ttt", {
+        method: "POST",
+        mode: "cors",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Basic " + btoa(":" + document.getElementById('auth').value),
+        },
+        body: JSON.stringify(data)
+    }).then(response => {
+       document.getElementById('round-status').innerHTML = "Status: " + response.status;
+    })
+}
 
 import { getDate } from "./site-wide.js";
 
@@ -152,6 +205,7 @@ window.getDate = getDate;
 window.add = add;
 window.remove = remove;
 window.postVideo = postVideo;
+window.postRound = postRound;
 
 window.onload = function() {
     var today = getDate()
