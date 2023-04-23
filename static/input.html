@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <title>YogsStats</title>
+    <script type="module" src="/static/js/input.js"></script>
+</head>
+<body>
+    <header class="header">
+        <div class="title">
+            YogsStats
+        </div>
+    </header>
+    <main class="main">
+        <div class="auth">
+            <input type="text" id="auth" style="background-color:white">
+        </div>
+        <div class="post-video">
+            <h1>Post video:</h1>
+            <label>Title</label>
+            <input type="text" id="title" style="background-color:white">
+            <label>Date:</label>
+            <input type="date" id="video-date" style="background-color:white">
+            <label>Video id:</label>
+            <input type="text" id="video-id" style="background-color:white">
+            <label>Intro Death:</label>
+            <input type="checkbox" id="intro-death" style="background-color:white">
+            <button type="button" onClick="postVideo()">POST</button>
+            <label id="video-status">Status: </label>
+        </div>
+        <div class="post-round">
+            <h1>Post round:</h1>
+            <label>Id</label>
+            <input type="text" id="title" style="background-color:white">
+            <label>Date:</label>
+            <input type="date" id="round-date" style="background-color:white">
+            <label>Video id:</label>
+            <input type="text" id="round-id" style="background-color:white">
+            <label>start:</label>
+            <input type="text" id="start" style="background-color:white">
+            <label>end:</label>
+            <input type="text" id="end" style="background-color:white">
+            <label>Winning Team:</label>
+            <select id="winning-team" style="background-color:white">
+            <label>Jester killer:</label>
+            <input type="text" id="jester-killer" style="background-color:white">
+            <div id="players">
+                <h3>Players: </h3>
+                <button type="button" onClick="add()">Add</button>
+                <div id="player_list">
+                    
+                </div>
+            </div>
+            <button>POST</button>
+        </div>
+    </main>
+</body>

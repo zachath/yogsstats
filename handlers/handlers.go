@@ -33,21 +33,19 @@ func GetOrPost(get, post http.HandlerFunc) http.HandlerFunc {
 func BasicAuth(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		_, providedPassword, ok := req.BasicAuth()
-		if !ok {
-			log.Error().Msg("failed to parse basic auth")
-			http.Error(rw, "Unauthorized", http.StatusUnauthorized)
-			return
+
+		if ok {
+			hashedPass := os.Getenv("POST_PASS")
+			err := bcrypt.CompareHashAndPassword([]byte(hashedPass), []byte(providedPassword))
+			if err == nil {
+				next(rw, req)
+				return
+			}
 		}
 
-		hashedPass := os.Getenv("POST_PASS")
-		err := bcrypt.CompareHashAndPassword([]byte(hashedPass), []byte(providedPassword))
-		if err != nil {
-			log.Error().Err(err).Msg("unauthorized login attempt")
-			http.Error(rw, "Unauthorized", http.StatusUnauthorized)
-			return
-		}
-
-		next(rw, req)
+		log.Error().Msgf("unauthorized login attemt, password: %s", providedPassword)
+		rw.Header().Set("WWW-Authenticate", `Basic realm="restricted"`)
+		http.Error(rw, "Unauthorized", http.StatusUnauthorized)
 	})
 }
 
@@ -183,4 +181,8 @@ func RolePercentagesPage(rw http.ResponseWriter, r *http.Request) {
 
 func JesterKillsPage(rw http.ResponseWriter, r *http.Request) {
 	http.ServeFile(rw, r, "static/jester.html")
+}
+
+func InputPage(rw http.ResponseWriter, r *http.Request) {
+	http.ServeFile(rw, r, "static/input.html")
 }
