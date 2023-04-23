@@ -30,17 +30,20 @@ func GetOrPost(get, post http.HandlerFunc) http.HandlerFunc {
 	})
 }
 
-func ValidatePost(next http.HandlerFunc) http.HandlerFunc {
+func BasicAuth(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		_, providedPassword, ok := req.BasicAuth()
+		if !ok {
+			log.Error().Msg("failed to parse basic auth")
+			http.Error(rw, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
 		hashedPass := os.Getenv("POST_PASS")
-
-		err := bcrypt.CompareHashAndPassword([]byte(hashedPass), []byte(req.Header.Get("X-Access-Token")))
-
+		err := bcrypt.CompareHashAndPassword([]byte(hashedPass), []byte(providedPassword))
 		if err != nil {
-			log.Error().Err(err).Msg("POST ATTEMTED USING INVALID PASSWORD!!!")
-			http.Error(rw, "", http.StatusForbidden)
-			b, _ := bcrypt.GenerateFromPassword([]byte(req.Header.Get("X-Access-Token")), 10)
-			log.Debug().Str("Got", string(b)).Str("expected", hashedPass).Msg("")
+			log.Error().Err(err).Msg("unauthorized login attempt")
+			http.Error(rw, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
 
