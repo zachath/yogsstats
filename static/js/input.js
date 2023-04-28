@@ -128,12 +128,12 @@ async function getRoles() {
 async function postVideo() {
     let data = {
         title: document.getElementById('title').value,
-        date: document.getElementById('video-date').value,
+        date: document.getElementById('date').value,
         vid: document.getElementById('video-id').value,
         introDeath: document.getElementById('intro-death').checked.toString()
     }
 
-    fetch("http://localhost:8080/stats/ttt/videos", {
+    fetch("https://yogsstats.com/stats/ttt/videos", {
         method: "POST",
         mode: "cors",
         headers: {
@@ -149,7 +149,7 @@ async function postVideo() {
 async function postRound() {
     let data = {
         id: document.getElementById("id").value,
-        date: document.getElementById("round-date").value,
+        date: document.getElementById("date").value,
         vid: document.getElementById("round-vid").value,
         start: Number(document.getElementById("start").value),
         end: Number(document.getElementById("end").value),
@@ -186,7 +186,7 @@ async function postRound() {
         }
     }
 
-    fetch("http://localhost:8080/stats/ttt", {
+    fetch("https://yogsstats.com/stats/ttt", {
         method: "POST",
         mode: "cors",
         headers: {
@@ -209,8 +209,7 @@ window.postRound = postRound;
 
 window.onload = function() {
     var today = getDate()
-    document.getElementById("video-date").setAttribute("value", today);
-    document.getElementById("round-date").setAttribute("value", today);
+    document.getElementById("date").setAttribute("value", today);
     getTeams()
     getRoles()
 }
