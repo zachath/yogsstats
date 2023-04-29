@@ -24,18 +24,16 @@
             <label>Title:</label>
             <input type="text" id="title" style="background-color:white">
             <label>Video id:</label>
-            <input type="text" id="video-id" style="background-color:white">
+            <input type="text" id="vid" style="background-color:white">
             <label>Intro Death:</label>
             <input type="checkbox" id="intro-death" style="background-color:white">
-            <button type="button" onClick="postVideo()">POST</button>
+            <button type="button" onclick="postVideo()">POST</button>
             <label id="video-status">Status: </label>
         </div>
         <div class="post-round">
             <h1>Post round:</h1>
             <label>Id</label>
             <input type="text" id="id" style="background-color:white">
-            <label>Video id:</label>
-            <input type="text" id="round-vid" style="background-color:white">
             <label>start:</label>
             <input type="text" id="start" style="background-color:white">
             <label>end:</label>
@@ -47,7 +45,8 @@
 
             <div id="players">
                 <h3>Players: </h3>
-                <button type="button" onClick="add()">Add</button>
+                <button type="button" onclick="add()">Add</button>
+                <button type="button" onclick="clearRound()">Clear</button>
                 <div id="player_list"></div>
             </div>
             <button onclick="postRound()">POST</button>

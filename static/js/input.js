@@ -1,4 +1,5 @@
 var player_id = 0
+var default_text_value = "Not Set"
 
 function remove(ev) {
     var button = ev.target;
@@ -25,8 +26,15 @@ function remove(ev) {
     div.removeChild(diedL)
     div.removeChild(button)
     div.remove()
+    
+    const index = players.indexOf(div)
+    if (index > -1) {
+        players.splice(index, 1)
+    }
+    console.log(players)
 }
 
+var players = []
 function add() {
     var div = document.createElement('div')
     player_id++;
@@ -49,6 +57,13 @@ function add() {
         opt.innerHTML = roles[idx]
         role.appendChild(opt)
     }
+    var opt = document.createElement('option')
+    opt.value = default_text_value
+    opt.innerHTML = default_text_value
+    opt.selected = true
+    opt.disabled = true
+    opt.hidden = true
+    role.appendChild(opt)
 
     var teamLabel = document.createElement('label')
     teamLabel.innerHTML = "Team: "
@@ -61,6 +76,13 @@ function add() {
         opt.innerHTML = teams[idx]
         team.appendChild(opt)
     }
+    var opt = document.createElement('option')
+    opt.value = default_text_value
+    opt.innerHTML = default_text_value
+    opt.selected = true
+    opt.disabled = true
+    opt.hidden = true
+    team.appendChild(opt)
 
     var diedLabel = document.createElement('label')
     diedLabel.innerHTML = "Died: "
@@ -95,6 +117,29 @@ function add() {
     div.appendChild(removeButton);
 
     player_list.appendChild(div)
+    players.push(div)
+}
+
+function clearRound() {
+    for (const div of players) {
+        for (const child of div.children) {
+            if (child.type != "text") {
+                let value = child.value
+                if (typeof value !== "undefined") {
+                    if (value == "on") {
+                        child.checked = false
+                    } else {
+                        child.value = default_text_value
+                    }
+                }
+            }
+        }
+    }
+
+    document.getElementById("start").value = ""
+    document.getElementById("end").value = ""
+    document.getElementById("winning-team").value = default_text_value
+    document.getElementById("jester-killer").value = ""
 }
 
 var teams = []
@@ -103,19 +148,31 @@ async function getTeams() {
     var winSelect = document.getElementById('winning-team')
     let response = await fetch("https://yogsstats.com/stats/ttt/teams")
     let json = await response.json()
-    teams.push("none")
     for (var idx in json['teams']) {
         var team = json['teams'][idx]
         teams.push(team)
+    }
+    teams.push("none")
+    teams.sort()
+
+    for (var idx in teams) {
+        team = teams[idx]
         var opt = document.createElement('option')
         opt.value = team
         opt.innerHTML = team
         winSelect.appendChild(opt)
     }
+    
+    var opt = document.createElement('option')
+    opt.value = default_text_value
+    opt.innerHTML = default_text_value
+    opt.selected = true
+    opt.disabled = true
+    opt.hidden = true
+    winSelect.appendChild(opt)
 }
 
 var roles = []
-
 async function getRoles() {
     let response = await fetch("https://yogsstats.com/stats/ttt/roles")
     let json = await response.json()
@@ -123,13 +180,15 @@ async function getRoles() {
         var role = json['roles'][idx]
         roles.push(role)
     }
+
+    roles.sort()
 }
 
 async function postVideo() {
     let data = {
         title: document.getElementById('title').value,
         date: document.getElementById('date').value,
-        vid: document.getElementById('video-id').value,
+        vid: document.getElementById('vid').value,
         introDeath: document.getElementById('intro-death').checked.toString()
     }
 
@@ -150,7 +209,7 @@ async function postRound() {
     let data = {
         id: document.getElementById("id").value,
         date: document.getElementById("date").value,
-        vid: document.getElementById("round-vid").value,
+        vid: document.getElementById("vid").value,
         start: Number(document.getElementById("start").value),
         end: Number(document.getElementById("end").value),
         winningTeam: document.getElementById("winning-team").value,
@@ -158,14 +217,13 @@ async function postRound() {
         players: []
     }
 
-    //Hacky
-    for (const child of document.getElementById('player_list').children) {
+    for (const div of players) {
         let values = []
-        for (const childchild of child.children) {
-            let value = childchild.value
+        for (const child of div.children) {
+            let value = child.value
             if (typeof value !== "undefined") {
                 if (value == "on") {
-                    if (childchild.checked) {
+                    if (child.checked) {
                         values.push("yes")
                     } else {
                         values.push("no")
@@ -204,6 +262,7 @@ import { getDate } from "./site-wide.js";
 window.getDate = getDate;
 window.add = add;
 window.remove = remove;
+window.clearRound = clearRound;
 window.postVideo = postVideo;
 window.postRound = postRound;
 
