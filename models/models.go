@@ -47,12 +47,13 @@ type TeamWinPercentageResponse struct {
 }
 
 type DetectiveWinPercentageEntry struct {
+	Player       string
 	WinRate      float64
 	RoundsPlayed int
 }
 type DetecitveWinPercentageResponse struct {
-	Feedback string                                 `json:"feedback"`
-	Players  map[string]DetectiveWinPercentageEntry `json:"players"`
+	Feedback string                        `json:"feedback"`
+	Players  []DetectiveWinPercentageEntry `json:"players"`
 }
 
 type RoleWinsEntry struct {
@@ -69,12 +70,18 @@ type RoleWinsResponse struct {
 }
 
 type TraitorComboEntry struct {
-	RoundsTogether int
-	WinRate        float64
+	Player         string  `json:"player"`
+	RoundsTogether int     `json:"roundsTogether"`
+	WinRate        float64 `json:"winRate"`
+}
+
+type Pairings struct {
+	Player  string              `json:"player"`
+	Entries []TraitorComboEntry `json:"entries"`
 }
 type TraitorCombosResponse struct {
-	Feedback string                                  `json:"feedback"`
-	Combos   map[string]map[string]TraitorComboEntry `json:"combos"`
+	Feedback string     `json:"feedback"`
+	Combos   []Pairings `json:"combos"`
 }
 
 type TraitorRound struct {

@@ -113,7 +113,7 @@ func CalculateDetectiveWinPercentage(player, from, to string, canon, round bool)
 	}
 
 	response := DetecitveWinPercentageResponse{
-		Players: make(map[string]DetectiveWinPercentageEntry),
+		Players: []DetectiveWinPercentageEntry{},
 	}
 
 	for _, player := range players {
@@ -145,7 +145,7 @@ func CalculateDetectiveWinPercentage(player, from, to string, canon, round bool)
 			dWin = 1
 		}
 
-		response.Players[player] = DetectiveWinPercentageEntry{WinRate: dWin, RoundsPlayed: roundsPlayed}
+		response.Players = append(response.Players, DetectiveWinPercentageEntry{Player: player, WinRate: dWin, RoundsPlayed: roundsPlayed})
 	}
 
 	response.Feedback = "Successfull request"
@@ -207,16 +207,18 @@ func CalculateTraitorCombos(player, from, to string, round bool) (TraitorCombosR
 		return TraitorCombosResponse{Feedback: "Error getting entries"}, errors.Annotatef(err, "Error getting entries, player = %s", player)
 	}
 
-	response := TraitorCombosResponse{Combos: make(map[string]map[string]TraitorComboEntry)}
+	response := TraitorCombosResponse{Combos: []Pairings{}}
 
-	for _, player := range selectedPlayers {
+	for currentPlayerIdx, player := range selectedPlayers {
 		playerRounds, err := db.GetTraitorRounds(player, from, to)
 		if err != nil {
 			return TraitorCombosResponse{Feedback: "Error getting combo win %"}, errors.Annotatef(err, "Error getting combo win percentage, player = %s, player")
 		}
 
+		response.Combos = append(response.Combos, Pairings{Player: player, Entries: []TraitorComboEntry{}})
+
 		for _, other := range allPlayers {
-			if _, alreadyDone := response.Combos[player][other]; other != player && !alreadyDone {
+			if other != player {
 				comboWinRate, commonRounds, err := getTraitorWinRate(playerRounds, other, from, to, round)
 				if err != nil {
 					log.Error().Err(err).Msg("")
@@ -227,17 +229,7 @@ func CalculateTraitorCombos(player, from, to string, round bool) (TraitorCombosR
 					continue
 				}
 
-				if response.Combos[player] == nil {
-					response.Combos[player] = make(map[string]TraitorComboEntry)
-				}
-				response.Combos[player][other] = TraitorComboEntry{WinRate: comboWinRate, RoundsTogether: commonRounds}
-
-				if player == "*" {
-					if response.Combos[other] == nil {
-						response.Combos[other] = make(map[string]TraitorComboEntry)
-					}
-					response.Combos[other][player] = TraitorComboEntry{WinRate: comboWinRate, RoundsTogether: commonRounds}
-				}
+				response.Combos[currentPlayerIdx].Entries = append(response.Combos[currentPlayerIdx].Entries, TraitorComboEntry{Player: other, WinRate: comboWinRate, RoundsTogether: commonRounds})
 			}
 		}
 	}

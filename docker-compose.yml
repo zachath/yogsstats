@@ -5,7 +5,7 @@ services:
     build:
       context: .
       args:
-        POSTGRES_PASSWORD: zacharias00
+        POSTGRES_PASSWORD: ${PQL_PASS}
         POST_PASSWORD: $$2a$10$$WVgswKX5Lhc/8arsPwesmeDpqZY0KSGPCL5OLrSolAB.ZWhU4smje
         HOST_IP: 127.0.0.1
     network_mode: "host"
