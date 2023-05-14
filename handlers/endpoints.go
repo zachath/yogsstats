@@ -183,16 +183,6 @@ func TeamWins(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	indexToRemoveAt := 0
-	for idx, team := range response.Response {
-		if team.Team == "none" {
-			indexToRemoveAt = idx
-			break
-		}
-	}
-
-	response.Response = append(response.Response[:indexToRemoveAt], response.Response[indexToRemoveAt+1])
-
 	log.Info().Msg("Served Team Win Percentage request!")
 
 	json.NewEncoder(rw).Encode(response)
@@ -222,16 +212,6 @@ func PlayerWinPercentage(rw http.ResponseWriter, req *http.Request) {
 		log.Error().Stack().Err(err).Msg("Failed getting player win percentage.")
 		http.Error(rw, "Failed getting player win percentage.", http.StatusInternalServerError)
 		return
-	}
-
-	for _, entry := range response.Players {
-		indexToRemoveAt := 0
-		for idx, team := range entry.Teams {
-			if team.Team == "none" {
-				indexToRemoveAt = idx
-			}
-		}
-		entry.Teams = append(entry.Teams[:indexToRemoveAt], entry.Teams[indexToRemoveAt+1])
 	}
 
 	log.Info().Msg("Served player win percentage request!")

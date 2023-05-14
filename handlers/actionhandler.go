@@ -32,6 +32,10 @@ func CalculatePlayerWinPercentage(player, from, to string, round bool) (PlayerWi
 
 		response.Players = append(response.Players, TeamsWinPercentage{Player: player, Teams: []TeamEntry{}})
 		for _, team := range teams {
+			if team == "none" {
+				continue
+			}
+
 			tt, err := db.GetRoundParticipationTeamsByPlayer(player, from, to, team)
 			if err != nil {
 				return PlayerWinPercentageResponse{Feedback: "Error getting team participation info"}, errors.Annotate(err, "Error getting team participation info")
@@ -91,6 +95,10 @@ func CalculateTeamWins(team, from, to string) (TeamWinPercentageResponse, error)
 	}
 
 	for _, team := range teams {
+		if team == "none" {
+			continue
+		}
+
 		winsOfTeam, err := db.CountRows("round", fmt.Sprintf("winning_team = '%s' AND date >= '%s' AND date <= '%s'", team, from, to))
 		if err != nil {
 			return TeamWinPercentageResponse{Feedback: "Internal server error"}, errors.Annotate(err, "Failed counting team wins")
