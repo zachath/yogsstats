@@ -98,12 +98,13 @@ type RolesResponse struct {
 }
 
 type JesterKillsResponse struct {
-	Feedback        string                      `json:"feedback"`
-	TotalJesterWins int                         `json:"totalJesterWins"`
-	Players         map[string]JesterKillsEntry `json:"players"`
+	Feedback        string             `json:"feedback"`
+	TotalJesterWins int                `json:"totalJesterWins"`
+	Players         []JesterKillsEntry `json:"players"`
 }
 
 type JesterKillsEntry struct {
-	Kills int     `json:"kills"`
-	Rate  float64 `json:"rate"`
+	Player string  `json:"player"`
+	Kills  int     `json:"kills"`
+	Rate   float64 `json:"rate"`
 }

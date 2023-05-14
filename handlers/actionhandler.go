@@ -283,7 +283,7 @@ func calculateJesterKills(from, to string) (JesterKillsResponse, error) {
 		return JesterKillsResponse{Feedback: "Error getting entries"}, errors.Annotate(err, "Error getting entries, players")
 	}
 
-	var response = JesterKillsResponse{TotalJesterWins: numJesterWins, Players: make(map[string]JesterKillsEntry)}
+	var response = JesterKillsResponse{TotalJesterWins: numJesterWins, Players: []JesterKillsEntry{}}
 	for _, player := range allPlayers {
 		kills, rate, err := db.GetJesterKills(numJesterWins, player, from, to)
 		if err != nil {
@@ -291,7 +291,7 @@ func calculateJesterKills(from, to string) (JesterKillsResponse, error) {
 		}
 
 		if kills != 0 {
-			response.Players[player] = JesterKillsEntry{Kills: kills, Rate: rate}
+			response.Players = append(response.Players, JesterKillsEntry{Player: player, Kills: kills, Rate: rate})
 		}
 	}
 
