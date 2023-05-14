@@ -55,11 +55,11 @@ func CalculatePlayerWinPercentage(player, from, to string, round bool) (PlayerWi
 				f, err := roundup(result)
 				if err != nil {
 					log.Error().Err(err).Msg("Failed to round result.")
-					response.Players[idx].Teams = append(response.Players[idx].Teams, TeamEntry{Team: team, Percentage: result, Wins: wins, RoundPlayedAs: len(tt)})
+					response.Players[idx].Teams = append(response.Players[idx].Teams, TeamEntry{Team: team, WinPercentage: result, Wins: wins, RoundPlayedAs: len(tt)})
 				}
-				response.Players[idx].Teams = append(response.Players[idx].Teams, TeamEntry{Team: team, Percentage: f, Wins: wins, RoundPlayedAs: len(tt)})
+				response.Players[idx].Teams = append(response.Players[idx].Teams, TeamEntry{Team: team, WinPercentage: f, Wins: wins, RoundPlayedAs: len(tt)})
 			} else {
-				response.Players[idx].Teams = append(response.Players[idx].Teams, TeamEntry{Team: team, Percentage: result, Wins: wins, RoundPlayedAs: len(tt)})
+				response.Players[idx].Teams = append(response.Players[idx].Teams, TeamEntry{Team: team, WinPercentage: result, Wins: wins, RoundPlayedAs: len(tt)})
 			}
 		}
 
@@ -82,7 +82,7 @@ func CalculateTeamWins(team, from, to string) (TeamWinPercentageResponse, error)
 	}
 
 	var response TeamWinPercentageResponse
-	response.Response = map[string]int{}
+	response.Response = []TeamWin{}
 
 	response.Total = totalRounds
 
@@ -96,7 +96,7 @@ func CalculateTeamWins(team, from, to string) (TeamWinPercentageResponse, error)
 			return TeamWinPercentageResponse{Feedback: "Internal server error"}, errors.Annotate(err, "Failed counting team wins")
 		}
 
-		response.Response[team] = winsOfTeam
+		response.Response = append(response.Response, TeamWin{Team: team, Wins: winsOfTeam})
 	}
 
 	log.Info().Msg("Team win percentage request")
@@ -143,7 +143,7 @@ func CalculateDetectiveWinPercentage(player, from, to string, canon, round bool)
 			dWin = 1
 		}
 
-		response.Players = append(response.Players, DetectiveWinPercentageEntry{Player: player, WinRate: dWin, RoundsPlayed: roundsPlayed})
+		response.Players = append(response.Players, DetectiveWinPercentageEntry{Player: player, WinPercentage: dWin, RoundsPlayed: roundsPlayed})
 	}
 
 	response.Feedback = "Successfull request"
@@ -187,7 +187,7 @@ func CalculateRoleWins(player, from, to string, round bool) (RoleWinsResponse, e
 				}
 			}
 
-			roleEntries = append(roleEntries, RoleWinsEntry{Role: role, Percentage: rate, RoundPlayedAs: roundsPlayed, Wins: wins})
+			roleEntries = append(roleEntries, RoleWinsEntry{Role: role, WinPercentage: rate, RoundPlayedAs: roundsPlayed, Wins: wins})
 		}
 		response.Players[idx] = RoleWinPercentage{Player: p, Roles: roleEntries}
 	}
@@ -229,7 +229,7 @@ func CalculateTraitorCombos(player, from, to string, round bool) (TraitorCombosR
 					continue
 				}
 
-				response.Combos[currentPlayerIdx].Entries = append(response.Combos[currentPlayerIdx].Entries, TraitorComboEntry{Player: other, WinRate: comboWinRate, RoundsTogether: commonRounds})
+				response.Combos[currentPlayerIdx].Entries = append(response.Combos[currentPlayerIdx].Entries, TraitorComboEntry{Player: other, WinPercentage: comboWinRate, RoundsTogether: commonRounds})
 			}
 		}
 	}

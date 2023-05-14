@@ -183,7 +183,15 @@ func TeamWins(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	delete(response.Response, "none")
+	indexToRemoveAt := 0
+	for idx, team := range response.Response {
+		if team.Team == "none" {
+			indexToRemoveAt = idx
+			break
+		}
+	}
+
+	response.Response = append(response.Response[:indexToRemoveAt], response.Response[indexToRemoveAt+1])
 
 	log.Info().Msg("Served Team Win Percentage request!")
 
