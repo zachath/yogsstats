@@ -20,17 +20,17 @@ func CalculatePlayerWinPercentage(player, from, to string, round bool) (PlayerWi
 	}
 
 	response := PlayerWinPercentageResponse{
-		Players: make(map[string]TeamsWinPercentage),
+		Players: []TeamsWinPercentage{},
 	}
 
-	for _, player := range players {
+	for idx, player := range players {
 		roundsPlayed := 0
 		teams, err := db.GetEntries("*", "team", "team", "*")
 		if err != nil {
 			return PlayerWinPercentageResponse{Feedback: "Error getting entries"}, errors.Annotate(err, "Error getting entries")
 		}
 
-		response.Players[player] = TeamsWinPercentage{Teams: make(map[string]PercentageEntry)}
+		response.Players = append(response.Players, TeamsWinPercentage{Player: player, Teams: []TeamEntry{}})
 		for _, team := range teams {
 			tt, err := db.GetRoundParticipationTeamsByPlayer(player, from, to, team)
 			if err != nil {
@@ -55,17 +55,15 @@ func CalculatePlayerWinPercentage(player, from, to string, round bool) (PlayerWi
 				f, err := roundup(result)
 				if err != nil {
 					log.Error().Err(err).Msg("Failed to round result.")
-					response.Players[player].Teams[team] = PercentageEntry{Percentage: result, Wins: wins, RoundPlayedAs: len(tt)}
+					response.Players[idx].Teams = append(response.Players[idx].Teams, TeamEntry{Team: team, Percentage: result, Wins: wins, RoundPlayedAs: len(tt)})
 				}
-				response.Players[player].Teams[team] = PercentageEntry{Percentage: f, Wins: wins, RoundPlayedAs: len(tt)}
+				response.Players[idx].Teams = append(response.Players[idx].Teams, TeamEntry{Team: team, Percentage: f, Wins: wins, RoundPlayedAs: len(tt)})
 			} else {
-				response.Players[player].Teams[team] = PercentageEntry{Percentage: result, Wins: wins, RoundPlayedAs: len(tt)}
+				response.Players[idx].Teams = append(response.Players[idx].Teams, TeamEntry{Team: team, Percentage: result, Wins: wins, RoundPlayedAs: len(tt)})
 			}
 		}
 
-		entry := response.Players[player]
-		entry.RoundsPlayed = roundsPlayed
-		response.Players[player] = entry
+		response.Players[idx].RoundsPlayed = roundsPlayed
 	}
 
 	response.Feedback = "Successfull request"

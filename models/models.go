@@ -25,19 +25,21 @@ type Player struct {
 	Died string `json:"died" db:"died"`
 }
 
-type PercentageEntry struct {
+type TeamEntry struct {
+	Team          string  `json:"team"`
 	Percentage    float64 `json:"percentage"`
 	Wins          int     `json:"wins"`
 	RoundPlayedAs int     `json:"rounds"`
 }
 
 type TeamsWinPercentage struct {
-	Teams        map[string]PercentageEntry `json:"teams"`
-	RoundsPlayed int                        `json:"roundsPlayed"`
+	Player       string      `json:"player"`
+	Teams        []TeamEntry `json:"teams"`
+	RoundsPlayed int         `json:"roundsPlayed"`
 }
 type PlayerWinPercentageResponse struct {
-	Feedback string                        `json:"feedback"`
-	Players  map[string]TeamsWinPercentage `json:"players"`
+	Feedback string               `json:"feedback"`
+	Players  []TeamsWinPercentage `json:"players"`
 }
 
 type TeamWinPercentageResponse struct {
@@ -47,9 +49,9 @@ type TeamWinPercentageResponse struct {
 }
 
 type DetectiveWinPercentageEntry struct {
-	Player       string
-	WinRate      float64
-	RoundsPlayed int
+	Player       string  `json:"player"`
+	WinRate      float64 `json:"winRate"`
+	RoundsPlayed int     `json:"roundsPlayed"`
 }
 type DetecitveWinPercentageResponse struct {
 	Feedback string                        `json:"feedback"`

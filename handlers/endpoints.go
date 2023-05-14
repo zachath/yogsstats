@@ -216,8 +216,14 @@ func PlayerWinPercentage(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	for player := range response.Players {
-		delete(response.Players[player].Teams, "none")
+	for _, entry := range response.Players {
+		indexToRemoveAt := 0
+		for idx, team := range entry.Teams {
+			if team.Team == "none" {
+				indexToRemoveAt = idx
+			}
+		}
+		entry.Teams = append(entry.Teams[:indexToRemoveAt], entry.Teams[indexToRemoveAt+1])
 	}
 
 	log.Info().Msg("Served player win percentage request!")
