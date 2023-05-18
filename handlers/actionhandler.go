@@ -19,9 +19,7 @@ func CalculatePlayerWinPercentage(player, team, from, to string, round bool) (Pl
 		return PlayerWinPercentageResponse{Feedback: "Error getting entries"}, errors.Annotate(err, "Error getting entries")
 	}
 
-	response := PlayerWinPercentageResponse{
-		Players: []TeamsWinPercentage{},
-	}
+	tmpPlayers := []TeamsWinPercentage{}
 
 	for idx, player := range players {
 		roundsPlayed := 0
@@ -30,7 +28,7 @@ func CalculatePlayerWinPercentage(player, team, from, to string, round bool) (Pl
 			return PlayerWinPercentageResponse{Feedback: "Error getting entries"}, errors.Annotate(err, "Error getting entries")
 		}
 
-		response.Players = append(response.Players, TeamsWinPercentage{Player: player, Teams: []TeamEntry{}})
+		tmpPlayers = append(tmpPlayers, TeamsWinPercentage{Player: player, Teams: []TeamEntry{}})
 		for _, team := range teams {
 			if team == "none" {
 				continue
@@ -59,15 +57,25 @@ func CalculatePlayerWinPercentage(player, team, from, to string, round bool) (Pl
 				f, err := roundup(result)
 				if err != nil {
 					log.Error().Err(err).Msg("Failed to round result.")
-					response.Players[idx].Teams = append(response.Players[idx].Teams, TeamEntry{Team: team, WinPercentage: result, Wins: wins, RoundPlayedAs: len(tt)})
+					tmpPlayers[idx].Teams = append(tmpPlayers[idx].Teams, TeamEntry{Team: team, WinPercentage: result, Wins: wins, RoundPlayedAs: len(tt)})
 				}
-				response.Players[idx].Teams = append(response.Players[idx].Teams, TeamEntry{Team: team, WinPercentage: f, Wins: wins, RoundPlayedAs: len(tt)})
+				tmpPlayers[idx].Teams = append(tmpPlayers[idx].Teams, TeamEntry{Team: team, WinPercentage: f, Wins: wins, RoundPlayedAs: len(tt)})
 			} else {
-				response.Players[idx].Teams = append(response.Players[idx].Teams, TeamEntry{Team: team, WinPercentage: result, Wins: wins, RoundPlayedAs: len(tt)})
+				tmpPlayers[idx].Teams = append(tmpPlayers[idx].Teams, TeamEntry{Team: team, WinPercentage: result, Wins: wins, RoundPlayedAs: len(tt)})
 			}
 		}
 
-		response.Players[idx].RoundsPlayed = roundsPlayed
+		tmpPlayers[idx].RoundsPlayed = roundsPlayed
+	}
+
+	response := PlayerWinPercentageResponse{
+		Players: []TeamsWinPercentage{},
+	}
+
+	for _, p := range tmpPlayers {
+		if p.RoundsPlayed != 0 {
+			response.Players = append(response.Players, p)
+		}
 	}
 
 	response.Feedback = "Successfull request"
