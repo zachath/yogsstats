@@ -25,6 +25,11 @@ type Player struct {
 	Died string `json:"died" db:"died"`
 }
 
+type Team struct {
+	Team   string `json:"team" db:"team"`
+	Colour string `json:"colour" db:"colour"`
+}
+
 type TeamEntry struct {
 	Team          string  `json:"team"`
 	WinPercentage float64 `json:"winPercentage"`
@@ -100,7 +105,7 @@ type TraitorRound struct {
 }
 
 type TeamsResponse struct {
-	Teams []string `json:"teams"`
+	Teams []Team `json:"teams"`
 }
 
 type RolesResponse struct {

@@ -285,6 +285,16 @@ func GetRound(id, from, to string) ([]models.Round, error) {
 	return rounds, nil
 }
 
+func GetTeams() (models.TeamsResponse, error) {
+	var rows []models.Team
+	err := db.Select(&rows, "SELECT * FROM TEAM")
+	if err != nil {
+		return models.TeamsResponse{}, errors.Wrapf(err, "failed getting teams")
+	}
+
+	return models.TeamsResponse{Teams: rows}, nil
+}
+
 type RoundParticipationTeams struct {
 	Team string
 	Win  string `db:"winning_team"`

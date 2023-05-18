@@ -5,13 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"strconv"
 
 	//External dependencies
-	"github.com/gomarkdown/markdown"
-	"github.com/gomarkdown/markdown/html"
+
 	log "github.com/rs/zerolog/log"
 
 	//Local packages
@@ -19,22 +17,6 @@ import (
 	. "yogsstats/models"
 	stupid "yogsstats/stupid"
 )
-
-func ReadMeHandler(rw http.ResponseWriter, req *http.Request) {
-	content, err := ioutil.ReadFile("README.md")
-	if err != nil {
-		http.Error(rw, "Error loading page.", http.StatusInternalServerError)
-		return
-	}
-
-	md := []byte(content)
-	flags := html.CommonFlags | html.HrefTargetBlank
-	html := markdown.ToHTML(md, nil, html.NewRenderer(html.RendererOptions{Flags: flags}))
-
-	log.Info().Msg("Served readme request!")
-
-	rw.Write(html)
-}
 
 func GetVideo(rw http.ResponseWriter, req *http.Request) {
 	var videos []Video
@@ -121,6 +103,16 @@ func GetTTTRound(rw http.ResponseWriter, req *http.Request) {
 	json.NewEncoder(rw).Encode(rounds)
 }
 
+func GetTeams(rw http.ResponseWriter, req *http.Request) {
+	teams, err := db.GetTeams()
+	if err != nil {
+		log.Error().Stack().Err(err).Msg("Failed to get teams")
+		return
+	}
+
+	json.NewEncoder(rw).Encode(teams)
+}
+
 func PostTTTRound(rw http.ResponseWriter, req *http.Request) {
 	round := req.Context().Value("round").(Round)
 
@@ -134,23 +126,6 @@ func PostTTTRound(rw http.ResponseWriter, req *http.Request) {
 	log.Info().Msg("Served TTT Round POST request!")
 
 	io.WriteString(rw, "POSTed round successfully")
-}
-
-func GetTeams(rw http.ResponseWriter, req *http.Request) {
-	db, err := db.GetEntries("team", "team", "team", "*")
-	if err != nil {
-		log.Error().Stack().Err(err).Msg("Failed to get teams")
-		return
-	}
-
-	var teams []string
-	for _, d := range db {
-		if d != "none" {
-			teams = append(teams, d)
-		}
-	}
-
-	json.NewEncoder(rw).Encode(TeamsResponse{Teams: teams})
 }
 
 func GetRoles(rw http.ResponseWriter, req *http.Request) {

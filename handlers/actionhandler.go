@@ -25,7 +25,7 @@ func CalculatePlayerWinPercentage(player, from, to string, round bool) (PlayerWi
 
 	for idx, player := range players {
 		roundsPlayed := 0
-		teams, err := db.GetEntries("*", "team", "team", "*")
+		teams, err := db.GetEntries("team", "team", "team", "*")
 		if err != nil {
 			return PlayerWinPercentageResponse{Feedback: "Error getting entries"}, errors.Annotate(err, "Error getting entries")
 		}
@@ -75,7 +75,7 @@ func CalculatePlayerWinPercentage(player, from, to string, round bool) (PlayerWi
 }
 
 func CalculateTeamWins(team, from, to string) (TeamWinPercentageResponse, error) {
-	teams, err := db.GetEntries("*", "team", "team", team)
+	teams, err := db.GetEntries("team", "team", "team", team)
 	if err != nil {
 		return TeamWinPercentageResponse{Feedback: "Error getting entries."}, errors.Annotate(err, "Error getting entries")
 	}
