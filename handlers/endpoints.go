@@ -165,6 +165,7 @@ func TeamWins(rw http.ResponseWriter, req *http.Request) {
 
 func PlayerWinPercentage(rw http.ResponseWriter, req *http.Request) {
 	player := req.URL.Query().Get("player")
+	team := req.URL.Query().Get("team")
 	from := req.Context().Value("from").(string)
 	to := req.Context().Value("to").(string)
 
@@ -182,7 +183,11 @@ func PlayerWinPercentage(rw http.ResponseWriter, req *http.Request) {
 		player = "*"
 	}
 
-	response, err = CalculatePlayerWinPercentage(player, from, to, round)
+	if team == "" {
+		team = "*"
+	}
+
+	response, err = CalculatePlayerWinPercentage(player, team, from, to, round)
 	if err != nil {
 		log.Error().Stack().Err(err).Msg("Failed getting player win percentage.")
 		http.Error(rw, "Failed getting player win percentage.", http.StatusInternalServerError)

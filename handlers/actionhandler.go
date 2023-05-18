@@ -13,7 +13,7 @@ import (
 	log "github.com/rs/zerolog/log"
 )
 
-func CalculatePlayerWinPercentage(player, from, to string, round bool) (PlayerWinPercentageResponse, error) {
+func CalculatePlayerWinPercentage(player, team, from, to string, round bool) (PlayerWinPercentageResponse, error) {
 	players, err := db.GetEntries("*", "player", "name", player)
 	if err != nil {
 		return PlayerWinPercentageResponse{Feedback: "Error getting entries"}, errors.Annotate(err, "Error getting entries")
@@ -25,7 +25,7 @@ func CalculatePlayerWinPercentage(player, from, to string, round bool) (PlayerWi
 
 	for idx, player := range players {
 		roundsPlayed := 0
-		teams, err := db.GetEntries("team", "team", "team", "*")
+		teams, err := db.GetEntries("team", "team", "team", team)
 		if err != nil {
 			return PlayerWinPercentageResponse{Feedback: "Error getting entries"}, errors.Annotate(err, "Error getting entries")
 		}
