@@ -172,9 +172,7 @@ func CalculateRoleWins(player, role, from, to string, round bool) (RoleWinsRespo
 		return RoleWinsResponse{Feedback: "Error getting entries"}, errors.Annotate(err, "Error getting entries")
 	}
 
-	response := RoleWinsResponse{
-		Players: []RoleWinPercentage{},
-	}
+	tmp := []RoleWinPercentage{}
 
 	roles, err := db.GetRoles(role, true)
 	if err != nil {
@@ -182,7 +180,7 @@ func CalculateRoleWins(player, role, from, to string, round bool) (RoleWinsRespo
 	}
 
 	for idx, p := range players {
-		response.Players = append(response.Players, RoleWinPercentage{})
+		tmp = append(tmp, RoleWinPercentage{})
 		roleEntries := []RoleWinsEntry{}
 		totalRounds := 0
 		for _, role := range roles {
@@ -207,7 +205,17 @@ func CalculateRoleWins(player, role, from, to string, round bool) (RoleWinsRespo
 
 			roleEntries = append(roleEntries, RoleWinsEntry{Role: role, WinPercentage: rate, RoundPlayedAs: roundsPlayed, Wins: wins})
 		}
-		response.Players[idx] = RoleWinPercentage{Player: p, Roles: roleEntries, RoundsPlayed: totalRounds}
+		tmp[idx] = RoleWinPercentage{Player: p, Roles: roleEntries, RoundsPlayed: totalRounds}
+	}
+
+	response := RoleWinsResponse{
+		Players: []RoleWinPercentage{},
+	}
+
+	for _, p := range tmp {
+		if p.RoundsPlayed != 0 {
+			response.Players = append(response.Players, p)
+		}
 	}
 
 	response.Feedback = "Successfull request"
