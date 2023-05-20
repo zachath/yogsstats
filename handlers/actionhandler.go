@@ -184,12 +184,14 @@ func CalculateRoleWins(player, role, from, to string, round bool) (RoleWinsRespo
 	for idx, p := range players {
 		response.Players = append(response.Players, RoleWinPercentage{})
 		roleEntries := []RoleWinsEntry{}
+		totalRounds := 0
 		for _, role := range roles {
 			wins, roundsPlayed, err := db.WinsByRole(p, role, from, to)
 			if err != nil {
 				return RoleWinsResponse{Feedback: "Error calculating winrate by role"}, errors.Annotatef(err, "Failed calculation for role %s", role)
 			}
 
+			totalRounds += roundsPlayed
 			if roundsPlayed == 0 {
 				continue
 			}
@@ -205,7 +207,7 @@ func CalculateRoleWins(player, role, from, to string, round bool) (RoleWinsRespo
 
 			roleEntries = append(roleEntries, RoleWinsEntry{Role: role, WinPercentage: rate, RoundPlayedAs: roundsPlayed, Wins: wins})
 		}
-		response.Players[idx] = RoleWinPercentage{Player: p, Roles: roleEntries}
+		response.Players[idx] = RoleWinPercentage{Player: p, Roles: roleEntries, RoundsPlayed: totalRounds}
 	}
 
 	response.Feedback = "Successfull request"

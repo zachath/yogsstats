@@ -76,8 +76,9 @@ type RoleWinsEntry struct {
 }
 
 type RoleWinPercentage struct {
-	Player string          `json:"player"`
-	Roles  []RoleWinsEntry `json:"roles"`
+	Player       string          `json:"player"`
+	Roles        []RoleWinsEntry `json:"roles"`
+	RoundsPlayed int             `json:"roundsPlayed"`
 }
 type RoleWinsResponse struct {
 	Feedback string              `json:"feedback"`
