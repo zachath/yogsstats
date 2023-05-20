@@ -129,7 +129,12 @@ func PostTTTRound(rw http.ResponseWriter, req *http.Request) {
 }
 
 func GetRoles(rw http.ResponseWriter, req *http.Request) {
-	roles, err := db.GetEntries("role", "role", "role", "*")
+	canWin := true
+	if req.URL.Query().Get("canWin") == "false" {
+		canWin = false
+	}
+
+	roles, err := db.GetRoles("*", canWin)
 	if err != nil {
 		log.Error().Stack().Err(err).Msg("Failed to get roles")
 		return
@@ -238,6 +243,7 @@ func DetectiveWinPercentage(rw http.ResponseWriter, req *http.Request) {
 
 func RoleWinPercentageHandler(rw http.ResponseWriter, req *http.Request) {
 	player := req.URL.Query().Get("player")
+	role := req.URL.Query().Get("role")
 	from := req.Context().Value("from").(string)
 	to := req.Context().Value("to").(string)
 
@@ -253,8 +259,11 @@ func RoleWinPercentageHandler(rw http.ResponseWriter, req *http.Request) {
 	if player == "" {
 		player = "*"
 	}
+	if role == "" {
+		role = "*"
+	}
 
-	response, err = CalculateRoleWins(player, from, to, round)
+	response, err = CalculateRoleWins(player, role, from, to, round)
 	if err != nil {
 		log.Error().Stack().Err(err).Msg("Failed getting role win percentage.")
 		http.Error(rw, "Failed getting role win percentage.", http.StatusInternalServerError)

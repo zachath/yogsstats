@@ -166,7 +166,7 @@ func CalculateDetectiveWinPercentage(player, from, to string, canon, round bool)
 	return response, nil
 }
 
-func CalculateRoleWins(player, from, to string, round bool) (RoleWinsResponse, error) {
+func CalculateRoleWins(player, role, from, to string, round bool) (RoleWinsResponse, error) {
 	players, err := db.GetEntries("*", "player", "name", player)
 	if err != nil {
 		return RoleWinsResponse{Feedback: "Error getting entries"}, errors.Annotate(err, "Error getting entries")
@@ -176,7 +176,7 @@ func CalculateRoleWins(player, from, to string, round bool) (RoleWinsResponse, e
 		Players: []RoleWinPercentage{},
 	}
 
-	roles, err := db.GetEntries("role", "role", "win", "true")
+	roles, err := db.GetRoles(role, true)
 	if err != nil {
 		return RoleWinsResponse{Feedback: "Error getting entries"}, errors.Annotate(err, "Error getting entries")
 	}

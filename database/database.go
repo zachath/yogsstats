@@ -295,6 +295,26 @@ func GetTeams() (models.TeamsResponse, error) {
 	return models.TeamsResponse{Teams: rows}, nil
 }
 
+func GetRoles(role string, canWin bool) ([]string, error) {
+	var query string
+	var rows []string
+	if role == "*" {
+		query = "SELECT role FROM ROLE WHERE win = $1"
+		err := db.Select(&rows, query, canWin)
+		if err != nil {
+			return []string{}, errors.Wrapf(err, "failed getting roles")
+		}
+	} else {
+		query = "SELECT role FROM ROLE WHERE role = $1 AND win = $2"
+		err := db.Select(&rows, query, role, canWin)
+		if err != nil {
+			return []string{}, errors.Wrapf(err, "failed getting roles")
+		}
+	}
+
+	return rows, nil
+}
+
 type RoundParticipationTeams struct {
 	Team string
 	Win  string `db:"winning_team"`
