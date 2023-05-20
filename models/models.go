@@ -34,7 +34,7 @@ type TeamEntry struct {
 	Team          string  `json:"team"`
 	WinPercentage float64 `json:"winPercentage"`
 	Wins          int     `json:"wins"`
-	RoundPlayedAs int     `json:"rounds"`
+	RoundPlayedAs int     `json:"roundsPlayed"`
 }
 
 type TeamsWinPercentage struct {
@@ -72,7 +72,7 @@ type RoleWinsEntry struct {
 	Role          string  `json:"role"`
 	WinPercentage float64 `json:"winPercentage"`
 	Wins          int     `json:"wins"`
-	RoundPlayedAs int     `json:"rounds"`
+	RoundPlayedAs int     `json:"roundsPlayed"`
 }
 
 type RoleWinPercentage struct {
