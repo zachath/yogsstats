@@ -224,7 +224,7 @@ func DetectiveWinPercentage(rw http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	var response DetecitveWinPercentageResponse
+	var response DetectiveWinPercentageResponse
 	if player == "" {
 		player = "*"
 	}
@@ -411,4 +411,18 @@ func JesterKills(rw http.ResponseWriter, req *http.Request) {
 	log.Info().Msg("Served jester kills request!")
 
 	json.NewEncoder(rw).Encode(response)
+}
+
+func GetPlayers(rw http.ResponseWriter, req *http.Request) {
+	players, err := db.GetEntries("name", "player", "", "*")
+	if err != nil {
+		log.Error().Stack().Err(err).Msg("Failed to get players")
+		return
+	}
+
+	type Players struct {
+		Players []string `json:"players"`
+	}
+
+	json.NewEncoder(rw).Encode(Players{Players: players})
 }

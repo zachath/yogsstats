@@ -22,15 +22,8 @@ func init() {
 }
 
 func main() {
-	http.HandleFunc("/", RootHandler)
-	http.HandleFunc("/traitor-combos", TraitorCombosPage)
-	http.HandleFunc("/detective-win-percentages", DetectivePercentagesPage)
-	http.HandleFunc("/player-win-percentages", PlayerPercentagesPage)
-	http.HandleFunc("/role-win-percentages", RolePercentagesPage)
-	http.HandleFunc("/jester-kills", JesterKillsPage)
-	http.HandleFunc("/input", SetHeaders(BasicAuth(InputPage)))
+	http.HandleFunc("/stats/ttt/input", SetHeaders(BasicAuth(InputPage)))
 
-	http.HandleFunc("/readme", SetHeaders(ReadMeHandler))
 	http.HandleFunc("/stats/ttt", SetHeaders(DateValidation(GetOrPost(GetTTTRound, BasicAuth(ValidateTTTRoundPost(PostTTTRound))))))
 	http.HandleFunc("/stats/ttt/meta", SetHeaders(APIMetaData))
 	http.HandleFunc("/stats/ttt/teamWins", SetHeaders(DateValidation(TeamWins)))
@@ -42,6 +35,7 @@ func main() {
 	http.HandleFunc("/stats/ttt/jesterKills", SetHeaders(DateValidation(JesterKills)))
 	http.HandleFunc("/stats/ttt/teams", SetHeaders(GetTeams))
 	http.HandleFunc("/stats/ttt/roles", SetHeaders(GetRoles))
+	http.HandleFunc("/stats/ttt/players", SetHeaders(GetPlayers))
 
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 

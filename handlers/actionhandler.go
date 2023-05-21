@@ -78,7 +78,7 @@ func CalculatePlayerWinPercentage(player, team, from, to string, round bool) (Pl
 		}
 	}
 
-	response.Feedback = "Successfull request"
+	response.Feedback = "Successful request"
 	return response, nil
 }
 
@@ -116,29 +116,29 @@ func CalculateTeamWins(team, from, to string) (TeamWinPercentageResponse, error)
 	}
 
 	log.Info().Msg("Team win percentage request")
-	response.Feedback = "Successfull request"
+	response.Feedback = "Successful request"
 	return response, nil
 }
 
-func CalculateDetectiveWinPercentage(player, from, to string, canon, round bool) (DetecitveWinPercentageResponse, error) {
+func CalculateDetectiveWinPercentage(player, from, to string, canon, round bool) (DetectiveWinPercentageResponse, error) {
 	players, err := db.GetEntries("*", "player", "name", player)
 	if err != nil {
-		return DetecitveWinPercentageResponse{Feedback: "Error getting entries"}, errors.Annotate(err, "Error getting entries")
+		return DetectiveWinPercentageResponse{Feedback: "Error getting entries"}, errors.Annotate(err, "Error getting entries")
 	}
 
-	response := DetecitveWinPercentageResponse{
+	response := DetectiveWinPercentageResponse{
 		Players: []DetectiveWinPercentageEntry{},
 	}
 
 	for _, player := range players {
 		dWins, err := db.InnocentWinsByPlayer(player, from, to, round)
 		if err != nil {
-			return DetecitveWinPercentageResponse{Feedback: fmt.Sprintf("Error getting detective win percentage (%s)", player)}, errors.Annotate(err, "Error getting detective win percentage")
+			return DetectiveWinPercentageResponse{Feedback: fmt.Sprintf("Error getting detective win percentage (%s)", player)}, errors.Annotate(err, "Error getting detective win percentage")
 		}
 
 		roundsPlayed, err := db.DetectiveRoundsByPlayer(player, from, to)
 		if err != nil {
-			return DetecitveWinPercentageResponse{Feedback: fmt.Sprintf("Error getting detective win percentage (%s)", player)}, errors.Annotate(err, "Error getting detective win percentage")
+			return DetectiveWinPercentageResponse{Feedback: fmt.Sprintf("Error getting detective win percentage (%s)", player)}, errors.Annotate(err, "Error getting detective win percentage")
 		}
 
 		if roundsPlayed == 0 {
@@ -150,19 +150,20 @@ func CalculateDetectiveWinPercentage(player, from, to string, canon, round bool)
 		if round {
 			dWin, err = roundup(dWin)
 			if err != nil {
-				return DetecitveWinPercentageResponse{Feedback: "Failed roduning results"}, errors.Annotate(err, "failed rouding results")
+				return DetectiveWinPercentageResponse{Feedback: "Failed rounding results"}, errors.Annotate(err, "failed rounding results")
 			}
 		}
 
 		if canon && player == "Zylus" {
 			log.Info().Msg("Canon flag set to true, setting detective win percentage of Zylus to 1.")
+			roundsPlayed = dWins
 			dWin = 1
 		}
 
 		response.Players = append(response.Players, DetectiveWinPercentageEntry{Player: player, WinPercentage: dWin, RoundsPlayed: roundsPlayed})
 	}
 
-	response.Feedback = "Successfull request"
+	response.Feedback = "Successful request"
 	return response, nil
 }
 
@@ -199,7 +200,7 @@ func CalculateRoleWins(player, role, from, to string, round bool) (RoleWinsRespo
 			if round {
 				rate, err = roundup(rate)
 				if err != nil {
-					return RoleWinsResponse{Feedback: "Failed roduning results"}, errors.Annotate(err, "failed rouding results")
+					return RoleWinsResponse{Feedback: "Failed rounding results"}, errors.Annotate(err, "failed rounding results")
 				}
 			}
 
@@ -218,7 +219,7 @@ func CalculateRoleWins(player, role, from, to string, round bool) (RoleWinsRespo
 		}
 	}
 
-	response.Feedback = "Successfull request"
+	response.Feedback = "Successful request"
 	return response, nil
 }
 
@@ -322,7 +323,7 @@ func calculateJesterKills(from, to string) (JesterKillsResponse, error) {
 	}
 
 	log.Info().Msg("jester kills request")
-	response.Feedback = "Successfull request"
+	response.Feedback = "Successful request"
 	return response, nil
 }
 

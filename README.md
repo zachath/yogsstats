@@ -29,6 +29,8 @@ Data is manually entered for every round played, the players, their roles, teams
 
 `/stats/ttt/roles`: Returns roles in database.
 
+`/stats/ttt/players`: Returns players in database.
+
 Every endpoint, except `meta, roles, & teams`, supports the following query parameters: `to` and `from` in the `YYYY-MM-DD` format which then only includes rounds within the specified date range. These are implicitly used if not explicitly defined, with the `to` date being set to the time of the request. Any endpoint which returns float values to indicate percentages have the optional parameter `round` which truncates the response, set to false by default.
 
 All response data is in JSON format.

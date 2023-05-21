@@ -63,7 +63,7 @@ type DetectiveWinPercentageEntry struct {
 	WinPercentage float64 `json:"winPercentage"`
 	RoundsPlayed  int     `json:"roundsPlayed"`
 }
-type DetecitveWinPercentageResponse struct {
+type DetectiveWinPercentageResponse struct {
 	Feedback string                        `json:"feedback"`
 	Players  []DetectiveWinPercentageEntry `json:"players"`
 }
