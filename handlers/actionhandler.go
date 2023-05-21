@@ -305,6 +305,10 @@ func calculateJesterKills(from, to string) (JesterKillsResponse, error) {
 		return JesterKillsResponse{Feedback: "failed counting jester wins"}, errors.Annotate(err, "failed counting jester wins")
 	}
 
+	if numJesterWins == 0 {
+		return JesterKillsResponse{Feedback: "No jester wins found", Players: []JesterKillsEntry{}}, nil
+	}
+
 	allPlayers, err := db.GetEntries("*", "player", "name", "*")
 	if err != nil {
 		return JesterKillsResponse{Feedback: "Error getting entries"}, errors.Annotate(err, "Error getting entries, players")
