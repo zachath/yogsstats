@@ -10,7 +10,13 @@ services:
         HOST_IP: 127.0.0.1
     network_mode: "host"
     restart: always
+    volumes:
+      - "/etc/letsencrypt/:/etc/letsencrypt/:rw"
+
+  yogsstats-frontend:
+    build: 
+      context: ../yogsstats-frontend
     ports:
-      - 443:443
+      - 3000:3000
     volumes:
       - "/etc/letsencrypt/:/etc/letsencrypt/:rw"

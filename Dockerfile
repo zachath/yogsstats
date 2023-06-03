@@ -1,6 +1,13 @@
-FROM golang:1.19.3-alpine3.17
+FROM golang:1.19.3-alpine3.17 as builder
 
-LABEL maintainer="Zacharias Thorell <zachariasthorell@gmail.com>"
+WORKDIR /build
+
+COPY . .
+
+RUN go mod download && \
+ go build -o yogsstats
+
+FROM alpine:latest
 
 ARG POSTGRES_PASSWORD
 ARG POST_PASSWORD
@@ -12,13 +19,8 @@ ENV HOST=${HOST_IP}
 
 WORKDIR /app
 
-COPY go.* ./
-RUN go mod download
+COPY --from=builder /build/yogsstats yogsstats
 
-COPY . .
+ENV PORT 5000
 
-ENV PORT 443
-
-RUN go build
-
-CMD ["./yogsstats"]
+CMD ["/app/yogsstats"]

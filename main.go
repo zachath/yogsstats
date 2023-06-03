@@ -39,11 +39,11 @@ func main() {
 
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 
-	go func() {
+	/*go func() {
 		log.Fatal().Err(http.ListenAndServe(":80", http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 			http.Redirect(rw, req, "https://"+req.Host+req.RequestURI, http.StatusMovedPermanently)
 		}))).Msg("")
-	}()
+	}()*/
 
 	port := fmt.Sprintf(":%s", os.Getenv("PORT"))
 	log.Info().Msgf("Server listening on port: %s", port)
@@ -51,6 +51,8 @@ func main() {
 	log.Error().Err(err).Msg("Server exited.")
 
 	//When running locally.
-	/*err := http.ListenAndServe(":8080", nil)
+	/*port := fmt.Sprintf(":%s", os.Getenv("PORT"))
+	log.Debug().Msgf("Running on port %s", port)
+	err := http.ListenAndServe(port, nil)
 	log.Error().Err(err).Msg("")*/
 }
