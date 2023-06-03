@@ -17,6 +17,6 @@ services:
     build: 
       context: ../yogsstats-frontend
     ports:
-      - 3000:3000
+      - 3000:443
     volumes:
       - "/etc/letsencrypt/:/etc/letsencrypt/:rw"
