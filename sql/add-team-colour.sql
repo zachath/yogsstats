@@ -8,4 +8,4 @@ update team set colour = 'pink' where team = 'clown';
 update team set colour = 'brown' where team = 'elves';
 update team set colour = '#8b0000' where team = 'communists';
 update team set colour = '#FF69B4' where team = 'lovers';
-update team set colour = '' where temm = 'none';
+update team set colour = '' where team = 'none';
