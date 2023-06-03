@@ -43,7 +43,7 @@ func BasicAuth(next http.HandlerFunc) http.HandlerFunc {
 			}
 		}
 
-		log.Error().Msgf("unauthorized login attemt, password: %s", providedPassword)
+		log.Error().Msgf("unauthorized login attempt, password: %s", providedPassword)
 		rw.Header().Set("WWW-Authenticate", `Basic realm="restricted"`)
 		http.Error(rw, "Unauthorized", http.StatusUnauthorized)
 	})
@@ -157,32 +157,4 @@ func SetHeaders(next http.HandlerFunc) http.HandlerFunc {
 		rw.Header().Set("Access-Control-Allow-Origin", "*")
 		next(rw, req)
 	})
-}
-
-func RootHandler(rw http.ResponseWriter, r *http.Request) {
-	http.ServeFile(rw, r, "static/index.html")
-}
-
-func TraitorCombosPage(rw http.ResponseWriter, r *http.Request) {
-	http.ServeFile(rw, r, "static/traitors.html")
-}
-
-func DetectivePercentagesPage(rw http.ResponseWriter, r *http.Request) {
-	http.ServeFile(rw, r, "static/detective.html")
-}
-
-func PlayerPercentagesPage(rw http.ResponseWriter, r *http.Request) {
-	http.ServeFile(rw, r, "static/player.html")
-}
-
-func RolePercentagesPage(rw http.ResponseWriter, r *http.Request) {
-	http.ServeFile(rw, r, "static/role.html")
-}
-
-func JesterKillsPage(rw http.ResponseWriter, r *http.Request) {
-	http.ServeFile(rw, r, "static/jester.html")
-}
-
-func InputPage(rw http.ResponseWriter, r *http.Request) {
-	http.ServeFile(rw, r, "static/input.html")
 }

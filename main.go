@@ -22,7 +22,9 @@ func init() {
 }
 
 func main() {
-	http.HandleFunc("/stats/ttt/input", SetHeaders(BasicAuth(InputPage)))
+	http.HandleFunc("/stats/ttt/input", SetHeaders(BasicAuth(func(rw http.ResponseWriter, req *http.Request) {
+		http.ServeFile(rw, req, "input.html")
+	})))
 
 	http.HandleFunc("/stats/ttt", SetHeaders(DateValidation(GetOrPost(GetTTTRound, BasicAuth(ValidateTTTRoundPost(PostTTTRound))))))
 	http.HandleFunc("/stats/ttt/meta", SetHeaders(APIMetaData))
@@ -36,14 +38,6 @@ func main() {
 	http.HandleFunc("/stats/ttt/teams", SetHeaders(GetTeams))
 	http.HandleFunc("/stats/ttt/roles", SetHeaders(GetRoles))
 	http.HandleFunc("/stats/ttt/players", SetHeaders(GetPlayers))
-
-	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
-
-	/*go func() {
-		log.Fatal().Err(http.ListenAndServe(":80", http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-			http.Redirect(rw, req, "https://"+req.Host+req.RequestURI, http.StatusMovedPermanently)
-		}))).Msg("")
-	}()*/
 
 	port := fmt.Sprintf(":%s", os.Getenv("PORT"))
 	log.Info().Msgf("Server listening on port: %s", port)

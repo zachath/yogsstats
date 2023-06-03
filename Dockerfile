@@ -21,6 +21,8 @@ WORKDIR /app
 
 COPY --from=builder /build/yogsstats yogsstats
 
+COPY --from=builder /build/input.html input.html
+
 ENV PORT 5000
 
 CMD ["/app/yogsstats"]
