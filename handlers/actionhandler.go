@@ -175,7 +175,7 @@ func CalculateRoleWins(player, role, from, to string, round bool) (RoleWinsRespo
 
 	tmp := []RoleWinPercentage{}
 
-	roles, err := db.GetRoles(role, true)
+	roles, err := db.GetRoles(role, "true")
 	if err != nil {
 		return RoleWinsResponse{Feedback: "Error getting entries"}, errors.Annotate(err, "Error getting entries")
 	}

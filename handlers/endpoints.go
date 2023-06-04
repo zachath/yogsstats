@@ -129,10 +129,14 @@ func PostTTTRound(rw http.ResponseWriter, req *http.Request) {
 }
 
 func GetRoles(rw http.ResponseWriter, req *http.Request) {
-	canWin := true
+	canWin := "true"
 	if req.URL.Query().Get("canWin") == "false" {
-		canWin = false
+		canWin = "false"
+	} else if req.URL.Query().Get("canWin") == "" {
+		canWin = "any"
 	}
+
+	log.Debug().Msg(canWin)
 
 	roles, err := db.GetRoles("*", canWin)
 	if err != nil {
