@@ -43,10 +43,4 @@ func main() {
 	log.Info().Msgf("Server listening on port: %s", port)
 	err := http.ListenAndServeTLS(port, "/etc/letsencrypt/live/yogsstats.com/fullchain.pem", "/etc/letsencrypt/live/yogsstats.com/privkey.pem", nil)
 	log.Error().Err(err).Msg("Server exited.")
-
-	//When running locally.
-	/*port := fmt.Sprintf(":%s", os.Getenv("PORT"))
-	log.Debug().Msgf("Running on port %s", port)
-	err := http.ListenAndServe(port, nil)
-	log.Error().Err(err).Msg("")*/
 }
