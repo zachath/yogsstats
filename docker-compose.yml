@@ -20,3 +20,4 @@ services:
       - 3000:443
     volumes:
       - "/etc/letsencrypt/:/etc/letsencrypt/:rw"
+    restart: always
