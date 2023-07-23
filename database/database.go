@@ -80,6 +80,14 @@ func CountRows(table, whereClause string) (int, error) {
 	return count[0], nil
 }
 
+type RoundInfo struct {
+	Id     string `json:"id"`
+	Date   string `json:"date"`
+	Start  int    `json:"start" db:"vid_start"`
+	End    int    `json:"end" db:"vid_end"`
+	Length int    `json:"length"`
+}
+
 func GetOldestRoundInfo() (RoundInfo, error) {
 	return getRoundInfo("ASC")
 }
@@ -88,22 +96,41 @@ func GetNewestRoundInfo() (RoundInfo, error) {
 	return getRoundInfo("DESC")
 }
 
-type RoundInfo struct {
-	Id   string `json:"id"`
-	Date string `json:"date"`
-}
-
 func getRoundInfo(sort string) (RoundInfo, error) {
 	if sort != "ASC" && sort != "DESC" {
 		return RoundInfo{}, errors.Errorf("Unknown sort '%s', only accepts 'ASC' or 'DESC'", sort)
 	}
 
-	query := fmt.Sprintf("SELECT id, date FROM round ORDER by id %s LIMIT 1", sort)
+	query := fmt.Sprintf("SELECT id, date, vid_start, vid_end, (vid_end - vid_start) as length FROM round ORDER by id %s LIMIT 1", sort)
 
 	var info []RoundInfo
 	err := db.Select(&info, query)
 	if err != nil {
 		return RoundInfo{}, errors.Wrapf(err, "Failed to get round info")
+	}
+
+	return info[0], nil
+}
+
+func GetShortestRound() (RoundInfo, error) {
+	return getRoundLengthExtreme("ASC")
+}
+
+func GetLongestRound() (RoundInfo, error) {
+	return getRoundLengthExtreme("DESC")
+}
+
+func getRoundLengthExtreme(sort string) (RoundInfo, error) {
+	if sort != "ASC" && sort != "DESC" {
+		return RoundInfo{}, errors.Errorf("Unknown sort '%s', only accepts 'ASC' or 'DESC'", sort)
+	}
+
+	query := fmt.Sprintf("SELECT id, date, vid_start, vid_end, (vid_end - vid_start) as length FROM round ORDER by length %s LIMIT 1", sort)
+
+	var info []RoundInfo
+	err := db.Select(&info, query)
+	if err != nil {
+		return RoundInfo{}, errors.Wrapf(err, "Failed to get round extreme based on length")
 	}
 
 	return info[0], nil

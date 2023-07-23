@@ -281,9 +281,11 @@ func RoleWinPercentageHandler(rw http.ResponseWriter, req *http.Request) {
 
 func APIMetaData(rw http.ResponseWriter, req *http.Request) {
 	type MetaResponse struct {
-		Count       int          `json:"roundCount"`
-		OldestRound db.RoundInfo `json:"oldestRound"`
-		NewestRound db.RoundInfo `json:"newestRound"`
+		Count         int          `json:"roundCount"`
+		OldestRound   db.RoundInfo `json:"oldestRound"`
+		NewestRound   db.RoundInfo `json:"newestRound"`
+		ShortestRound db.RoundInfo `json:"shortestRound"`
+		LongestRound  db.RoundInfo `json:"longestRound"`
 	}
 
 	count, err := db.CountRows("round", "")
@@ -307,13 +309,31 @@ func APIMetaData(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	shortestRound, err := db.GetShortestRound()
+	if err != nil {
+		log.Error().Stack().Err(err).Msg("")
+		http.Error(rw, "Failed to get shortest round", http.StatusInternalServerError)
+		return
+	}
+
+	longestRound, err := db.GetLongestRound()
+	if err != nil {
+		log.Error().Stack().Err(err).Msg("")
+		http.Error(rw, "Failed to get longest round", http.StatusInternalServerError)
+		return
+	}
+
 	newestRound.Date = stupid.FixStupidDate(newestRound.Date)
 	oldestRound.Date = stupid.FixStupidDate(oldestRound.Date)
+	shortestRound.Date = stupid.FixStupidDate(shortestRound.Date)
+	longestRound.Date = stupid.FixStupidDate(longestRound.Date)
 
 	response := MetaResponse{
-		Count:       count,
-		OldestRound: oldestRound,
-		NewestRound: newestRound,
+		Count:         count,
+		OldestRound:   oldestRound,
+		NewestRound:   newestRound,
+		ShortestRound: shortestRound,
+		LongestRound:  longestRound,
 	}
 
 	log.Info().Int("code", http.StatusOK).Msg("API meta request served.")
