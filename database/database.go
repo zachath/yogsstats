@@ -82,6 +82,7 @@ func CountRows(table, whereClause string) (int, error) {
 
 type RoundInfo struct {
 	Id     string `json:"id"`
+	Video  string `json:"video"`
 	Date   string `json:"date"`
 	Start  int    `json:"start" db:"vid_start"`
 	End    int    `json:"end" db:"vid_end"`
@@ -101,7 +102,7 @@ func getRoundInfo(sort string) (RoundInfo, error) {
 		return RoundInfo{}, errors.Errorf("Unknown sort '%s', only accepts 'ASC' or 'DESC'", sort)
 	}
 
-	query := fmt.Sprintf("SELECT id, date, vid_start, vid_end, (vid_end - vid_start) as length FROM round ORDER by id %s LIMIT 1", sort)
+	query := fmt.Sprintf("SELECT id, video, date, vid_start, vid_end, (vid_end - vid_start) as length FROM round ORDER by id %s LIMIT 1", sort)
 
 	var info []RoundInfo
 	err := db.Select(&info, query)
@@ -125,7 +126,7 @@ func getRoundLengthExtreme(sort string) (RoundInfo, error) {
 		return RoundInfo{}, errors.Errorf("Unknown sort '%s', only accepts 'ASC' or 'DESC'", sort)
 	}
 
-	query := fmt.Sprintf("SELECT id, date, vid_start, vid_end, (vid_end - vid_start) as length FROM round ORDER by length %s LIMIT 1", sort)
+	query := fmt.Sprintf("SELECT id, video, date, vid_start, vid_end, (vid_end - vid_start) as length FROM round ORDER by length %s LIMIT 1", sort)
 
 	var info []RoundInfo
 	err := db.Select(&info, query)
