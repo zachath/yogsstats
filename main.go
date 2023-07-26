@@ -38,6 +38,7 @@ func main() {
 	http.HandleFunc("/stats/ttt/teams", SetHeaders(GetTeams))
 	http.HandleFunc("/stats/ttt/roles", SetHeaders(GetRoles))
 	http.HandleFunc("/stats/ttt/players", SetHeaders(GetPlayers))
+	http.HandleFunc("/stats/ttt/beggarWinRateByTeam", SetHeaders(BeggarWinRateByTeam))
 
 	port := fmt.Sprintf(":%s", os.Getenv("PORT"))
 	log.Info().Msgf("Server listening on port: %s", port)

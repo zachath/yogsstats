@@ -441,6 +441,7 @@ func GetPlayers(rw http.ResponseWriter, req *http.Request) {
 	players, err := db.GetEntries("name", "player", "", "*")
 	if err != nil {
 		log.Error().Stack().Err(err).Msg("Failed to get players")
+		http.Error(rw, "Failed to get players", http.StatusInternalServerError)
 		return
 	}
 
@@ -449,4 +450,27 @@ func GetPlayers(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	json.NewEncoder(rw).Encode(Players{Players: players})
+}
+
+func BeggarWinRateByTeam(rw http.ResponseWriter, req *http.Request) {
+	innocentRate, err := db.BeggarWinRateByTeam("innocents")
+	if err != nil {
+		log.Error().Stack().Err(err).Msg("Failed getting beggar rate")
+		http.Error(rw, "Failed getting beggar rate", http.StatusInternalServerError)
+		return
+	}
+
+	traitorRate, err := db.BeggarWinRateByTeam("traitors")
+	if err != nil {
+		log.Error().Stack().Err(err).Msg("Failed getting beggar rate")
+		http.Error(rw, "Failed getting beggar rate", http.StatusInternalServerError)
+		return
+	}
+
+	type Response struct {
+		InnocentRate float64 `json:"innocentRate"`
+		TraitorRate  float64 `json:"traitorRate"`
+	}
+
+	json.NewEncoder(rw).Encode(Response{InnocentRate: innocentRate, TraitorRate: traitorRate})
 }

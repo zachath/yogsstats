@@ -445,3 +445,15 @@ func GetJesterKills(jesterWins int, player, from, to string) (int, float64, erro
 
 	return rows[0].Kills, rows[0].Rate, nil
 }
+
+func BeggarWinRateByTeam(team string) (float64, error) {
+	query := "select round(cast(A.NUM as numeric) / cast(A.DENOM as numeric), 2) from (select (select count(*) from round R join round_participation RP on RP.id = R.id where RP.role = 'beggar' and RP.team = $1 and R.winning_team = $1) as NUM, (select count(*) from round R join round_participation RP on RP.id = R.id where RP.role = 'beggar' and RP.team = $1) as DENOM) as A;"
+
+	var rate []float64
+	err := db.Select(&rate, query, team)
+	if err != nil {
+		return 0, errors.Wrapf(err, "failed getting beggar win ratio, team: %s", team)
+	}
+
+	return rate[0], nil
+}
