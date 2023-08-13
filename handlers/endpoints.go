@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 
 	//External dependencies
 
@@ -15,7 +16,6 @@ import (
 	//Local packages
 	db "yogsstats/database"
 	. "yogsstats/models"
-	stupid "yogsstats/stupid"
 )
 
 func GetVideo(rw http.ResponseWriter, req *http.Request) {
@@ -42,7 +42,7 @@ func GetVideo(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	for index := range videos {
-		videos[index].Date = stupid.FixStupidDate(videos[index].Date)
+		videos[index].Date = reformatDate(videos[index].Date)
 	}
 
 	rw.Header().Set("Content-Type", "application/json")
@@ -81,7 +81,7 @@ func GetTTTRound(rw http.ResponseWriter, req *http.Request) {
 	rounds, err = db.GetRound(id, from, to)
 
 	if err != nil {
-		log.Error().Stack().Err(err).Msgf("Failed to get TTT round")
+		log.Error().Stack().Err(err).Msgf("Failed to get TTT round with id %s", id)
 		http.Error(rw, fmt.Sprintf("Failed to get TTT round: %s", id), http.StatusInternalServerError)
 		return
 	}
@@ -92,7 +92,7 @@ func GetTTTRound(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	for index := range rounds {
-		rounds[index].Date = stupid.FixStupidDate(rounds[index].Date)
+		rounds[index].Date = reformatDate(rounds[index].Date)
 	}
 
 	rw.Header().Set("Content-Type", "application/json")
@@ -323,10 +323,10 @@ func APIMetaData(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	newestRound.Date = stupid.FixStupidDate(newestRound.Date)
-	oldestRound.Date = stupid.FixStupidDate(oldestRound.Date)
-	shortestRound.Date = stupid.FixStupidDate(shortestRound.Date)
-	longestRound.Date = stupid.FixStupidDate(longestRound.Date)
+	newestRound.Date = reformatDate(newestRound.Date)
+	oldestRound.Date = reformatDate(oldestRound.Date)
+	shortestRound.Date = reformatDate(shortestRound.Date)
+	longestRound.Date = reformatDate(longestRound.Date)
 
 	response := MetaResponse{
 		Count:         count,
@@ -473,4 +473,12 @@ func BeggarWinRateByTeam(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	json.NewEncoder(rw).Encode(Response{InnocentRate: innocentRate, TraitorRate: traitorRate})
+}
+
+func reformatDate(s string) string {
+	if idx := strings.Index(s, "T"); idx != -1 {
+		s = s[:idx]
+	}
+
+	return s
 }

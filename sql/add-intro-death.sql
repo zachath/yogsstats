@@ -1,1 +1,0 @@
-alter table round add intro_death text not null default('not_tracked');

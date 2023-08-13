@@ -1,1 +1,0 @@
-alter table role add column win boolean;
