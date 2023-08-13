@@ -2,13 +2,13 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 12.15 (Ubuntu 12.15-0ubuntu0.20.04.1)
--- Dumped by pg_dump version 12.15 (Ubuntu 12.15-0ubuntu0.20.04.1)
+-- Dumped from database version 14.8 (Ubuntu 14.8-0ubuntu0.22.10.1)
+-- Dumped by pg_dump version 14.8 (Ubuntu 14.8-0ubuntu0.22.10.1)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
 SET idle_in_transaction_session_timeout = 0;
-SET client_encoding = 'UTF8';
+SET client_encoding = 'LATIN1';
 SET standard_conforming_strings = on;
 SELECT pg_catalog.set_config('search_path', '', false);
 SET check_function_bodies = false;
@@ -37,8 +37,8 @@ ALTER TABLE public.player OWNER TO postgres;
 
 CREATE TABLE public.role (
     role text NOT NULL,
-    detective text,
-    win boolean
+    win boolean,
+    detective_role boolean DEFAULT false NOT NULL
 );
 
 
@@ -134,44 +134,44 @@ Briony
 -- Data for Name: role; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.role (role, detective, win) FROM stdin;
-innocent	\N	t
-traitor	\N	t
-jester	\N	t
-impersonator	\N	t
-informant	\N	t
-clown	\N	t
-hypnotist	\N	t
-veteran	\N	t
-beggar	\N	t
-zombie	\N	t
-turncoat	\N	t
-mad scientist	\N	t
-summoner	\N	t
-parasite	\N	t
-deputy	\N	t
-glitch	\N	t
-paramedic	\N	t
-elf	\N	t
-detective	d	t
-paladin	d	t
-medium	d	t
-tracker	d	t
-santa	d	t
-communist	\N	t
-cupid	\N	t
-taxidermist	\N	t
-boxer	\N	t
-drunk	\N	f
-loot goblin	\N	f
-swapper	\N	f
-marshal	d	t
-randoman	d	t
-shadow	\N	f
-clowntective	\N	t
-queen bee		t
-bee		t
-mud scientist		f
+COPY public.role (role, win, detective_role) FROM stdin;
+innocent	t	f
+traitor	t	f
+jester	t	f
+impersonator	t	f
+informant	t	f
+clown	t	f
+hypnotist	t	f
+veteran	t	f
+beggar	t	f
+zombie	t	f
+turncoat	t	f
+mad scientist	t	f
+summoner	t	f
+parasite	t	f
+deputy	t	f
+glitch	t	f
+paramedic	t	f
+elf	t	f
+communist	t	f
+cupid	t	f
+taxidermist	t	f
+boxer	t	f
+drunk	f	f
+loot goblin	f	f
+swapper	f	f
+shadow	f	f
+clowntective	t	f
+queen bee	t	f
+bee	t	f
+mud scientist	f	f
+detective	t	t
+paladin	t	t
+medium	t	t
+tracker	t	t
+santa	t	t
+marshal	t	t
+randoman	t	t
 \.
 
 
@@ -264,7 +264,7 @@ COPY public.round (id, date, winning_team, randomat, video, vid_start, vid_end, 
 202212131	2022-12-13	innocents	droping this	gIwbQJJlCxw	45	331	\N
 202212130	2022-12-13	jester	droping this	gIwbQJJlCxw	17	38	Rythian
 202210221	2022-10-22	traitors	Its Breeh!	VRLFaq9XcMc	214	330	\N
-202210222	2022-10-22	innocents	Ã‰vÃ©nement AlÃ©atoire	VRLFaq9XcMc	364	469	\N
+202210222	2022-10-22	innocents	Événement Aléatoire	VRLFaq9XcMc	364	469	\N
 202210223	2022-10-22	innocents	Everyone has their favourites	VRLFaq9XcMc	509	678	\N
 202210224	2022-10-22	innocents	You just triggered my trap card!	VRLFaq9XcMc	711	942	\N
 202212172	2022-12-17	traitors	droping this	HDfGua9hZzI	635	713	\N
@@ -846,6 +846,7 @@ COPY public.round_participation (id, player, role, team, died) FROM stdin;
 202211012	Boba	traitor	traitors	not_tracked
 202211012	Ravs	innocent	innocents	not_tracked
 202211012	Daltos	innocent	innocents	not_tracked
+202212061	Lewis	zombie	zombies	not_tracked
 202211013	Lewis	innocent	innocents	not_tracked
 202211013	Ben	parasite	traitors	not_tracked
 202211013	Duncan	turncoat	innocents	not_tracked
@@ -1301,7 +1302,6 @@ COPY public.round_participation (id, player, role, team, died) FROM stdin;
 202212061	Rythian	zombie	zombies	not_tracked
 202212061	Zoey	innocent	innocents	not_tracked
 202212061	Osie	zombie	zombies	not_tracked
-202212061	Lewis	zombie	zombies	not_tracked
 202212062	Ben	glitch	innocents	not_tracked
 202212062	Duncan	jester	jester	not_tracked
 202212062	Ravs	innocent	innocents	not_tracked
@@ -4949,7 +4949,7 @@ When one person shoots... EVERYONE SHOOTS?! | Gmod TTT	ebVSH3L5hjM	false	2023-05
 Riddle Master Ben gives away his traitor buddy | Gmod TTT	1RRbgC7wRtU	false	2023-05-06
 We're being hunted by the immortal SUPER COP!! | Gmod TTT	Xb1avFSyJa0	false	2023-05-09
 Lewis finally cracks, thinks EVERYONE is a prop | Gmod TTT	hwMR1y4gbK4	false	2023-05-13
-NEW PLAYER Nilesy paid Â£1,000 for this skin in Gmod TTT!!	2i_-L6Dny3o	false	2023-05-16
+NEW PLAYER Nilesy paid £1,000 for this skin in Gmod TTT!!	2i_-L6Dny3o	false	2023-05-16
 These cats have NINE LIVES?! | Gmod TTT	xQP3hdxOmCM	false	2023-05-20
 Only admin abuse can end this AWFUL round of Gmod TTT!	VRLFaq9XcMc	not_tracked	2022-10-22
 It's MORE-BEEn Time! | Gmod TTT	X_jNsbBS278	false	2022-10-18
