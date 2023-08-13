@@ -369,7 +369,7 @@ func GetRoundParticipationTeamsByPlayer(player, from, to, team string) ([]RoundP
 }
 
 func InnocentWinsByPlayer(player, from, to string, round bool) (int, error) {
-	query := "SELECT COUNT(*) FROM round_participation RP JOIN round R ON RP.id = R.id JOIN role RO ON RP.role = RO.role WHERE RP.player = $1 AND date >= $2 AND date <= $3 AND RO.detective = 'd' AND R.winning_team = 'innocents';"
+	query := "SELECT COUNT(*) FROM round_participation RP JOIN round R ON RP.id = R.id JOIN role RO ON RP.role = RO.role WHERE RP.player = $1 AND date >= $2 AND date <= $3 AND RO.detective_role = true AND R.winning_team = 'innocents';"
 
 	var wins []int
 	err := db.Select(&wins, query, player, from, to)
@@ -381,7 +381,7 @@ func InnocentWinsByPlayer(player, from, to string, round bool) (int, error) {
 }
 
 func DetectiveRoundsByPlayer(player, from, to string) (int, error) {
-	query := "SELECT COUNT(*) FROM round_participation RP JOIN round R ON RP.id = R.id JOIN role RO ON RP.role = RO.role WHERE RP.player = $1 AND date >= $2 AND date <= $3 AND RO.detective = 'd';"
+	query := "SELECT COUNT(*) FROM round_participation RP JOIN round R ON RP.id = R.id JOIN role RO ON RP.role = RO.role WHERE RP.player = $1 AND date >= $2 AND date <= $3 AND RO.detective_role = true;"
 
 	var rounds []int
 	err := db.Select(&rounds, query, player, from, to)
