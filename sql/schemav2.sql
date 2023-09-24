@@ -200,19 +200,11 @@ ALTER TABLE ONLY public.round_participation
 
 
 --
--- Name: round_participation round_participation_role_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: round_participation round_participation_team_role_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.round_participation
-    ADD CONSTRAINT round_participation_role_fkey FOREIGN KEY (role) REFERENCES public.roles(role);
-
-
---
--- Name: round_participation round_participation_team_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.round_participation
-    ADD CONSTRAINT round_participation_team_fkey FOREIGN KEY (team) REFERENCES public.teams(team);
+    ADD CONSTRAINT round_participation_team_role_fk FOREIGN KEY (role, team) REFERENCES public.roles_by_teams(role, team);
 
 
 --
