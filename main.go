@@ -26,6 +26,12 @@ func main() {
 		http.ServeFile(rw, req, "input.html")
 	})))
 
+	/*
+		v2:
+		/players
+		/stats/{player}
+	*/
+
 	http.HandleFunc("/stats/ttt", SetHeaders(DateValidation(GetOrPost(GetTTTRound, BasicAuth(ValidateTTTRoundPost(PostTTTRound))))))
 	http.HandleFunc("/stats/ttt/meta", SetHeaders(APIMetaData))
 	http.HandleFunc("/stats/ttt/teamWins", SetHeaders(DateValidation(TeamWins)))
