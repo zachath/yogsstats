@@ -67,6 +67,7 @@ insert into roles_by_teams values ('lover', 'lovers');
 -- videos:
 alter table video add column i_d bool default true;
 update video set i_d = false where intro_death = 'not_tracked';
+update video set i_d = false where intro_death = 'no'
 insert into videos(video_id, title, intro_death, date) select vid, title, i_d, date from video;
 
 -- rounds:

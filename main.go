@@ -6,48 +6,57 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"time"
 
 	//External dependencies
+	"github.com/gorilla/mux"
 	"github.com/rs/zerolog"
 	log "github.com/rs/zerolog/log"
 	"github.com/rs/zerolog/pkgerrors"
 
 	//Local packages
-	. "yogsstats/handlers"
+	handlers "yogsstats/handlers"
 )
 
+// TODO: Why no stacktrace
 func init() {
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 	zerolog.ErrorStackMarshaler = pkgerrors.MarshalStack
 }
 
 func main() {
-	http.HandleFunc("/stats/ttt/input", SetHeaders(BasicAuth(func(rw http.ResponseWriter, req *http.Request) {
-		http.ServeFile(rw, req, "input.html")
-	})))
+	r := mux.NewRouter()
+	r.HandleFunc("/meta", handlers.SetHeaders(handlers.APIMetaData)).Methods(http.MethodOptions, http.MethodGet)
 
-	/*
-		v2:
-		/players
-		/stats/{player}
-	*/
+	r.HandleFunc("/rounds", handlers.SetHeaders(handlers.DateValidation(handlers.Rounds))).Methods(http.MethodOptions, http.MethodGet)
+	r.HandleFunc("/rounds/{round}", handlers.SetHeaders(handlers.GetRound)).Methods(http.MethodOptions, http.MethodGet)
+	r.HandleFunc("/rounds/{round}", handlers.SetHeaders(handlers.BasicAuth(nil))).Methods(http.MethodOptions, http.MethodPost)
 
-	http.HandleFunc("/stats/ttt", SetHeaders(DateValidation(GetOrPost(GetTTTRound, BasicAuth(ValidateTTTRoundPost(PostTTTRound))))))
-	http.HandleFunc("/stats/ttt/meta", SetHeaders(APIMetaData))
-	http.HandleFunc("/stats/ttt/teamWins", SetHeaders(DateValidation(TeamWins)))
-	http.HandleFunc("/stats/ttt/playerWinPercentage", SetHeaders(DateValidation(PlayerWinPercentage)))
-	http.HandleFunc("/stats/ttt/detectiveWinPercentage", SetHeaders(DateValidation(DetectiveWinPercentage)))
-	http.HandleFunc("/stats/ttt/traitorCombos", SetHeaders(DateValidation(TraitorCombos)))
-	http.HandleFunc("/stats/ttt/videos", SetHeaders(DateValidation(GetOrPost(GetVideo, BasicAuth(ValidateVideoPost(PostVideo))))))
-	http.HandleFunc("/stats/ttt/roleWinPercentage", SetHeaders(DateValidation(RoleWinPercentageHandler)))
-	http.HandleFunc("/stats/ttt/jesterKills", SetHeaders(DateValidation(JesterKills)))
-	http.HandleFunc("/stats/ttt/teams", SetHeaders(GetTeams))
-	http.HandleFunc("/stats/ttt/roles", SetHeaders(GetRoles))
-	http.HandleFunc("/stats/ttt/players", SetHeaders(GetPlayers))
-	http.HandleFunc("/stats/ttt/beggarWinRateByTeam", SetHeaders(BeggarWinRateByTeam))
+	r.HandleFunc("/videos", handlers.SetHeaders(handlers.DateValidation(handlers.Videos))).Methods(http.MethodOptions, http.MethodGet)
+	r.HandleFunc("/videos/{video}", handlers.SetHeaders(handlers.GetVideo2)).Methods(http.MethodOptions, http.MethodGet)
+	r.HandleFunc("/videos/{video}", handlers.SetHeaders(handlers.BasicAuth(handlers.PostVideo2))).Methods(http.MethodOptions, http.MethodPost)
+
+	r.HandleFunc("/players", handlers.SetHeaders(nil)).Methods(http.MethodOptions, http.MethodGet)
+	r.HandleFunc("/players/{player}", handlers.SetHeaders(nil)).Methods(http.MethodOptions, http.MethodGet)
+	r.HandleFunc("/players/{player}", handlers.SetHeaders(handlers.BasicAuth(handlers.PostPlayer))).Methods(http.MethodOptions, http.MethodPost)
+
+	r.HandleFunc("/teams", handlers.SetHeaders(handlers.DateValidation(handlers.Teams))).Methods(http.MethodOptions, http.MethodGet)
+	r.HandleFunc("/teams/{team}", handlers.SetHeaders(handlers.DateValidation(handlers.GetTeam))).Methods(http.MethodOptions, http.MethodGet)
+	r.HandleFunc("/teams/{team}", handlers.SetHeaders(handlers.BasicAuth(handlers.InsertTeam))).Methods(http.MethodOptions, http.MethodPost)
+
+	r.HandleFunc("/roles", handlers.SetHeaders(handlers.Roles)).Methods(http.MethodOptions, http.MethodGet)
+	r.HandleFunc("/roles/{role}", handlers.SetHeaders(handlers.GetRole)).Methods(http.MethodOptions, http.MethodGet)
+	r.HandleFunc("/roles/{role}", handlers.SetHeaders(handlers.BasicAuth(handlers.InsertRole))).Methods(http.MethodOptions, http.MethodPost)
 
 	port := fmt.Sprintf(":%s", os.Getenv("PORT"))
 	log.Info().Msgf("Server listening on port: %s", port)
-	err := http.ListenAndServeTLS(port, "/etc/letsencrypt/live/yogsstats.com/fullchain.pem", "/etc/letsencrypt/live/yogsstats.com/privkey.pem", nil)
-	log.Error().Err(err).Msg("Server exited.")
+
+	server := &http.Server{
+		Handler:      r,
+		Addr:         port,
+		WriteTimeout: 15 * time.Second,
+		ReadTimeout:  15 * time.Second,
+	}
+
+	log.Fatal().Err(server.ListenAndServeTLS("/etc/letsencrypt/live/yogsstats.com/fullchain.pem", "/etc/letsencrypt/live/yogsstats.com/privkey.pem")).Msg("Server exited.")
 }

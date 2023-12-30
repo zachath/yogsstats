@@ -8,34 +8,22 @@ import (
 	"net/http"
 	"os"
 	"time"
+	"yogsstats/models"
 
 	//External dependencies
 	log "github.com/rs/zerolog/log"
 	"golang.org/x/crypto/bcrypt"
-
 	//Local packages
-	. "yogsstats/models"
 )
-
-func GetOrPost(get, post http.HandlerFunc) http.HandlerFunc {
-	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-		if req.Method == http.MethodGet {
-			get(rw, req)
-		} else if req.Method == http.MethodPost {
-			post(rw, req)
-		} else {
-			http.Error(rw, "Unsupported method", http.StatusBadRequest)
-			return
-		}
-	})
-}
 
 func BasicAuth(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		_, providedPassword, ok := req.BasicAuth()
+		log.Debug().Bool("ok", ok).Msg("")
 
 		if ok {
 			hashedPass := os.Getenv("POST_PASS")
+			log.Debug().Str("pass", hashedPass).Msg("")
 			err := bcrypt.CompareHashAndPassword([]byte(hashedPass), []byte(providedPassword))
 			if err == nil {
 				next(rw, req)
@@ -53,7 +41,7 @@ func ValidateVideoPost(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		ctx := req.Context()
 
-		var video Video
+		var video models.Video
 		defer req.Body.Close()
 
 		reqBody, err := ioutil.ReadAll(req.Body)
@@ -81,7 +69,7 @@ func ValidateTTTRoundPost(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		ctx := req.Context()
 
-		var round Round
+		var round models.Round
 		defer req.Body.Close()
 
 		reqBody, err := ioutil.ReadAll(req.Body)
@@ -105,11 +93,6 @@ func ValidateTTTRoundPost(next http.HandlerFunc) http.HandlerFunc {
 	})
 }
 
-func verifyDate(date string) error {
-	_, err := time.Parse("2006-01-02", date)
-	return err
-}
-
 func setTimeBox(from, to *string) {
 	if *from == "" {
 		*from = "2000-12-24"
@@ -118,6 +101,18 @@ func setTimeBox(from, to *string) {
 	if *to == "" {
 		*to = time.Now().Format("2006-01-02")
 	}
+}
+
+func SetHeaders(next http.HandlerFunc) http.HandlerFunc {
+	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		rw.Header().Set("Access-Control-Allow-Origin", "*")
+		next(rw, req)
+	})
+}
+
+func verifyDate(date string) error {
+	_, err := time.Parse("2006-01-02", date)
+	return err
 }
 
 func DateValidation(next http.HandlerFunc) http.HandlerFunc {
@@ -132,6 +127,8 @@ func DateValidation(next http.HandlerFunc) http.HandlerFunc {
 				http.Error(rw, "Invalid date (from)", http.StatusBadRequest)
 				return
 			}
+		} else {
+			from = "2000-12-24"
 		}
 
 		to := req.URL.Query().Get("to")
@@ -139,22 +136,17 @@ func DateValidation(next http.HandlerFunc) http.HandlerFunc {
 			err := verifyDate(to)
 			if err != nil {
 				log.Error().Err(err).Msg("Invalid date format")
-				http.Error(rw, "Invalid date (to)", http.StatusBadRequest)
+				http.Error(rw, "Invalid date (to)", http.StatusBadRequest) //TODO: Errors in JSON format `{"type": "internal server error", "code": code, "message": "message"}`
 				return
 			}
+		} else {
+			to = "2099-12-24"
 		}
 
 		ctx = context.WithValue(ctx, "from", from)
 		ctx = context.WithValue(ctx, "to", to)
 		req = req.WithContext(ctx)
 
-		next(rw, req)
-	})
-}
-
-func SetHeaders(next http.HandlerFunc) http.HandlerFunc {
-	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-		rw.Header().Set("Access-Control-Allow-Origin", "*")
 		next(rw, req)
 	})
 }

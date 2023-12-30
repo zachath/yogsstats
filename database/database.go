@@ -62,24 +62,6 @@ func GetEntries(cols, table, column, value string) ([]string, error) {
 	return entries, nil
 }
 
-func CountRows(table, whereClause string) (int, error) {
-	var count []int
-	var query string
-
-	if whereClause == "" {
-		query = fmt.Sprintf("SELECT COUNT(*) FROM %s", table)
-	} else {
-		query = fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE %s", table, whereClause)
-	}
-
-	err := db.Select(&count, query)
-	if err != nil {
-		return -1, errors.Wrapf(err, "Failed to count rows with query: %s", query)
-	}
-
-	return count[0], nil
-}
-
 type RoundInfo struct {
 	Id     string `json:"id"`
 	Video  string `json:"video"`

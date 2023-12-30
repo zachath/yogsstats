@@ -279,68 +279,6 @@ func RoleWinPercentageHandler(rw http.ResponseWriter, req *http.Request) {
 	json.NewEncoder(rw).Encode(response)
 }
 
-func APIMetaData(rw http.ResponseWriter, req *http.Request) {
-	type MetaResponse struct {
-		Count         int          `json:"roundCount"`
-		OldestRound   db.RoundInfo `json:"oldestRound"`
-		NewestRound   db.RoundInfo `json:"newestRound"`
-		ShortestRound db.RoundInfo `json:"shortestRound"`
-		LongestRound  db.RoundInfo `json:"longestRound"`
-	}
-
-	count, err := db.CountRows("round", "")
-	if err != nil {
-		log.Error().Stack().Err(err).Msg("")
-		http.Error(rw, "Failed to count round rows", http.StatusInternalServerError)
-		return
-	}
-
-	oldestRound, err := db.GetOldestRoundInfo()
-	if err != nil {
-		log.Error().Stack().Err(err).Msg("")
-		http.Error(rw, "Failed to get oldest round info", http.StatusInternalServerError)
-		return
-	}
-
-	newestRound, err := db.GetNewestRoundInfo()
-	if err != nil {
-		log.Error().Stack().Err(err).Msg("")
-		http.Error(rw, "Failed to get newest round info", http.StatusInternalServerError)
-		return
-	}
-
-	shortestRound, err := db.GetShortestRound()
-	if err != nil {
-		log.Error().Stack().Err(err).Msg("")
-		http.Error(rw, "Failed to get shortest round", http.StatusInternalServerError)
-		return
-	}
-
-	longestRound, err := db.GetLongestRound()
-	if err != nil {
-		log.Error().Stack().Err(err).Msg("")
-		http.Error(rw, "Failed to get longest round", http.StatusInternalServerError)
-		return
-	}
-
-	newestRound.Date = reformatDate(newestRound.Date)
-	oldestRound.Date = reformatDate(oldestRound.Date)
-	shortestRound.Date = reformatDate(shortestRound.Date)
-	longestRound.Date = reformatDate(longestRound.Date)
-
-	response := MetaResponse{
-		Count:         count,
-		OldestRound:   oldestRound,
-		NewestRound:   newestRound,
-		ShortestRound: shortestRound,
-		LongestRound:  longestRound,
-	}
-
-	log.Info().Int("code", http.StatusOK).Msg("API meta request served.")
-
-	json.NewEncoder(rw).Encode(response)
-}
-
 type traitorComboCache struct {
 	LatestRound int
 	Response    TraitorCombosResponse
