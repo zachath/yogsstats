@@ -7,13 +7,12 @@ type Video2 struct {
 	IntroDeath bool   `json:"introDeath" db:"intro_death"`
 }
 
-// TODO: Will also contain their stats.
 type Player2 struct {
 	Name                   string  `json:"name,omitempty" db:"name"`
 	DetectiveWinPercentage float64 `json:"detectiveWinPercentage"`
 	TeamWinPercentage      float64 `json:"teamWinPercentage"`
 	RoleWinPercentage      float64 `json:"roleWinPercentage"`
-	JesterKills            float64 `json:"jesterKills"`
+	JesterKills            int     `json:"jesterKills"`
 }
 
 type Role2 struct {

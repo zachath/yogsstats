@@ -36,8 +36,8 @@ func main() {
 	r.HandleFunc("/videos/{video}", handlers.SetHeaders(handlers.GetVideo2)).Methods(http.MethodOptions, http.MethodGet)
 	r.HandleFunc("/videos/{video}", handlers.SetHeaders(handlers.BasicAuth(handlers.PostVideo2))).Methods(http.MethodOptions, http.MethodPost)
 
-	r.HandleFunc("/players", handlers.SetHeaders(nil)).Methods(http.MethodOptions, http.MethodGet)
-	r.HandleFunc("/players/{player}", handlers.SetHeaders(nil)).Methods(http.MethodOptions, http.MethodGet)
+	r.HandleFunc("/players", handlers.SetHeaders(handlers.DateValidation(handlers.Players))).Methods(http.MethodOptions, http.MethodGet)
+	r.HandleFunc("/players/{player}", handlers.SetHeaders(handlers.DateValidation(nil))).Methods(http.MethodOptions, http.MethodGet)
 	r.HandleFunc("/players/{player}", handlers.SetHeaders(handlers.BasicAuth(handlers.PostPlayer))).Methods(http.MethodOptions, http.MethodPost)
 
 	r.HandleFunc("/teams", handlers.SetHeaders(handlers.DateValidation(handlers.Teams))).Methods(http.MethodOptions, http.MethodGet)

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"net/http"
 	"yogsstats/database"
 
@@ -9,7 +10,24 @@ import (
 )
 
 func Players(rw http.ResponseWriter, req *http.Request) {
-	//players, err := database.GetAllPlayers()
+	from := req.Context().Value("from").(string)
+	to := req.Context().Value("to").(string)
+
+	players, err := database.GetAllPlayers(from, to)
+	if err != nil {
+		log.Error().Stack().Err(err).Msg("failed to get players")
+		http.Error(rw, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	err = json.NewEncoder(rw).Encode(players)
+	if err != nil {
+		log.Error().Stack().Err(err).Msg("failed to encode response")
+		http.Error(rw, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	log.Info().Int("code", http.StatusOK).Msg("players (GET) request served")
 }
 
 func GetPlayer(rw http.ResponseWriter, req *http.Request) {

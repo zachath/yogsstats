@@ -306,8 +306,43 @@ func InsertVideo2(video models.Video2) error {
 	return nil
 }
 
-func GetAllPlayers() ([]models.Player2, error) {
-	return nil, nil
+func GetAllPlayers(from, to string) ([]models.Player2, error) {
+	playerNames := []string{}
+
+	err := db2.Select(&playerNames, "SELECT * FROM players;")
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to perform query")
+	}
+
+	players := []models.Player2{}
+	for _, p := range playerNames {
+		player := models.Player2{
+			Name: p,
+		}
+
+		player.JesterKills, err = jesterKills(player.Name, from, to)
+		if err != nil {
+			return nil, errors.Annotate(err, "failed to get jester kills")
+		}
+
+		players = append(players, player)
+	}
+
+	return players, nil
+}
+
+func jesterKills(player, from, to string) (int, error) {
+	var wins []int
+	err := db2.Select(&wins, "SELECT K.kills from (SELECT COUNT(*) as kills FROM ROUNDS JOIN videos V ON video = V.video_id WHERE jester_killer = $1 AND V.date >= $2 AND V.date <= $3) as K;", player, from, to)
+	if err != nil {
+		return 0, errors.Annotatef(err, "failed to get jester kills for player '%s'", player)
+	}
+
+	if len(wins) != 1 {
+		return 0, errors.Annotatef(err, "got unexpected amount of rows: %d", len(wins))
+	}
+
+	return wins[0], nil
 }
 
 func InsertPlayer(name string) error {
