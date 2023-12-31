@@ -320,6 +320,11 @@ func GetAllPlayers(from, to string) ([]models.Player2, error) {
 			Name: p,
 		}
 
+		player.DetectiveWinPercentage, err = detectiveWinPercentage(player.Name, from, to)
+		if err != nil {
+			return nil, errors.Annotate(err, "failed to get detective win percentage")
+		}
+
 		player.JesterKills, err = jesterKills(player.Name, from, to)
 		if err != nil {
 			return nil, errors.Annotate(err, "failed to get jester kills")
@@ -329,6 +334,29 @@ func GetAllPlayers(from, to string) ([]models.Player2, error) {
 	}
 
 	return players, nil
+}
+
+func detectiveWinPercentage(player, from, to string) (float64, error) {
+	var rate []float64
+	err := db2.Select(
+		&rate,
+		"SELECT trunc(A.wins / (B.total)::numeric,3) FROM (SELECT COUNT(*) as wins FROM round_participation RP JOIN rounds R ON RP.id = R.id JOIN roles RO ON RP.role = RO.role JOIN videos V on R.video = V.video_id WHERE RP.player = $1 AND V.date >= $2 AND V.date <= $3 AND RO.is_detective = true AND R.winning_team = 'innocents') as A, (SELECT COUNT(*) as total FROM round_participation RP JOIN rounds R ON RP.id = R.id JOIN roles RO ON RP.role = RO.role JOIN videos V on R.video = V.video_id WHERE RP.player = $1 AND V.date >= $2 AND V.date <= $3 AND RO.is_detective = true) as B;",
+		player,
+		from,
+		to,
+	)
+	if err != nil {
+		if err.Error() == "pq: division by zero" {
+			return 0, nil
+		}
+		return 0, errors.Annotatef(err, "failed to get detective percentage for player '%s'", player)
+	}
+
+	if len(rate) != 1 {
+		return 0, errors.Annotatef(err, "got unexpected amount of rows: %d", len(rate))
+	}
+
+	return rate[0], nil
 }
 
 func jesterKills(player, from, to string) (int, error) {

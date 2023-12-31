@@ -29,7 +29,7 @@ type Team2 struct {
 }
 
 type RoundParticipation struct {
-	Id     int    `db:"id"` //TODO: RM?
+	Id     int    `db:"id"`
 	Player string `json:"player" db:"player"`
 	Role   string `json:"role" db:"role"`
 	Team   string `json:"team" db:"team"`
