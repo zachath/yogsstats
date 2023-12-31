@@ -71,8 +71,6 @@ func GetRounds(players bool, from, to, where string, args ...string) ([]models.R
 		arguments = append(arguments, arg)
 	}
 
-	log.Debug().Str("query", query).Msg("")
-
 	err := db2.Select(&rows, query, arguments...)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get rounds")
@@ -112,6 +110,38 @@ func GetRounds(players bool, from, to, where string, args ...string) ([]models.R
 	}
 
 	return rounds, nil
+}
+
+func InsertRound2(round models.Round2) error {
+	tx, err := db2.Beginx()
+	if err != nil {
+		return errors.Annotate(err, "failed to begin transaction")
+	}
+
+	if round.JesterKiller.Name == "" {
+		_, err = tx.Exec("INSERT INTO rounds VALUES ($1, $2, $3, $4, $5);", round.Id, round.WinningTeam, round.Video.Id, round.Start, round.End)
+	} else {
+		_, err = tx.Exec("INSERT INTO rounds VALUES ($1, $2, $3, $4, $5, $6);", round.Id, round.WinningTeam, round.Video.Id, round.Start, round.End, round.JesterKiller.Name)
+	}
+
+	if err != nil {
+		if rollback := tx.Rollback(); rollback != nil {
+			return errors.Annotate(rollback, "failed to perform & rollback query")
+		}
+		return errors.Annotate(err, "failed to perform query")
+	}
+
+	for _, rp := range round.Players {
+		_, err = tx.Exec("INSERT INTO round_participation VALUES ($1, $2, $3, $4);", round.Id, rp.Player, rp.Role, rp.Team)
+		if err != nil {
+			if rollback := tx.Rollback(); rollback != nil {
+				return errors.Annotate(rollback, "failed to perform & rollback query")
+			}
+			return errors.Annotate(err, "failed to perform query")
+		}
+	}
+
+	return tx.Commit()
 }
 
 func GetVideos(from, to, where string, args ...string) ([]models.Video2, error) {

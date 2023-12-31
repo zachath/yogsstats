@@ -23,7 +23,6 @@ func BasicAuth(next http.HandlerFunc) http.HandlerFunc {
 
 		if ok {
 			hashedPass := os.Getenv("POST_PASS")
-			log.Debug().Str("pass", hashedPass).Msg("")
 			err := bcrypt.CompareHashAndPassword([]byte(hashedPass), []byte(providedPassword))
 			if err == nil {
 				next(rw, req)

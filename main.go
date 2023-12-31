@@ -30,7 +30,7 @@ func main() {
 
 	r.HandleFunc("/rounds", handlers.SetHeaders(handlers.DateValidation(handlers.Rounds))).Methods(http.MethodOptions, http.MethodGet)
 	r.HandleFunc("/rounds/{round}", handlers.SetHeaders(handlers.GetRound)).Methods(http.MethodOptions, http.MethodGet)
-	r.HandleFunc("/rounds/{round}", handlers.SetHeaders(handlers.BasicAuth(nil))).Methods(http.MethodOptions, http.MethodPost)
+	r.HandleFunc("/rounds/{round}", handlers.SetHeaders(handlers.BasicAuth(handlers.InsertRound))).Methods(http.MethodOptions, http.MethodPost)
 
 	r.HandleFunc("/videos", handlers.SetHeaders(handlers.DateValidation(handlers.Videos))).Methods(http.MethodOptions, http.MethodGet)
 	r.HandleFunc("/videos/{video}", handlers.SetHeaders(handlers.GetVideo2)).Methods(http.MethodOptions, http.MethodGet)
