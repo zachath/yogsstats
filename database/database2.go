@@ -3,6 +3,7 @@ package database
 import (
 	"fmt"
 	"os"
+	"sync"
 	"yogsstats/models"
 
 	"github.com/jmoiron/sqlx"
@@ -324,35 +325,49 @@ func GetAllPlayers(from, to string) ([]models.Player2, error) {
 		return nil, errors.Annotate(err, "failed to get roles")
 	}
 
-	//TODO Add concurrency, response time before: ~0.7s - ~0.8s
 	players := []models.Player2{}
+	mu := sync.Mutex{}
+	wg := sync.WaitGroup{}
 	for _, p := range playerNames {
-		player := models.Player2{
-			Name: p,
-		}
+		wg.Add(1)
+		go func(name string) {
+			defer wg.Done()
 
-		player.DetectiveWinPercentage, err = detectiveWinPercentage(player.Name, from, to)
-		if err != nil {
-			return nil, errors.Annotate(err, "failed to get detective win percentage")
-		}
+			player := models.Player2{
+				Name: name,
+			}
 
-		player.TeamWinPercentage, err = teamWinPercentage(player.Name, from, to, teams)
-		if err != nil {
-			return nil, errors.Annotate(err, "failed to get team win percentage")
-		}
+			player.DetectiveWinPercentage, err = detectiveWinPercentage(player.Name, from, to)
+			if err != nil {
+				log.Debug().Str("player", name).Msg("failed to get detective win percentage")
+				return
+			}
 
-		player.RoleWinPercentage, err = roleWinPercentage(player.Name, from, to, roles)
-		if err != nil {
-			return nil, errors.Annotate(err, "failed to get team win percentage")
-		}
+			player.TeamWinPercentage, err = teamWinPercentage(player.Name, from, to, teams)
+			if err != nil {
+				log.Debug().Str("player", name).Msg("failed to get team win percentage")
+				return
+			}
 
-		player.JesterKills, err = jesterKills(player.Name, from, to)
-		if err != nil {
-			return nil, errors.Annotate(err, "failed to get jester kills")
-		}
+			player.RoleWinPercentage, err = roleWinPercentage(player.Name, from, to, roles)
+			if err != nil {
+				log.Debug().Str("player", name).Msg("failed to get team win percentage")
+				return
+			}
 
-		players = append(players, player)
+			player.JesterKills, err = jesterKills(player.Name, from, to)
+			if err != nil {
+				log.Debug().Str("player", name).Msg("failed to get jester kills")
+				return
+			}
+
+			mu.Lock()
+			players = append(players, player)
+			mu.Unlock()
+		}(p)
 	}
+
+	wg.Wait()
 
 	return players, nil
 }
