@@ -319,6 +319,12 @@ func GetAllPlayers(from, to string) ([]models.Player2, error) {
 		return nil, errors.Annotate(err, "failed to get teams")
 	}
 
+	roles, err := GetRoles2()
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to get roles")
+	}
+
+	//TODO Add concurrency, response time before: ~0.7s - ~0.8s
 	players := []models.Player2{}
 	for _, p := range playerNames {
 		player := models.Player2{
@@ -332,7 +338,12 @@ func GetAllPlayers(from, to string) ([]models.Player2, error) {
 
 		player.TeamWinPercentage, err = teamWinPercentage(player.Name, from, to, teams)
 		if err != nil {
-			return nil, errors.Annotate(err, "failed to get detective win percentage")
+			return nil, errors.Annotate(err, "failed to get team win percentage")
+		}
+
+		player.RoleWinPercentage, err = roleWinPercentage(player.Name, from, to, roles)
+		if err != nil {
+			return nil, errors.Annotate(err, "failed to get team win percentage")
 		}
 
 		player.JesterKills, err = jesterKills(player.Name, from, to)
@@ -395,6 +406,37 @@ func teamWinPercentage(player, from, to string, teams []models.Team2) ([]models.
 
 		teamStat[0].Team = team.TeamName
 		stats = append(stats, teamStat[0])
+	}
+
+	return stats, nil
+}
+
+func roleWinPercentage(player, from, to string, roles []models.Role2) ([]models.WinPercentageStat, error) {
+	var stats []models.WinPercentageStat
+	for _, role := range roles {
+		var roleStat []models.WinPercentageStat
+
+		err := db2.Select(
+			&roleStat,
+			"SELECT trunc(A.wins / (B.total)::numeric,3) as percentage, A.wins as wins, B.total as total FROM (SELECT COUNT(*) as wins FROM round_participation RP JOIN rounds R ON RP.id = R.id JOIN videos V on R.video = V.video_id WHERE RP.player = $1 AND V.date >= $2 AND V.date <= $3 AND RP.role = $4 AND R.winning_team IN (SELECT team FROM roles_by_teams WHERE role = $4)) as A, (SELECT COUNT(*) as total FROM round_participation RP JOIN rounds R ON RP.id = R.id JOIN videos V on R.video = V.video_id WHERE RP.player = $1 AND V.date >= $2 AND V.date <= $3 AND RP.role = $4) as B;",
+			player,
+			from,
+			to,
+			role.RoleName,
+		)
+		if err != nil {
+			if err.Error() == "pq: division by zero" {
+				continue
+			}
+			return nil, errors.Annotatef(err, "failed to get win percentage for player '%s' of role '%s'", player, role.RoleName)
+		}
+
+		if len(roleStat) != 1 {
+			return nil, errors.Annotatef(err, "got unexpected amount of rows: %d", len(roleStat))
+		}
+
+		roleStat[0].Role = role.RoleName
+		stats = append(stats, roleStat[0])
 	}
 
 	return stats, nil

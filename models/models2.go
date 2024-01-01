@@ -9,7 +9,7 @@ type Video2 struct {
 
 type Player2 struct {
 	Name                   string              `json:"name,omitempty" db:"name"`
-	DetectiveWinPercentage WinPercentageStat   `json:"detectiveWinPercentage"`
+	DetectiveWinPercentage WinPercentageStat   `json:"detectiveWinPercentage"` //TODO: canon flag
 	TeamWinPercentage      []WinPercentageStat `json:"teamWinPercentage"`
 	RoleWinPercentage      []WinPercentageStat `json:"roleWinPercentage"`
 	JesterKills            int                 `json:"jesterKills"`
