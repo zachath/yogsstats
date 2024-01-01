@@ -307,14 +307,17 @@ func InsertVideo2(video models.Video2) error {
 	return nil
 }
 
-func GetAllPlayers(from, to string) ([]models.Player2, error) {
-	playerNames := []string{}
-
+func GetAllPlayerNames() ([]string, error) {
+	var playerNames []string
 	err := db2.Select(&playerNames, "SELECT * FROM players;")
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to perform query")
 	}
 
+	return playerNames, nil
+}
+
+func GetAllPlayers(from, to string, playerNames []string, canon bool) ([]models.Player2, error) {
 	teams, err := GetTeams2(true)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to get teams")
@@ -337,7 +340,7 @@ func GetAllPlayers(from, to string) ([]models.Player2, error) {
 				Name: name,
 			}
 
-			player.DetectiveWinPercentage, err = detectiveWinPercentage(player.Name, from, to)
+			player.DetectiveWinPercentage, err = detectiveWinPercentage(player.Name, from, to, canon)
 			if err != nil {
 				log.Debug().Str("player", name).Msg("failed to get detective win percentage")
 				return
@@ -372,7 +375,7 @@ func GetAllPlayers(from, to string) ([]models.Player2, error) {
 	return players, nil
 }
 
-func detectiveWinPercentage(player, from, to string) (models.WinPercentageStat, error) {
+func detectiveWinPercentage(player, from, to string, canon bool) (models.WinPercentageStat, error) {
 	var stat []models.WinPercentageStat
 	err := db2.Select(
 		&stat,
@@ -392,7 +395,13 @@ func detectiveWinPercentage(player, from, to string) (models.WinPercentageStat, 
 		return models.WinPercentageStat{}, errors.Annotatef(err, "got unexpected amount of rows: %d", len(stat))
 	}
 
-	return stat[0], nil
+	s := stat[0]
+	if canon && player == "Zylus" {
+		s.Percentage = 1
+		s.Rounds = s.Wins
+	}
+
+	return s, nil
 }
 
 func teamWinPercentage(player, from, to string, teams []models.Team2) ([]models.WinPercentageStat, error) {
