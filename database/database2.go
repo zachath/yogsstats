@@ -251,9 +251,16 @@ func InsertTeam(team models.Team2) error {
 	return tx.Commit()
 }
 
-func GetRoles2() ([]models.Role2, error) {
+func GetRoles2(canwin bool) ([]models.Role2, error) {
 	roles := []models.Role2{}
-	err := db2.Select(&roles, "SELECT * FROM roles;")
+
+	var err error
+
+	if canwin {
+		err = db2.Select(&roles, "SELECT * FROM roles WHERE role IN (SELECT role FROM roles_by_teams RT JOIN teams T ON T.team = RT.team WHERE T.can_win);")
+	} else {
+		err = db2.Select(&roles, "SELECT * FROM roles;")
+	}
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to perform query")
 	}
@@ -323,7 +330,7 @@ func GetAllPlayers(from, to string, playerNames []string, canon bool) ([]models.
 		return nil, errors.Annotate(err, "failed to get teams")
 	}
 
-	roles, err := GetRoles2()
+	roles, err := GetRoles2(true)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to get roles")
 	}

@@ -12,7 +12,7 @@ import (
 )
 
 func Roles(rw http.ResponseWriter, req *http.Request) {
-	roles, err := database.GetRoles2()
+	roles, err := database.GetRoles2(false)
 	if err != nil {
 		log.Error().Stack().Err(err).Msg("failed to get roles")
 		http.Error(rw, "internal server error", http.StatusInternalServerError)
@@ -42,7 +42,7 @@ func Roles(rw http.ResponseWriter, req *http.Request) {
 func GetRole(rw http.ResponseWriter, req *http.Request) {
 	role := mux.Vars(req)["role"]
 
-	roles, err := database.GetRoles2()
+	roles, err := database.GetRoles2(false)
 	if err != nil {
 		log.Error().Stack().Err(err).Msg("failed to get roles")
 		http.Error(rw, "internal server error", http.StatusInternalServerError)
