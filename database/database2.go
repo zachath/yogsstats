@@ -338,6 +338,9 @@ func GetAllPlayers(from, to string, playerNames []string, canon bool) ([]models.
 	players := []models.Player2{}
 	mu := sync.Mutex{}
 	wg := sync.WaitGroup{}
+
+	tc := map[string]map[string]models.WinPercentageStat{}
+	tcmu := sync.Mutex{}
 	for _, p := range playerNames {
 		wg.Add(1)
 		go func(name string) {
@@ -349,25 +352,31 @@ func GetAllPlayers(from, to string, playerNames []string, canon bool) ([]models.
 
 			player.DetectiveWinPercentage, err = detectiveWinPercentage(player.Name, from, to, canon)
 			if err != nil {
-				log.Debug().Str("player", name).Msg("failed to get detective win percentage")
+				log.Error().Err(err).Stack().Str("player", name).Msg("failed to get detective win percentage")
 				return
 			}
 
 			player.TeamWinPercentage, err = teamWinPercentage(player.Name, from, to, teams)
 			if err != nil {
-				log.Debug().Str("player", name).Msg("failed to get team win percentage")
+				log.Error().Err(err).Stack().Str("player", name).Msg("failed to get team win percentage")
 				return
 			}
 
 			player.RoleWinPercentage, err = roleWinPercentage(player.Name, from, to, roles)
 			if err != nil {
-				log.Debug().Str("player", name).Msg("failed to get team win percentage")
+				log.Error().Err(err).Stack().Str("player", name).Msg("failed to get team win percentage")
+				return
+			}
+
+			player.TraitorCombos, err = traitorCombos(player.Name, from, to, &tc, &tcmu)
+			if err != nil {
+				log.Error().Err(err).Stack().Str("player", name).Msg("failed to get traitor win percentage")
 				return
 			}
 
 			player.JesterKills, err = jesterKills(player.Name, from, to)
 			if err != nil {
-				log.Debug().Str("player", name).Msg("failed to get jester kills")
+				log.Error().Err(err).Stack().Str("player", name).Msg("failed to get jester kills")
 				return
 			}
 
@@ -399,7 +408,7 @@ func detectiveWinPercentage(player, from, to string, canon bool) (models.WinPerc
 	}
 
 	if len(stat) != 1 {
-		return models.WinPercentageStat{}, errors.Annotatef(err, "got unexpected amount of rows: %d", len(stat))
+		return models.WinPercentageStat{}, errors.Errorf("got unexpected amount of rows: %d", len(stat))
 	}
 
 	s := stat[0]
@@ -432,7 +441,7 @@ func teamWinPercentage(player, from, to string, teams []models.Team2) ([]models.
 		}
 
 		if len(teamStat) != 1 {
-			return nil, errors.Annotatef(err, "got unexpected amount of rows: %d", len(teamStat))
+			return nil, errors.Errorf("got unexpected amount of rows: %d", len(teamStat))
 		}
 
 		teamStat[0].Team = team.TeamName
@@ -463,12 +472,77 @@ func roleWinPercentage(player, from, to string, roles []models.Role2) ([]models.
 		}
 
 		if len(roleStat) != 1 {
-			return nil, errors.Annotatef(err, "got unexpected amount of rows: %d", len(roleStat))
+			return nil, errors.Errorf("got unexpected amount of rows: %d", len(roleStat))
 		}
 
 		roleStat[0].Role = role.RoleName
 		stats = append(stats, roleStat[0])
 	}
+
+	return stats, nil
+}
+
+func traitorCombos(player, from, to string, tc *map[string]map[string]models.WinPercentageStat, mu *sync.Mutex) ([]models.WinPercentageStat, error) {
+	players, err := GetAllPlayerNames()
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to get all players")
+	}
+
+	for _, p := range players {
+		if p != player {
+			mu.Lock()
+			if val, ok := (*tc)[p][player]; ok {
+				(*tc)[player][p] = val
+				mu.Unlock()
+				continue
+			}
+			mu.Unlock()
+
+			var val []models.WinPercentageStat
+			err = db2.Select(
+				&val,
+				"SELECT $2 as buddy, trunc(A.wins / (B.total)::numeric,3) as percentage, A.wins as wins, B.total as total FROM (SELECT COUNT(*) as wins FROM rounds R JOIN videos V ON R.video = V.video_id JOIN round_participation RP1 ON RP1.id = R.id JOIN round_participation RP2 ON RP2.id = R.id WHERE RP1.player = $1 AND RP2.player = $2 AND RP1.team = 'traitors' AND RP2.team = 'traitors' AND R.winning_team = 'traitors' AND V.date >= $3 AND V.date <= $4) as A, (SELECT COUNT(*) as total FROM rounds R JOIN videos V ON R.video = V.video_id JOIN round_participation RP1 ON RP1.id = R.id JOIN round_participation RP2 ON RP2.id = R.id WHERE RP1.player = $1 AND RP2.player = $2 AND RP1.team = 'traitors' AND RP2.team = 'traitors' AND V.date >= $3 AND V.date <= $4) as B;",
+				player,
+				p,
+				from,
+				to,
+			)
+			if err != nil {
+				if err.Error() == "pq: division by zero" {
+					continue
+				}
+				return nil, errors.Annotatef(err, "failed to get traitor percentage for player '%s' and '%s'", player, p)
+			}
+
+			if len(val) != 1 {
+				return nil, errors.Errorf("got unexpected amount of rows: %d", len(val))
+			}
+
+			mu.Lock()
+
+			if (*tc)[player] == nil {
+				(*tc)[player] = make(map[string]models.WinPercentageStat)
+			}
+
+			(*tc)[player][p] = val[0]
+
+			if (*tc)[p] == nil {
+				(*tc)[p] = make(map[string]models.WinPercentageStat)
+			}
+
+			(*tc)[p][player] = val[0]
+
+			mu.Unlock()
+		}
+	}
+
+	stats := []models.WinPercentageStat{}
+
+	mu.Lock()
+	for _, val := range (*tc)[player] {
+		stats = append(stats, val)
+	}
+	mu.Unlock()
 
 	return stats, nil
 }
@@ -481,7 +555,7 @@ func jesterKills(player, from, to string) (int, error) {
 	}
 
 	if len(wins) != 1 {
-		return 0, errors.Annotatef(err, "got unexpected amount of rows: %d", len(wins))
+		return 0, errors.Errorf("got unexpected amount of rows: %d", len(wins))
 	}
 
 	return wins[0], nil

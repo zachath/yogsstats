@@ -12,6 +12,7 @@ type Player2 struct {
 	DetectiveWinPercentage WinPercentageStat   `json:"detectiveWinPercentage"`
 	TeamWinPercentage      []WinPercentageStat `json:"teamWinPercentage"`
 	RoleWinPercentage      []WinPercentageStat `json:"roleWinPercentage"`
+	TraitorCombos          []WinPercentageStat `json:"traitorCombos"`
 	JesterKills            int                 `json:"jesterKills"`
 }
 
@@ -21,6 +22,7 @@ type WinPercentageStat struct {
 	Rounds     int     `json:"rounds" db:"total"`
 	Team       string  `json:"team,omitempty"`
 	Role       string  `json:"role,omitempty"`
+	Buddy      string  `json:"buddy,omitempty" db:"buddy"`
 }
 
 type Role2 struct {
