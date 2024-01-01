@@ -8,11 +8,19 @@ type Video2 struct {
 }
 
 type Player2 struct {
-	Name                   string  `json:"name,omitempty" db:"name"`
-	DetectiveWinPercentage float64 `json:"detectiveWinPercentage"`
-	TeamWinPercentage      float64 `json:"teamWinPercentage"`
-	RoleWinPercentage      float64 `json:"roleWinPercentage"`
-	JesterKills            int     `json:"jesterKills"`
+	Name                   string              `json:"name,omitempty" db:"name"`
+	DetectiveWinPercentage WinPercentageStat   `json:"detectiveWinPercentage"`
+	TeamWinPercentage      []WinPercentageStat `json:"teamWinPercentage"`
+	RoleWinPercentage      []WinPercentageStat `json:"roleWinPercentage"`
+	JesterKills            int                 `json:"jesterKills"`
+}
+
+type WinPercentageStat struct {
+	Percentage float64 `json:"percentage" db:"percentage"`
+	Wins       int     `json:"wins" db:"wins"`
+	Rounds     int     `json:"rounds" db:"total"`
+	Team       string  `json:"team,omitempty"`
+	Role       string  `json:"role,omitempty"`
 }
 
 type Role2 struct {

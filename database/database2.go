@@ -314,6 +314,11 @@ func GetAllPlayers(from, to string) ([]models.Player2, error) {
 		return nil, errors.Annotate(err, "failed to perform query")
 	}
 
+	teams, err := GetTeams2(true)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to get teams")
+	}
+
 	players := []models.Player2{}
 	for _, p := range playerNames {
 		player := models.Player2{
@@ -321,6 +326,11 @@ func GetAllPlayers(from, to string) ([]models.Player2, error) {
 		}
 
 		player.DetectiveWinPercentage, err = detectiveWinPercentage(player.Name, from, to)
+		if err != nil {
+			return nil, errors.Annotate(err, "failed to get detective win percentage")
+		}
+
+		player.TeamWinPercentage, err = teamWinPercentage(player.Name, from, to, teams)
 		if err != nil {
 			return nil, errors.Annotate(err, "failed to get detective win percentage")
 		}
@@ -336,27 +346,58 @@ func GetAllPlayers(from, to string) ([]models.Player2, error) {
 	return players, nil
 }
 
-func detectiveWinPercentage(player, from, to string) (float64, error) {
-	var rate []float64
+func detectiveWinPercentage(player, from, to string) (models.WinPercentageStat, error) {
+	var stat []models.WinPercentageStat
 	err := db2.Select(
-		&rate,
-		"SELECT trunc(A.wins / (B.total)::numeric,3) FROM (SELECT COUNT(*) as wins FROM round_participation RP JOIN rounds R ON RP.id = R.id JOIN roles RO ON RP.role = RO.role JOIN videos V on R.video = V.video_id WHERE RP.player = $1 AND V.date >= $2 AND V.date <= $3 AND RO.is_detective = true AND R.winning_team = 'innocents') as A, (SELECT COUNT(*) as total FROM round_participation RP JOIN rounds R ON RP.id = R.id JOIN roles RO ON RP.role = RO.role JOIN videos V on R.video = V.video_id WHERE RP.player = $1 AND V.date >= $2 AND V.date <= $3 AND RO.is_detective = true) as B;",
+		&stat,
+		"SELECT trunc(A.wins / (B.total)::numeric,3) as percentage, A.wins as wins, B.total as total FROM (SELECT COUNT(*) as wins FROM round_participation RP JOIN rounds R ON RP.id = R.id JOIN roles RO ON RP.role = RO.role JOIN videos V on R.video = V.video_id WHERE RP.player = $1 AND V.date >= $2 AND V.date <= $3 AND RO.is_detective = true AND R.winning_team = 'innocents') as A, (SELECT COUNT(*) as total FROM round_participation RP JOIN rounds R ON RP.id = R.id JOIN roles RO ON RP.role = RO.role JOIN videos V on R.video = V.video_id WHERE RP.player = $1 AND V.date >= $2 AND V.date <= $3 AND RO.is_detective = true) as B;",
 		player,
 		from,
 		to,
 	)
 	if err != nil {
 		if err.Error() == "pq: division by zero" {
-			return 0, nil
+			return models.WinPercentageStat{}, nil
 		}
-		return 0, errors.Annotatef(err, "failed to get detective percentage for player '%s'", player)
+		return models.WinPercentageStat{}, errors.Annotatef(err, "failed to get detective percentage for player '%s'", player)
 	}
 
-	if len(rate) != 1 {
-		return 0, errors.Annotatef(err, "got unexpected amount of rows: %d", len(rate))
+	if len(stat) != 1 {
+		return models.WinPercentageStat{}, errors.Annotatef(err, "got unexpected amount of rows: %d", len(stat))
 	}
 
-	return rate[0], nil
+	return stat[0], nil
+}
+
+func teamWinPercentage(player, from, to string, teams []models.Team2) ([]models.WinPercentageStat, error) {
+	var stats []models.WinPercentageStat
+	for _, team := range teams {
+		var teamStat []models.WinPercentageStat
+
+		err := db2.Select(
+			&teamStat,
+			"SELECT trunc(A.wins / (B.total)::numeric,3) as percentage, A.wins as wins, B.total as total FROM (SELECT COUNT(*) as wins FROM round_participation RP JOIN rounds R ON RP.id = R.id JOIN videos V on R.video = V.video_id WHERE RP.player = $1 AND V.date >= $2 AND V.date <= $3 AND RP.team = $4 AND R.winning_team = $4) as A, (SELECT COUNT(*) as total FROM round_participation RP JOIN rounds R ON RP.id = R.id JOIN videos V on R.video = V.video_id WHERE RP.player = $1 AND V.date >= $2 AND V.date <= $3 AND RP.team = $4) as B;",
+			player,
+			from,
+			to,
+			team.TeamName,
+		)
+		if err != nil {
+			if err.Error() == "pq: division by zero" {
+				continue
+			}
+			return nil, errors.Annotatef(err, "failed to get win percentage for player '%s' of team '%s'", player, team.TeamName)
+		}
+
+		if len(teamStat) != 1 {
+			return nil, errors.Annotatef(err, "got unexpected amount of rows: %d", len(teamStat))
+		}
+
+		teamStat[0].Team = team.TeamName
+		stats = append(stats, teamStat[0])
+	}
+
+	return stats, nil
 }
 
 func jesterKills(player, from, to string) (int, error) {
