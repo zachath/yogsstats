@@ -4,7 +4,8 @@ import (
 	//Go packages
 	"context"
 	"encoding/json"
-	"io/ioutil"
+	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"time"
@@ -32,7 +33,7 @@ func BasicAuth(next http.HandlerFunc) http.HandlerFunc {
 
 		log.Error().Msgf("unauthorized login attempt, password: %s", providedPassword)
 		rw.Header().Set("WWW-Authenticate", `Basic realm="restricted"`)
-		http.Error(rw, "Unauthorized", http.StatusUnauthorized)
+		writeError(&rw, "unauthorized", http.StatusUnauthorized)
 	})
 }
 
@@ -43,17 +44,17 @@ func ValidateVideoPost(next http.HandlerFunc) http.HandlerFunc {
 		var video models.Video
 		defer req.Body.Close()
 
-		reqBody, err := ioutil.ReadAll(req.Body)
+		reqBody, err := io.ReadAll(req.Body)
 		if err != nil {
-			log.Error().Err(err).Stack().Msg("Parsing body to video failed")
-			http.Error(rw, "Could not parse input data", http.StatusBadRequest)
+			log.Error().Stack().Err(err).Msg("Parsing body to video failed")
+			writeError(&rw, "could not parse input data", http.StatusBadRequest)
 			return
 		}
 
 		err = json.Unmarshal(reqBody, &video)
 		if err != nil {
-			log.Error().Err(err).Stack().Msg("Unmarshaling failed")
-			http.Error(rw, "Could not marshal input data", http.StatusBadRequest)
+			log.Error().Stack().Err(err).Msg("Unmarshaling failed")
+			writeError(&rw, "could not marshal input data", http.StatusBadRequest)
 			return
 		}
 
@@ -71,17 +72,17 @@ func ValidateTTTRoundPost(next http.HandlerFunc) http.HandlerFunc {
 		var round models.Round
 		defer req.Body.Close()
 
-		reqBody, err := ioutil.ReadAll(req.Body)
+		reqBody, err := io.ReadAll(req.Body)
 		if err != nil {
-			log.Error().Err(err).Stack().Msg("Parsing body to TTT round failed")
-			http.Error(rw, "Could not parse input data", http.StatusBadRequest)
+			log.Error().Stack().Err(err).Msg("Parsing body to TTT round failed")
+			writeError(&rw, "could not parse input data", http.StatusBadRequest)
 			return
 		}
 
 		err = json.Unmarshal(reqBody, &round)
 		if err != nil {
-			log.Error().Err(err).Stack().Msg("Unmarshaling failed")
-			http.Error(rw, "Could not marshal input data", http.StatusBadRequest)
+			log.Error().Stack().Err(err).Msg("Unmarshaling failed")
+			writeError(&rw, "could not marshal input data", http.StatusBadRequest)
 			return
 		}
 
@@ -114,6 +115,14 @@ func verifyDate(date string) error {
 	return err
 }
 
+func writeError(rw *http.ResponseWriter, msg string, code int) {
+	http.Error(*rw, fmt.Sprintf(`{"code": %d, "error": "%s"}`, code, msg), code)
+}
+
+func wrtiteInternalError(rw *http.ResponseWriter) {
+	writeError(rw, "internal server error", http.StatusInternalServerError)
+}
+
 func DateValidation(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		ctx := req.Context()
@@ -122,8 +131,8 @@ func DateValidation(next http.HandlerFunc) http.HandlerFunc {
 		if from != "" {
 			err := verifyDate(from)
 			if err != nil {
-				log.Error().Err(err).Msg("Invalid date format")
-				http.Error(rw, "Invalid date (from)", http.StatusBadRequest)
+				log.Error().Stack().Err(err).Msg("invalid date format")
+				writeError(&rw, "invalid date (from)", http.StatusBadRequest)
 				return
 			}
 		} else {
@@ -134,8 +143,8 @@ func DateValidation(next http.HandlerFunc) http.HandlerFunc {
 		if to != "" {
 			err := verifyDate(to)
 			if err != nil {
-				log.Error().Err(err).Msg("Invalid date format")
-				http.Error(rw, "Invalid date (to)", http.StatusBadRequest) //TODO: Errors in JSON format `{"type": "internal server error", "code": code, "message": "message"}`
+				log.Error().Stack().Err(err).Msg("invalid date format")
+				writeError(&rw, "invalid date (to)", http.StatusBadRequest)
 				return
 			}
 		} else {

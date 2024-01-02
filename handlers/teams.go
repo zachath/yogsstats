@@ -16,10 +16,10 @@ func Teams(rw http.ResponseWriter, req *http.Request) {
 	from := req.Context().Value("from").(string)
 	to := req.Context().Value("to").(string)
 
-	teams, err := database.GetTeams2(true)
+	teams, err := database.GetTeams(true)
 	if err != nil {
 		log.Error().Stack().Err(err).Msg("failed to get teams")
-		http.Error(rw, "internal server error", http.StatusInternalServerError)
+		wrtiteInternalError(&rw)
 		return
 	}
 
@@ -27,7 +27,7 @@ func Teams(rw http.ResponseWriter, req *http.Request) {
 		err = setTeamInfo(&teams[i], from, to)
 		if err != nil {
 			log.Error().Stack().Err(err).Msg("failed to set team info")
-			http.Error(rw, "internal server error", http.StatusInternalServerError)
+			wrtiteInternalError(&rw)
 			return
 		}
 	}
@@ -35,7 +35,7 @@ func Teams(rw http.ResponseWriter, req *http.Request) {
 	err = json.NewEncoder(rw).Encode(teams)
 	if err != nil {
 		log.Error().Stack().Err(err).Msg("failed to encode response")
-		http.Error(rw, "internal server error", http.StatusInternalServerError)
+		wrtiteInternalError(&rw)
 		return
 	}
 
@@ -48,10 +48,10 @@ func GetTeam(rw http.ResponseWriter, req *http.Request) {
 
 	team := mux.Vars(req)["team"]
 
-	teams, err := database.GetTeams2(true)
+	teams, err := database.GetTeams(true)
 	if err != nil {
 		log.Error().Stack().Err(err).Msg("failed to get teams")
-		http.Error(rw, "internal server error", http.StatusInternalServerError)
+		wrtiteInternalError(&rw)
 		return
 	}
 
@@ -60,14 +60,14 @@ func GetTeam(rw http.ResponseWriter, req *http.Request) {
 			err = setTeamInfo(&t, from, to)
 			if err != nil {
 				log.Error().Stack().Err(err).Msg("failed to set team info")
-				http.Error(rw, "internal server error", http.StatusInternalServerError)
+				wrtiteInternalError(&rw)
 				return
 			}
 
 			err = json.NewEncoder(rw).Encode(t)
 			if err != nil {
 				log.Error().Stack().Err(err).Msg("failed to encode response")
-				http.Error(rw, "internal server error", http.StatusInternalServerError)
+				wrtiteInternalError(&rw)
 				return
 			}
 			log.Info().Int("code", http.StatusOK).Msg("team (GET) request served")
@@ -79,7 +79,7 @@ func GetTeam(rw http.ResponseWriter, req *http.Request) {
 	http.Error(rw, "bad request", http.StatusBadRequest)
 }
 
-func setTeamInfo(team *models.Team2, from, to string) error {
+func setTeamInfo(team *models.Team, from, to string) error {
 	roles, err := database.GetRolesOfTeam(team.TeamName)
 	if err != nil {
 		return errors.Annotatef(err, "failed to get roles of team: '%s'", team.TeamName)
@@ -96,21 +96,21 @@ func setTeamInfo(team *models.Team2, from, to string) error {
 }
 
 func InsertTeam(rw http.ResponseWriter, req *http.Request) {
-	team := models.Team2{
+	team := models.Team{
 		TeamName: mux.Vars(req)["team"],
 	}
 
 	b, err := io.ReadAll(req.Body)
 	if err != nil {
 		log.Error().Stack().Err(err).Msg("failed to read body")
-		http.Error(rw, "internal server error", http.StatusInternalServerError)
+		wrtiteInternalError(&rw)
 		return
 	}
 
 	err = json.Unmarshal(b, &team)
 	if err != nil {
 		log.Error().Stack().Err(err).Msg("failed to unmarshal request")
-		http.Error(rw, "internal server error", http.StatusInternalServerError)
+		wrtiteInternalError(&rw)
 		return
 	}
 
@@ -123,7 +123,7 @@ func InsertTeam(rw http.ResponseWriter, req *http.Request) {
 	err = database.InsertTeam(team)
 	if err != nil {
 		log.Error().Stack().Err(err).Msg("failed to insert team")
-		http.Error(rw, "internal server error", http.StatusInternalServerError)
+		wrtiteInternalError(&rw)
 		return
 	}
 

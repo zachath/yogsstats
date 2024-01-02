@@ -16,21 +16,21 @@ func Players(rw http.ResponseWriter, req *http.Request) {
 	playerNames, err := database.GetAllPlayerNames()
 	if err != nil {
 		log.Error().Stack().Err(err).Msg("failed to get players")
-		http.Error(rw, "internal server error", http.StatusInternalServerError)
+		wrtiteInternalError(&rw)
 		return
 	}
 
 	players, err := database.GetAllPlayers(from, to, playerNames, req.URL.Query().Get("canon") == "true")
 	if err != nil {
 		log.Error().Stack().Err(err).Msg("failed to get player stats")
-		http.Error(rw, "internal server error", http.StatusInternalServerError)
+		wrtiteInternalError(&rw)
 		return
 	}
 
 	err = json.NewEncoder(rw).Encode(players)
 	if err != nil {
 		log.Error().Stack().Err(err).Msg("failed to encode response")
-		http.Error(rw, "internal server error", http.StatusInternalServerError)
+		wrtiteInternalError(&rw)
 		return
 	}
 
@@ -44,7 +44,7 @@ func GetPlayer(rw http.ResponseWriter, req *http.Request) {
 	playerNames, err := database.GetAllPlayerNames()
 	if err != nil {
 		log.Error().Stack().Err(err).Msg("failed to get players")
-		http.Error(rw, "internal server error", http.StatusInternalServerError)
+		wrtiteInternalError(&rw)
 		return
 	}
 
@@ -60,20 +60,20 @@ func GetPlayer(rw http.ResponseWriter, req *http.Request) {
 
 	if !found {
 		log.Error().Stack().Err(err).Str("player", name).Msg("player not found")
-		http.Error(rw, "bad request", http.StatusBadRequest)
+		wrtiteInternalError(&rw)
 		return
 	}
 
 	players, err := database.GetAllPlayers(from, to, []string{name}, req.URL.Query().Get("canon") == "true")
 	if err != nil {
 		log.Error().Stack().Err(err).Msg("failed to get player stats")
-		http.Error(rw, "internal server error", http.StatusInternalServerError)
+		wrtiteInternalError(&rw)
 		return
 	}
 
 	if len(players) != 1 {
 		log.Error().Stack().Err(err).Int("len", len(players)).Msg("got unexpected amount of players")
-		http.Error(rw, "internal server error", http.StatusInternalServerError)
+		wrtiteInternalError(&rw)
 		return
 	}
 	player := players[0]
@@ -81,7 +81,7 @@ func GetPlayer(rw http.ResponseWriter, req *http.Request) {
 	err = json.NewEncoder(rw).Encode(player)
 	if err != nil {
 		log.Error().Stack().Err(err).Msg("failed to encode response")
-		http.Error(rw, "internal server error", http.StatusInternalServerError)
+		wrtiteInternalError(&rw)
 		return
 	}
 
@@ -92,7 +92,7 @@ func PostPlayer(rw http.ResponseWriter, req *http.Request) {
 	err := database.InsertPlayer(mux.Vars(req)["player"])
 	if err != nil {
 		log.Error().Stack().Err(err).Msg("failed to insert player")
-		http.Error(rw, "internal server error", http.StatusInternalServerError)
+		wrtiteInternalError(&rw)
 		return
 	}
 

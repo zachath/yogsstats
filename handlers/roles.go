@@ -12,10 +12,10 @@ import (
 )
 
 func Roles(rw http.ResponseWriter, req *http.Request) {
-	roles, err := database.GetRoles2(false)
+	roles, err := database.GetRoles(false)
 	if err != nil {
 		log.Error().Stack().Err(err).Msg("failed to get roles")
-		http.Error(rw, "internal server error", http.StatusInternalServerError)
+		wrtiteInternalError(&rw)
 		return
 	}
 
@@ -23,7 +23,7 @@ func Roles(rw http.ResponseWriter, req *http.Request) {
 		teams, err := database.GetTeamsOfRole(roles[i].RoleName)
 		if err != nil {
 			log.Error().Stack().Err(err).Msg("failed to get teams")
-			http.Error(rw, "internal server error", http.StatusInternalServerError)
+			wrtiteInternalError(&rw)
 			return
 		}
 		roles[i].PossibleTeams = teams
@@ -32,7 +32,7 @@ func Roles(rw http.ResponseWriter, req *http.Request) {
 	err = json.NewEncoder(rw).Encode(roles)
 	if err != nil {
 		log.Error().Stack().Err(err).Msg("failed to encode response")
-		http.Error(rw, "internal server error", http.StatusInternalServerError)
+		wrtiteInternalError(&rw)
 		return
 	}
 
@@ -42,10 +42,10 @@ func Roles(rw http.ResponseWriter, req *http.Request) {
 func GetRole(rw http.ResponseWriter, req *http.Request) {
 	role := mux.Vars(req)["role"]
 
-	roles, err := database.GetRoles2(false)
+	roles, err := database.GetRoles(false)
 	if err != nil {
 		log.Error().Stack().Err(err).Msg("failed to get roles")
-		http.Error(rw, "internal server error", http.StatusInternalServerError)
+		wrtiteInternalError(&rw)
 		return
 	}
 
@@ -54,7 +54,7 @@ func GetRole(rw http.ResponseWriter, req *http.Request) {
 			teams, err := database.GetTeamsOfRole(roles[i].RoleName)
 			if err != nil {
 				log.Error().Stack().Err(err).Msg("failed to get teams")
-				http.Error(rw, "internal server error", http.StatusInternalServerError)
+				wrtiteInternalError(&rw)
 				return
 			}
 			roles[i].PossibleTeams = teams
@@ -62,9 +62,10 @@ func GetRole(rw http.ResponseWriter, req *http.Request) {
 			err = json.NewEncoder(rw).Encode(roles[i])
 			if err != nil {
 				log.Error().Stack().Err(err).Msg("failed to encode response")
-				http.Error(rw, "internal server error", http.StatusInternalServerError)
+				wrtiteInternalError(&rw)
 				return
 			}
+
 			log.Info().Int("code", http.StatusOK).Str("role", role).Msg("role (GET) request served")
 			return
 		}
@@ -75,7 +76,7 @@ func GetRole(rw http.ResponseWriter, req *http.Request) {
 }
 
 func InsertRole(rw http.ResponseWriter, req *http.Request) {
-	role := models.Role2{
+	role := models.Role{
 		RoleName: mux.Vars(req)["role"],
 	}
 

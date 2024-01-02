@@ -1,126 +1,57 @@
 package models
 
 type Video struct {
-	Vid        string `json:"vid" db:"id"`
+	Id         string `json:"id" db:"video_id"`
 	Date       string `json:"date" db:"date"`
 	Title      string `json:"title" db:"title"`
-	IntroDeath string `json:"introDeath" db:"intro_death"`
-}
-
-type Round struct {
-	Id           string   `json:"id" db:"id"`
-	Date         string   `json:"date" db:"date"`
-	Players      []Player `json:"players" db:"players"`
-	WinningTeam  string   `json:"winningTeam" db:"winning_team"`
-	Vid          string   `json:"vid" db:"id"`
-	Start        int      `json:"start" db:"vid_start"`
-	End          int      `json:"end" db:"vid_end"`
-	JesterKiller string   `json:"jesterKiller" db:"jester_killer"`
+	IntroDeath bool   `json:"introDeath" db:"intro_death"`
 }
 
 type Player struct {
-	Name string `json:"name" db:"name"`
-	Role string `json:"role" db:"role"`
-	Team string `json:"team" db:"team"`
-	Died string `json:"died" db:"died"`
+	Name                   string              `json:"name,omitempty" db:"name"`
+	DetectiveWinPercentage WinPercentageStat   `json:"detectiveWinPercentage"`
+	TeamWinPercentage      []WinPercentageStat `json:"teamWinPercentage"`
+	RoleWinPercentage      []WinPercentageStat `json:"roleWinPercentage"`
+	TraitorCombos          []WinPercentageStat `json:"traitorCombos"`
+	JesterKills            int                 `json:"jesterKills"`
+}
+
+type WinPercentageStat struct {
+	Percentage float64 `json:"percentage" db:"percentage"`
+	Wins       int     `json:"wins" db:"wins"`
+	Rounds     int     `json:"rounds" db:"total"`
+	Team       string  `json:"team,omitempty"`
+	Role       string  `json:"role,omitempty"`
+	Buddy      string  `json:"buddy,omitempty" db:"buddy"`
+}
+
+type Role struct {
+	RoleName      string   `json:"roleName" db:"role"`
+	Detective     bool     `json:"detective" db:"is_detective"`
+	PossibleTeams []string `json:"possibleTeams,omitempty"`
 }
 
 type Team struct {
+	TeamName      string   `json:"teamName" db:"team"`
+	CanWin        bool     `json:"canWin" db:"can_win"`
+	Wins          int      `json:"wins"`
+	PossibleRoles []string `json:"possibleRoles,omitempty"`
+}
+
+type RoundParticipation struct {
+	Id     int    `db:"id"`
+	Player string `json:"player" db:"player"`
+	Role   string `json:"role" db:"role"`
 	Team   string `json:"team" db:"team"`
-	Colour string `json:"colour" db:"colour"`
 }
 
-type TeamEntry struct {
-	Team          string  `json:"team"`
-	WinPercentage float64 `json:"winPercentage"`
-	Wins          int     `json:"wins"`
-	RoundPlayedAs int     `json:"roundsPlayed"`
-}
-
-type TeamsWinPercentage struct {
-	Player       string      `json:"player"`
-	Teams        []TeamEntry `json:"teams"`
-	RoundsPlayed int         `json:"roundsPlayed"`
-}
-type PlayerWinPercentageResponse struct {
-	Feedback string               `json:"feedback"`
-	Players  []TeamsWinPercentage `json:"players"`
-}
-
-type TeamWin struct {
-	Team string `json:"team"`
-	Wins int    `json:"wins"`
-}
-
-type TeamWinPercentageResponse struct {
-	Feedback string    `json:"feedback"`
-	Total    int       `json:"total"`
-	Response []TeamWin `json:"teams"`
-}
-
-type DetectiveWinPercentageEntry struct {
-	Player        string  `json:"player"`
-	WinPercentage float64 `json:"winPercentage"`
-	RoundsPlayed  int     `json:"roundsPlayed"`
-}
-type DetectiveWinPercentageResponse struct {
-	Feedback string                        `json:"feedback"`
-	Players  []DetectiveWinPercentageEntry `json:"players"`
-}
-
-type RoleWinsEntry struct {
-	Role          string  `json:"role"`
-	WinPercentage float64 `json:"winPercentage"`
-	Wins          int     `json:"wins"`
-	RoundPlayedAs int     `json:"roundsPlayed"`
-}
-
-type RoleWinPercentage struct {
-	Player       string          `json:"player"`
-	Roles        []RoleWinsEntry `json:"roles"`
-	RoundsPlayed int             `json:"roundsPlayed"`
-}
-type RoleWinsResponse struct {
-	Feedback string              `json:"feedback"`
-	Players  []RoleWinPercentage `json:"players"`
-}
-
-type TraitorComboEntry struct {
-	Player         string  `json:"player"`
-	RoundsTogether int     `json:"roundsTogether"`
-	WinPercentage  float64 `json:"winPercentage"`
-}
-
-type Pairings struct {
-	Player  string              `json:"player"`
-	Entries []TraitorComboEntry `json:"entries"`
-}
-type TraitorCombosResponse struct {
-	Feedback string     `json:"feedback"`
-	Combos   []Pairings `json:"combos"`
-}
-
-type TraitorRound struct {
-	Id  string
-	Win string `db:"winning_team"`
-}
-
-type TeamsResponse struct {
-	Teams []Team `json:"teams"`
-}
-
-type RolesResponse struct {
-	Roles []string `json:"roles"`
-}
-
-type JesterKillsResponse struct {
-	Feedback        string             `json:"feedback"`
-	TotalJesterWins int                `json:"totalJesterWins"`
-	Players         []JesterKillsEntry `json:"players"`
-}
-
-type JesterKillsEntry struct {
-	Player string  `json:"player"`
-	Kills  int     `json:"kills"`
-	Rate   float64 `json:"rate"`
+type Round struct {
+	Id           string               `json:"id" db:"id"`
+	Video        Video                `json:"video"`
+	Players      []RoundParticipation `json:"players,omitempty" db:"players"`
+	WinningTeam  string               `json:"winningTeam" db:"winning_team"`
+	Start        int                  `json:"start" db:"vid_start"`
+	End          int                  `json:"end" db:"vid_end"`
+	Length       int                  `json:"length"`
+	JesterKiller string               `json:"jesterKiller,omitempty" db:"jester_killer"`
 }

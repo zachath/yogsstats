@@ -18,14 +18,14 @@ func Videos(rw http.ResponseWriter, req *http.Request) {
 	videos, err := database.GetVideos(from, to, "")
 	if err != nil {
 		log.Error().Stack().Err(err).Msg("failed to get videos")
-		http.Error(rw, "internal server error", http.StatusInternalServerError)
+		wrtiteInternalError(&rw)
 		return
 	}
 
 	err = json.NewEncoder(rw).Encode(videos)
 	if err != nil {
 		log.Error().Stack().Err(err).Msg("failed to encode response")
-		http.Error(rw, "internal server error", http.StatusInternalServerError)
+		wrtiteInternalError(&rw)
 		return
 	}
 
@@ -35,10 +35,10 @@ func Videos(rw http.ResponseWriter, req *http.Request) {
 func GetVideo2(rw http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 
-	video, err := database.GetVideo2("2000-12-24", "2099-12-24", " AND video_id = $3", vars["video"])
+	video, err := database.GetVideo("2000-12-24", "2099-12-24", " AND video_id = $3", vars["video"])
 	if err != nil {
 		log.Error().Stack().Err(err).Msgf("failed to get video '%s'", vars["video"])
-		http.Error(rw, "internal server error", http.StatusInternalServerError)
+		wrtiteInternalError(&rw)
 		return
 	}
 
@@ -51,7 +51,7 @@ func GetVideo2(rw http.ResponseWriter, req *http.Request) {
 	err = json.NewEncoder(rw).Encode(video)
 	if err != nil {
 		log.Error().Stack().Err(err).Msg("failed to encode response")
-		http.Error(rw, "internal server error", http.StatusInternalServerError)
+		wrtiteInternalError(&rw)
 		return
 	}
 
@@ -59,21 +59,21 @@ func GetVideo2(rw http.ResponseWriter, req *http.Request) {
 }
 
 func PostVideo2(rw http.ResponseWriter, req *http.Request) {
-	video := models.Video2{
+	video := models.Video{
 		Id: mux.Vars(req)["video"],
 	}
 
 	b, err := io.ReadAll(req.Body)
 	if err != nil {
 		log.Error().Stack().Err(err).Msg("failed to read body")
-		http.Error(rw, "internal server error", http.StatusInternalServerError)
+		wrtiteInternalError(&rw)
 		return
 	}
 
 	err = json.Unmarshal(b, &video)
 	if err != nil {
 		log.Error().Stack().Err(err).Msg("failed to unmarshal request")
-		http.Error(rw, "internal server error", http.StatusInternalServerError)
+		wrtiteInternalError(&rw)
 		return
 	}
 
@@ -83,10 +83,10 @@ func PostVideo2(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	err = database.InsertVideo2(video)
+	err = database.InsertVideo(video)
 	if err != nil {
 		log.Error().Stack().Err(err).Msg("failed to insert video")
-		http.Error(rw, "internal server error", http.StatusInternalServerError)
+		wrtiteInternalError(&rw)
 		return
 	}
 

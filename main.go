@@ -12,16 +12,14 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/rs/zerolog"
 	log "github.com/rs/zerolog/log"
-	"github.com/rs/zerolog/pkgerrors"
 
 	//Local packages
 	handlers "yogsstats/handlers"
 )
 
-// TODO: Why no stacktrace
 func init() {
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
-	zerolog.ErrorStackMarshaler = pkgerrors.MarshalStack
+	zerolog.ErrorStackMarshaler = PingcapMarshalStack
 }
 
 func main() {

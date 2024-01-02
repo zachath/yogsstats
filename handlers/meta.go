@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	log "github.com/rs/zerolog/log"
 
@@ -11,49 +12,49 @@ import (
 )
 
 type MetaResponse struct {
-	Count         int           `json:"roundCount"`
-	OldestRound   models.Round2 `json:"oldestRound"`
-	NewestRound   models.Round2 `json:"newestRound"`
-	ShortestRound models.Round2 `json:"shortestRound"`
-	LongestRound  models.Round2 `json:"longestRound"`
+	Count         int          `json:"roundCount"`
+	OldestRound   models.Round `json:"oldestRound"`
+	NewestRound   models.Round `json:"newestRound"`
+	ShortestRound models.Round `json:"shortestRound"`
+	LongestRound  models.Round `json:"longestRound"`
 }
 
 func APIMetaData(rw http.ResponseWriter, req *http.Request) {
 	from := "2000-12-24"
 	to := "2099-12-24"
 
-	count, err := db.CountRows("round", "")
+	count, err := db.CountRounds()
 	if err != nil {
 		log.Error().Stack().Err(err).Msg("failed to count round rows")
-		http.Error(rw, "internal server error", http.StatusInternalServerError)
+		wrtiteInternalError(&rw)
 		return
 	}
 
-	oldestRound, err := db.GetRound2(false, from, to, " ORDER BY V.date DESC")
+	oldestRound, err := db.GetRound(false, from, to, " ORDER BY V.date DESC")
 	if err != nil {
 		log.Error().Stack().Err(err).Msg("failed to get oldest round")
-		http.Error(rw, "internal server error", http.StatusInternalServerError)
+		wrtiteInternalError(&rw)
 		return
 	}
 
-	newestRound, err := db.GetRound2(false, from, to, " ORDER BY V.date ASC")
+	newestRound, err := db.GetRound(false, from, to, " ORDER BY V.date ASC")
 	if err != nil {
 		log.Error().Stack().Err(err).Msg("failed to get newest round")
-		http.Error(rw, "internal server error", http.StatusInternalServerError)
+		wrtiteInternalError(&rw)
 		return
 	}
 
-	shortestRound, err := db.GetRound2(false, from, to, " ORDER BY length ASC")
+	shortestRound, err := db.GetRound(false, from, to, " ORDER BY length ASC")
 	if err != nil {
 		log.Error().Stack().Err(err).Msg("failed to get shortest round")
-		http.Error(rw, "internal server error", http.StatusInternalServerError)
+		wrtiteInternalError(&rw)
 		return
 	}
 
-	longestRound, err := db.GetRound2(false, from, to, " ORDER BY length DESC")
+	longestRound, err := db.GetRound(false, from, to, " ORDER BY length DESC")
 	if err != nil {
 		log.Error().Stack().Err(err).Msg("failed to get longest round")
-		http.Error(rw, "internal server error", http.StatusInternalServerError)
+		wrtiteInternalError(&rw)
 		return
 	}
 
@@ -73,9 +74,17 @@ func APIMetaData(rw http.ResponseWriter, req *http.Request) {
 	err = json.NewEncoder(rw).Encode(response)
 	if err != nil {
 		log.Error().Stack().Err(err).Msg("failed to encode response")
-		http.Error(rw, "internal server error", http.StatusInternalServerError)
+		wrtiteInternalError(&rw)
 		return
 	}
 
 	log.Info().Int("code", http.StatusOK).Msg("meta request served")
+}
+
+func reformatDate(s string) string {
+	if idx := strings.Index(s, "T"); idx != -1 {
+		s = s[:idx]
+	}
+
+	return s
 }
