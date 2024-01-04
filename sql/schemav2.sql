@@ -79,7 +79,7 @@ CREATE TABLE public.rounds (
     video text NOT NULL,
     round_start integer NOT NULL,
     round_end integer NOT NULL,
-    jester_killer text NOT NULL
+    jester_killer text
 );
 
 
@@ -91,7 +91,7 @@ ALTER TABLE public.rounds OWNER TO postgres;
 
 CREATE TABLE public.teams (
     team text NOT NULL,
-    canwin boolean DEFAULT true NOT NULL
+    can_win boolean DEFAULT true NOT NULL
 );
 
 
@@ -234,4 +234,3 @@ ALTER TABLE ONLY public.rounds
 --
 -- PostgreSQL database dump complete
 --
-

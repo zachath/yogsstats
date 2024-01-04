@@ -2,13 +2,13 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 12.14 (Ubuntu 12.14-0ubuntu0.20.04.1)
--- Dumped by pg_dump version 12.14 (Ubuntu 12.14-0ubuntu0.20.04.1)
+-- Dumped from database version 14.8 (Ubuntu 14.8-0ubuntu0.22.10.1)
+-- Dumped by pg_dump version 14.8 (Ubuntu 14.8-0ubuntu0.22.10.1)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
 SET idle_in_transaction_session_timeout = 0;
-SET client_encoding = 'UTF8';
+SET client_encoding = 'LATIN1';
 SET standard_conforming_strings = on;
 SELECT pg_catalog.set_config('search_path', '', false);
 SET check_function_bodies = false;
@@ -37,8 +37,8 @@ ALTER TABLE public.player OWNER TO postgres;
 
 CREATE TABLE public.role (
     role text NOT NULL,
-    detective text,
-    win boolean
+    win boolean,
+    detective_role boolean DEFAULT false NOT NULL
 );
 
 
@@ -82,7 +82,8 @@ ALTER TABLE public.round_participation OWNER TO postgres;
 --
 
 CREATE TABLE public.team (
-    team text NOT NULL
+    team text NOT NULL,
+    colour text
 );
 
 
@@ -123,6 +124,9 @@ Lolip
 Zoey
 Zylus
 Osie
+Nilesy
+Gee
+Briony
 \.
 
 
@@ -130,41 +134,44 @@ Osie
 -- Data for Name: role; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.role (role, detective, win) FROM stdin;
-innocent	\N	t
-traitor	\N	t
-jester	\N	t
-impersonator	\N	t
-informant	\N	t
-clown	\N	t
-hypnotist	\N	t
-veteran	\N	t
-beggar	\N	t
-zombie	\N	t
-turncoat	\N	t
-mad scientist	\N	t
-summoner	\N	t
-parasite	\N	t
-deputy	\N	t
-glitch	\N	t
-paramedic	\N	t
-elf	\N	t
-detective	d	t
-paladin	d	t
-medium	d	t
-tracker	d	t
-santa	d	t
-communist	\N	t
-cupid	\N	t
-taxidermist	\N	t
-boxer	\N	t
-drunk	\N	f
-loot goblin	\N	f
-swapper	\N	f
-marshal	d	t
-randoman	d	t
-shadow	\N	f
-clowntective	\N	t
+COPY public.role (role, win, detective_role) FROM stdin;
+innocent	t	f
+traitor	t	f
+jester	t	f
+impersonator	t	f
+informant	t	f
+clown	t	f
+hypnotist	t	f
+veteran	t	f
+beggar	t	f
+zombie	t	f
+turncoat	t	f
+mad scientist	t	f
+summoner	t	f
+parasite	t	f
+deputy	t	f
+glitch	t	f
+paramedic	t	f
+elf	t	f
+communist	t	f
+cupid	t	f
+taxidermist	t	f
+boxer	t	f
+drunk	f	f
+loot goblin	f	f
+swapper	f	f
+shadow	f	f
+clowntective	t	f
+queen bee	t	f
+bee	t	f
+mud scientist	f	f
+detective	t	t
+paladin	t	t
+medium	t	t
+tracker	t	t
+santa	t	t
+marshal	t	t
+randoman	t	t
 \.
 
 
@@ -179,12 +186,6 @@ COPY public.round (id, date, winning_team, randomat, video, vid_start, vid_end, 
 202211013	2022-11-01	innocents	The innocent the traitors and the ugly	Q5ErlVIH31Q	879	958	\N
 202211014	2022-11-01	innocents	The innocent the traitors and the ugly	Q5ErlVIH31Q	994	1087	\N
 202211015	2022-11-01	innocents	The innocent the traitors and the ugly	Q5ErlVIH31Q	1104	1242	\N
-202210220	2022-10-23	innocents	none	VRLFaq9XcMc	36	181	\N
-202210221	2022-10-23	traitors	Its Breeh!	VRLFaq9XcMc	214	330	\N
-202210222	2022-10-23	innocents	Événement Aléatoire	VRLFaq9XcMc	364	469	\N
-202210223	2022-10-23	innocents	Everyone has their favourites	VRLFaq9XcMc	509	678	\N
-202210224	2022-10-23	innocents	You just triggered my trap card!	VRLFaq9XcMc	711	942	\N
-202210226	2022-10-23	innocents	Bullets my only weakness!	VRLFaq9XcMc	1250	1425	\N
 202210250	2022-10-25	traitors	none	geRFB7ihD3M	13	96	\N
 202210251	2022-10-25	innocents	NOT THE BEES!	geRFB7ihD3M	131	164	\N
 202210252	2022-10-25	traitors	You just triggered my trap card!	geRFB7ihD3M	173	565	\N
@@ -252,7 +253,6 @@ COPY public.round (id, date, winning_team, randomat, video, vid_start, vid_end, 
 202212106	2022-12-10	traitors	none	HBfgvCLx808	810	908	\N
 202212170	2022-12-17	traitors	droping this	HDfGua9hZzI	18	237	\N
 202212171	2022-12-17	innocents	droping this	HDfGua9hZzI	268	605	\N
-202210225	2022-10-23	jester	Unbelievable Guilt	VRLFaq9XcMc	976	1216	Ravs
 202210292	2022-10-29	jester	none	fTM_5NZFhRY	377	500	Rythian
 202210293	2022-10-29	jester	none	fTM_5NZFhRY	539	674	Pedguin
 202211053	2022-11-05	jester	The Cake is a Lie	eIkEFaar-Qc	474	509	Daltos
@@ -260,8 +260,13 @@ COPY public.round (id, date, winning_team, randomat, video, vid_start, vid_end, 
 202211151	2022-11-15	jester	none	u8MzP3B0bMw	280	522	Ravs
 202211250	2022-11-25	jester	Deflation	otqA9aYtejA	38	113	Zylus
 202211253	2022-11-25	jester	none	otqA9aYtejA	551	604	Duncan
+202210220	2022-10-22	innocents	none	VRLFaq9XcMc	36	181	\N
 202212131	2022-12-13	innocents	droping this	gIwbQJJlCxw	45	331	\N
 202212130	2022-12-13	jester	droping this	gIwbQJJlCxw	17	38	Rythian
+202210221	2022-10-22	traitors	Its Breeh!	VRLFaq9XcMc	214	330	\N
+202210222	2022-10-22	innocents	Événement Aléatoire	VRLFaq9XcMc	364	469	\N
+202210223	2022-10-22	innocents	Everyone has their favourites	VRLFaq9XcMc	509	678	\N
+202210224	2022-10-22	innocents	You just triggered my trap card!	VRLFaq9XcMc	711	942	\N
 202212172	2022-12-17	traitors	droping this	HDfGua9hZzI	635	713	\N
 202212173	2022-12-17	elves	droping this	HDfGua9hZzI	738	895	\N
 202212174	2022-12-17	innocents	droping this	HDfGua9hZzI	920	1187	\N
@@ -497,6 +502,229 @@ COPY public.round (id, date, winning_team, randomat, video, vid_start, vid_end, 
 202305132	2023-05-13	traitors	\N	hwMR1y4gbK4	336	603	
 202305133	2023-05-13	innocents	\N	hwMR1y4gbK4	633	707	
 202305134	2023-05-13	innocents	\N	hwMR1y4gbK4	742	977	
+202305160	2023-05-16	innocents	\N	2i_-L6Dny3o	10	233	
+202305161	2023-05-16	innocents	\N	2i_-L6Dny3o	265	715	
+202305162	2023-05-16	innocents	\N	2i_-L6Dny3o	743	862	
+202305163	2023-05-16	bees	\N	2i_-L6Dny3o	888	1044	
+202305200	2023-05-20	innocents	\N	xQP3hdxOmCM	92	249	
+202305201	2023-05-20	innocents	\N	xQP3hdxOmCM	280	364	
+202305202	2023-05-20	traitors	\N	xQP3hdxOmCM	395	490	
+202305203	2023-05-20	traitors	\N	xQP3hdxOmCM	521	702	
+202305204	2023-05-20	traitors	\N	xQP3hdxOmCM	732	854	
+202305205	2023-05-20	innocents	\N	xQP3hdxOmCM	888	968	
+202210226	2022-10-22	innocents	Bullets my only weakness!	VRLFaq9XcMc	1250	1425	\N
+202210225	2022-10-22	jester	Unbelievable Guilt	VRLFaq9XcMc	976	1216	Ravs
+202210180	2022-10-18	innocents	\N	X_jNsbBS278	5	106	
+202210181	2022-10-18	innocents	\N	X_jNsbBS278	139	357	
+202210182	2022-10-18	traitors	\N	X_jNsbBS278	387	517	
+202210183	2022-10-18	innocents	\N	X_jNsbBS278	553	670	
+202210184	2022-10-18	bees	\N	X_jNsbBS278	699	966	
+202210150	2022-10-15	jester	\N	kKM7SJQZo0Y	82	151	Ravs
+202210151	2022-10-15	traitors	\N	kKM7SJQZo0Y	176	353	
+202210152	2022-10-15	innocents	\N	kKM7SJQZo0Y	366	503	
+202210153	2022-10-15	innocents	\N	kKM7SJQZo0Y	520	597	
+202210154	2022-10-15	innocents	\N	kKM7SJQZo0Y	631	711	
+202210155	2022-10-15	jester	\N	kKM7SJQZo0Y	733	790	Zylus
+202210156	2022-10-15	traitors	\N	kKM7SJQZo0Y	825	1188	
+202210113	2022-10-11	innocents	\N	hEnLP19VM64	862	1213	
+202306030	2023-06-03	jester	\N	VCHT4u5kMvc	109	263	Rythian
+202306031	2023-06-03	zombies	\N	VCHT4u5kMvc	296	430	
+202306032	2023-06-03	innocents	\N	VCHT4u5kMvc	458	787	
+202306033	2023-06-03	innocents	\N	VCHT4u5kMvc	818	1011	
+202210080	2022-10-08	innocents	\N	EvESsiqrxs4	10	440	
+202210081	2022-10-08	innocents	\N	EvESsiqrxs4	465	539	
+202210082	2022-10-08	innocents	\N	EvESsiqrxs4	569	683	
+202210083	2022-10-08	traitors	\N	EvESsiqrxs4	713	921	
+202210084	2022-10-08	traitors	\N	EvESsiqrxs4	949	1086	
+202210040	2022-10-04	traitors	\N	BCfa3ckSRws	39	194	
+202210041	2022-10-04	innocents	\N	BCfa3ckSRws	229	505	
+202305230	2023-05-23	jester	\N	Jp-BuV0I1Uc	28	176	Duncan
+202210042	2022-10-04	innocents	\N	BCfa3ckSRws	538	720	
+202305231	2023-05-23	innocents	\N	Jp-BuV0I1Uc	209	340	
+202210043	2022-10-04	innocents	\N	BCfa3ckSRws	752	1030	
+202305232	2023-05-23	innocents	\N	Jp-BuV0I1Uc	379	500	
+202210010	2022-10-01	traitors	\N	JaqxhsfR4T4	10	318	
+202305233	2023-05-23	traitors	\N	Jp-BuV0I1Uc	535	687	
+202210011	2022-10-01	innocents	\N	JaqxhsfR4T4	328	474	
+202305234	2023-05-23	innocents	\N	Jp-BuV0I1Uc	709	827	
+202210012	2022-10-01	traitors	\N	JaqxhsfR4T4	503	659	
+202305235	2023-05-23	innocents	\N	Jp-BuV0I1Uc	859	927	
+202305270	2023-05-27	innocents	\N	zehDuZ-h1m8	39	207	
+202305271	2023-05-27	traitors	\N	zehDuZ-h1m8	238	345	
+202305272	2023-05-27	traitors	\N	zehDuZ-h1m8	376	490	
+202305273	2023-05-27	traitors	\N	zehDuZ-h1m8	517	586	
+202305274	2023-05-27	traitors	\N	zehDuZ-h1m8	621	661	
+202305275	2023-05-27	innocents	\N	zehDuZ-h1m8	682	893	
+202305276	2023-05-27	innocents	\N	zehDuZ-h1m8	928	1111	
+202305300	2023-05-30	traitors	\N	1hvkhCMtuIw	10	147	
+202305301	2023-05-30	innocents	\N	1hvkhCMtuIw	181	363	
+202305302	2023-05-30	traitors	\N	1hvkhCMtuIw	397	658	
+202305303	2023-05-30	innocents	\N	1hvkhCMtuIw	689	895	
+202305304	2023-05-30	traitors	\N	1hvkhCMtuIw	930	1117	
+202210110	2022-10-11	traitors	\N	hEnLP19VM64	38	346	
+202210111	2022-10-11	innocents	\N	hEnLP19VM64	364	604	
+202210112	2022-10-11	jester	\N	hEnLP19VM64	635	827	Kirsty
+202210013	2022-10-01	traitors	\N	JaqxhsfR4T4	686	850	
+202210014	2022-10-01	traitors	\N	JaqxhsfR4T4	861	909	
+202306060	2023-06-06	traitors	\N	3kvyGLpdltw	38	312	
+202306061	2023-06-06	innocents	\N	3kvyGLpdltw	340	612	
+202306062	2023-06-06	innocents	\N	3kvyGLpdltw	644	898	
+202209270	2022-09-27	jester	\N	9LYHs_9-P0M	78	329	Rythian
+202209271	2022-09-27	innocents	\N	9LYHs_9-P0M	364	448	
+202209272	2022-09-27	innocents	\N	9LYHs_9-P0M	478	748	
+202209273	2022-09-27	traitors	\N	9LYHs_9-P0M	770	945	
+202209274	2022-09-27	traitors	\N	9LYHs_9-P0M	968	1086	
+202209275	2022-09-27	traitors	\N	9LYHs_9-P0M	1101	1206	
+202209240	2022-09-24	traitors	\N	WZKkd4gHMEM	93	430	
+202209241	2022-09-24	innocents	\N	WZKkd4gHMEM	447	594	
+202209242	2022-09-24	traitors	\N	WZKkd4gHMEM	629	879	
+202209243	2022-09-24	traitors	\N	WZKkd4gHMEM	914	1013	
+202209244	2022-09-24	innocents	\N	WZKkd4gHMEM	1048	1189	
+202306100	2023-06-10	traitors	\N	gHoqpGgYNMA	120	384	
+202306101	2023-06-10	innocents	\N	gHoqpGgYNMA	417	556	
+202306102	2023-06-10	innocents	\N	gHoqpGgYNMA	588	708	
+202306103	2023-06-10	zombies	\N	gHoqpGgYNMA	739	910	
+202306104	2023-06-10	traitors	\N	gHoqpGgYNMA	938	1118	
+202306130	2023-06-13	innocents	\N	4vDh9LHM73k	29	346	
+202306131	2023-06-13	traitors	\N	4vDh9LHM73k	376	567	
+202306132	2023-06-13	traitors	\N	4vDh9LHM73k	598	787	
+202306133	2023-06-13	innocents	\N	4vDh9LHM73k	816	956	
+202306170	2023-06-17	innocents	\N	4fkqC1pyQ2w	29	323	
+202306171	2023-06-17	innocents	\N	4fkqC1pyQ2w	337	473	
+202306172	2023-06-17	traitors	\N	4fkqC1pyQ2w	504	608	
+202306173	2023-06-17	zombies	\N	4fkqC1pyQ2w	642	747	
+202306174	2023-06-17	traitors	\N	4fkqC1pyQ2w	774	861	
+202306175	2023-06-17	innocents	\N	4fkqC1pyQ2w	891	988	
+202306176	2023-06-17	traitors	\N	4fkqC1pyQ2w	1021	1173	
+202306200	2023-06-20	traitors	\N	jAeGy-VoDmc	21	155	
+202306201	2023-06-20	traitors	\N	jAeGy-VoDmc	180	300	
+202306202	2023-06-20	innocents	\N	jAeGy-VoDmc	318	474	
+202306203	2023-06-20	innocents	\N	jAeGy-VoDmc	504	552	
+202306204	2023-06-20	traitors	\N	jAeGy-VoDmc	576	749	
+202306205	2023-06-20	innocents	\N	jAeGy-VoDmc	769	870	
+202306220	2023-06-22	innocents	\N	jhfFsnAOpb0	21	399	
+202306221	2023-06-22	traitors	\N	jhfFsnAOpb0	429	547	
+202306222	2023-06-22	innocents	\N	jhfFsnAOpb0	577	878	
+202306223	2023-06-22	traitors	\N	jhfFsnAOpb0	889	1011	
+202306240	2023-06-24	traitors	\N	qDS3c1Rjc7o	11	208	
+202306241	2023-06-24	traitors	\N	qDS3c1Rjc7o	238	438	
+202306242	2023-06-24	traitors	\N	qDS3c1Rjc7o	452	678	
+202306243	2023-06-24	traitors	\N	qDS3c1Rjc7o	705	850	
+202209200	2022-09-20	traitors	\N	eK8Nwp_C-_c	9	110	
+202209201	2022-09-20	innocents	\N	eK8Nwp_C-_c	134	230	
+202209202	2022-09-20	innocents	\N	eK8Nwp_C-_c	260	483	
+202209203	2022-09-20	traitors	\N	eK8Nwp_C-_c	514	842	
+202306280	2023-06-28	traitors	\N	zFbMsWMwW6U	34	386	
+202306281	2023-06-28	innocents	\N	zFbMsWMwW6U	420	544	
+202306282	2023-06-28	traitors	\N	zFbMsWMwW6U	565	622	
+202306283	2023-06-28	innocents	\N	zFbMsWMwW6U	639	759	
+202306284	2023-06-28	innocents	\N	zFbMsWMwW6U	769	891	
+202306290	2023-06-29	traitors	\N	q4pAikC1Fa8	9	161	
+202306292	2023-06-29	traitors	\N	q4pAikC1Fa8	335	564	
+202306293	2023-06-29	innocents	\N	q4pAikC1Fa8	595	789	
+202306291	2023-06-29	jester	\N	q4pAikC1Fa8	194	300	Lolip
+202306294	2023-06-29	jester	\N	q4pAikC1Fa8	823	1031	Daltos
+202306295	2023-06-29	traitors	\N	q4pAikC1Fa8	1060	1200	
+202307010	2023-07-01	traitors	\N	n8flDSFaBUk	12	209	
+202307011	2023-07-01	traitors	\N	n8flDSFaBUk	239	383	
+202307012	2023-07-01	traitors	\N	n8flDSFaBUk	414	663	
+202307013	2023-07-01	innocents	\N	n8flDSFaBUk	692	806	
+202307014	2023-07-01	innocents	\N	n8flDSFaBUk	837	971	
+202307015	2023-07-01	traitors	\N	n8flDSFaBUk	999	1267	
+202307040	2023-07-04	innocents	\N	0ePAy9ON6aM	90	248	
+202307041	2023-07-04	innocents	\N	0ePAy9ON6aM	278	359	
+202307042	2023-07-04	traitors	\N	0ePAy9ON6aM	391	434	
+202307043	2023-07-04	traitors	\N	0ePAy9ON6aM	473	665	
+202307044	2023-07-04	traitors	\N	0ePAy9ON6aM	691	825	
+202307045	2023-07-04	traitors	\N	0ePAy9ON6aM	852	950	
+202307060	2023-07-06	traitors	\N	boSGesFpomU	11	188	
+202307061	2023-07-06	zombies	\N	boSGesFpomU	225	385	
+202307062	2023-07-06	zombies	\N	boSGesFpomU	414	569	
+202307063	2023-07-06	innocents	\N	boSGesFpomU	605	778	
+202307064	2023-07-06	traitors	\N	boSGesFpomU	807	958	
+202307065	2023-07-06	traitors	\N	boSGesFpomU	991	1260	
+202307080	2023-07-08	zombies	\N	iLZ69BAe0HE	10	212	
+202307081	2023-07-08	traitors	\N	iLZ69BAe0HE	240	583	
+202307082	2023-07-08	innocents	\N	iLZ69BAe0HE	613	842	
+202307083	2023-07-08	traitors	\N	iLZ69BAe0HE	878	917	
+202307110	2023-07-11	innocents	\N	NN9A8L8expU	31	218	
+202307111	2023-07-11	innocents	\N	NN9A8L8expU	244	452	
+202307112	2023-07-11	traitors	\N	NN9A8L8expU	482	696	
+202307113	2023-07-11	elves	\N	NN9A8L8expU	726	992	
+202307130	2023-07-13	innocents	\N	ELKjkoyU21A	20	264	
+202307131	2023-07-13	zombies	\N	ELKjkoyU21A	289	423	
+202307132	2023-07-13	traitors	\N	ELKjkoyU21A	455	537	
+202307133	2023-07-13	zombies	\N	ELKjkoyU21A	567	668	
+202307134	2023-07-13	innocents	\N	ELKjkoyU21A	700	899	
+202307135	2023-07-13	zombies	\N	ELKjkoyU21A	937	1087	
+202307150	2023-07-15	jester	\N	OVe8ddpGgZQ	52	287	Zylus
+202307151	2023-07-15	innocents	\N	OVe8ddpGgZQ	322	500	
+202307152	2023-07-15	traitors	\N	OVe8ddpGgZQ	539	719	
+202307153	2023-07-15	innocents	\N	OVe8ddpGgZQ	744	846	
+202307154	2023-07-15	traitors	\N	OVe8ddpGgZQ	864	1242	
+202307180	2023-07-18	innocents	\N	XqzsityJF7I	57	93	
+202307181	2023-07-18	innocents	\N	XqzsityJF7I	122	340	
+202307182	2023-07-18	innocents	\N	XqzsityJF7I	369	540	
+202307183	2023-07-18	traitors	\N	XqzsityJF7I	574	680	
+202307184	2023-07-18	traitors	\N	XqzsityJF7I	714	915	
+202307185	2023-07-18	innocents	\N	XqzsityJF7I	946	1071	
+202307200	2023-07-20	traitors	\N	6Oa-lMt4HXM	15	133	
+202307201	2023-07-20	innocents	\N	6Oa-lMt4HXM	164	268	
+202307202	2023-07-20	innocents	\N	6Oa-lMt4HXM	290	564	
+202307203	2023-07-20	innocents	\N	6Oa-lMt4HXM	592	763	
+202307204	2023-07-20	traitors	\N	6Oa-lMt4HXM	788	882	
+202307205	2023-07-20	traitors	\N	6Oa-lMt4HXM	912	1066	
+202307206	2023-07-20	innocents	\N	6Oa-lMt4HXM	1091	1281	
+202307220	2023-07-22	traitors	\N	M_VWQt-qtLw	18	79	
+202307222	2023-07-22	clown	\N	M_VWQt-qtLw	200	407	
+202307221	2023-07-22	innocents	\N	M_VWQt-qtLw	113	168	
+202307223	2023-07-22	innocents	\N	M_VWQt-qtLw	441	556	
+202307224	2023-07-22	innocents	\N	M_VWQt-qtLw	587	692	
+202307226	2023-07-22	traitors	\N	M_VWQt-qtLw	880	973	
+202307225	2023-07-22	innocents	\N	M_VWQt-qtLw	718	855	
+202307250	2023-07-25	traitors	\N	c5AwkqJimFY	9	209	
+202307251	2023-07-25	innocents	\N	c5AwkqJimFY	224	402	
+202307252	2023-07-25	clown	\N	c5AwkqJimFY	419	757	
+202307253	2023-07-25	innocents	\N	c5AwkqJimFY	779	853	
+202307254	2023-07-25	traitors	\N	c5AwkqJimFY	881	1052	
+202307270	2023-07-27	clown	\N	q3A3FqDJTr4	11	90	
+202307271	2023-07-27	innocents	\N	q3A3FqDJTr4	126	252	
+202307272	2023-07-27	traitors	\N	q3A3FqDJTr4	282	569	
+202307273	2023-07-27	jester	\N	q3A3FqDJTr4	602	708	Daltos
+202307274	2023-07-27	zombies	\N	q3A3FqDJTr4	738	875	
+202307275	2023-07-27	innocents	\N	q3A3FqDJTr4	897	1094	
+202307290	2023-07-29	innocents	\N	tG7nh3No6e0	8	100	
+202307291	2023-07-29	innocents	\N	tG7nh3No6e0	133	306	
+202307292	2023-07-29	innocents	\N	tG7nh3No6e0	332	423	
+202307293	2023-07-29	innocents	\N	tG7nh3No6e0	441	672	
+202307294	2023-07-29	traitors	\N	tG7nh3No6e0	699	808	
+202307295	2023-07-29	innocents	\N	tG7nh3No6e0	841	1037	
+202308010	2023-08-01	innocents	\N	CSp850uMz98	89	213	
+202308011	2023-08-01	traitors	\N	CSp850uMz98	243	463	
+202308012	2023-08-01	traitors	\N	CSp850uMz98	477	630	
+202308013	2023-08-01	zombies	\N	CSp850uMz98	643	1003	
+202308014	2023-08-01	innocents	\N	CSp850uMz98	1017	1285	
+202308030	2023-08-03	traitors	\N	HjBz5xKAfv8	82	254	
+202308031	2023-08-03	innocents	\N	HjBz5xKAfv8	285	493	
+202308032	2023-08-03	innocents	\N	HjBz5xKAfv8	527	799	
+202308033	2023-08-03	traitors	\N	HjBz5xKAfv8	831	1004	
+202308034	2023-08-03	innocents	\N	HjBz5xKAfv8	1033	1106	
+202308035	2023-08-03	innocents	\N	HjBz5xKAfv8	1135	1341	
+202308050	2023-08-05	traitors	\N	hPk2VzNw_20	79	223	
+202308051	2023-08-05	traitors	\N	hPk2VzNw_20	250	426	
+202308052	2023-08-05	innocents	\N	hPk2VzNw_20	457	720	
+202308053	2023-08-05	jester	\N	hPk2VzNw_20	753	967	Kirsty
+202308080	2023-08-08	traitors	\N	Ge4gwl-E7vg	12	224	
+202308081	2023-08-08	innocents	\N	Ge4gwl-E7vg	250	587	
+202308082	2023-08-08	traitors	\N	Ge4gwl-E7vg	620	772	
+202308083	2023-08-08	jester	\N	Ge4gwl-E7vg	805	838	Rythian
+202308084	2023-08-08	bees	\N	Ge4gwl-E7vg	872	1222	
+202308120	2023-08-12	innocents	\N	RqABuPTymQ8	14	149	
+202308121	2023-08-12	innocents	\N	RqABuPTymQ8	181	381	
+202308122	2023-08-12	innocents	\N	RqABuPTymQ8	397	538	
+202308123	2023-08-12	traitors	\N	RqABuPTymQ8	573	745	
+202308124	2023-08-12	traitors	\N	RqABuPTymQ8	772	956	
+202308125	2023-08-12	innocents	\N	RqABuPTymQ8	980	1098	
 \.
 
 
@@ -618,6 +846,7 @@ COPY public.round_participation (id, player, role, team, died) FROM stdin;
 202211012	Boba	traitor	traitors	not_tracked
 202211012	Ravs	innocent	innocents	not_tracked
 202211012	Daltos	innocent	innocents	not_tracked
+202212061	Lewis	zombie	zombies	not_tracked
 202211013	Lewis	innocent	innocents	not_tracked
 202211013	Ben	parasite	traitors	not_tracked
 202211013	Duncan	turncoat	innocents	not_tracked
@@ -1073,7 +1302,6 @@ COPY public.round_participation (id, player, role, team, died) FROM stdin;
 202212061	Rythian	zombie	zombies	not_tracked
 202212061	Zoey	innocent	innocents	not_tracked
 202212061	Osie	zombie	zombies	not_tracked
-202212061	Lewis	zombie	zombies	not_tracked
 202212062	Ben	glitch	innocents	not_tracked
 202212062	Duncan	jester	jester	not_tracked
 202212062	Ravs	innocent	innocents	not_tracked
@@ -2940,6 +3168,1701 @@ COPY public.round_participation (id, player, role, team, died) FROM stdin;
 202305134	Zylus	hypnotist	traitors	yes
 202305134	Kirsty	traitor	traitors	yes
 202305134	Boba	traitor	traitors	yes
+202305160	Lewis	traitor	traitors	yes
+202305160	Ben	parasite	traitors	yes
+202305160	Duncan	innocent	innocents	yes
+202305160	Rythian	tracker	innocents	no
+202305160	Zylus	shadow	none	yes
+202305160	Kirsty	paramedic	innocents	yes
+202305160	Zoey	innocent	innocents	yes
+202305160	Nilesy	innocent	innocents	yes
+202305161	Lewis	swapper	none	no
+202305161	Ben	innocent	innocents	yes
+202305161	Duncan	deputy	innocents	yes
+202305161	Rythian	informant	traitors	yes
+202305161	Zylus	innocent	innocents	yes
+202305161	Kirsty	tracker	innocents	no
+202305161	Zoey	shadow	none	yes
+202305161	Nilesy	traitor	traitors	yes
+202305162	Lewis	jester	jester	yes
+202305162	Ben	impersonator	traitors	yes
+202305162	Duncan	shadow	none	yes
+202305162	Rythian	traitor	traitors	yes
+202305162	Zylus	medium	innocents	no
+202305162	Kirsty	innocent	innocents	yes
+202305162	Zoey	innocent	innocents	no
+202305162	Nilesy	veteran	innocents	no
+202305163	Lewis	innocent	innocents	yes
+202305163	Ben	parasite	traitors	yes
+202305163	Duncan	drunk	none	yes
+202305163	Rythian	clown	clown	yes
+202305163	Zylus	innocent	innocents	yes
+202305163	Kirsty	traitor	traitors	yes
+202305163	Zoey	tracker	innocents	yes
+202305163	Nilesy	veteran	innocents	yes
+202305200	Lewis	clown	clown	yes
+202305200	Ben	traitor	traitors	yes
+202305200	Duncan	medium	innocents	no
+202305200	Rythian	innocent	innocents	yes
+202305200	Zylus	traitor	innocents	yes
+202305200	Kirsty	paramedic	innocents	yes
+202305200	Zoey	shadow	none	yes
+202305200	Nilesy	innocent	innocents	yes
+202305201	Lewis	shadow	none	yes
+202305201	Ben	traitor	traitors	yes
+202305201	Duncan	hypnotist	traitors	yes
+202305201	Rythian	mad scientist	zombies	yes
+202305201	Zylus	randoman	innocents	no
+202305201	Kirsty	innocent	innocents	yes
+202305201	Zoey	veteran	innocents	no
+202305201	Nilesy	innocent	innocents	yes
+202305202	Lewis	impersonator	traitors	no
+202305202	Ben	shadow	none	yes
+202305202	Duncan	glitch	innocents	yes
+202305202	Rythian	randoman	innocents	yes
+202305202	Zylus	innocent	innocents	yes
+202305202	Kirsty	traitor	traitors	no
+202305202	Zoey	clown	clown	yes
+202305202	Nilesy	innocent	innocents	yes
+202305203	Lewis	innocent	innocents	yes
+202305203	Ben	shadow	none	yes
+202305203	Duncan	veteran	innocents	yes
+202305203	Rythian	traitor	traitors	yes
+202305203	Zylus	impersonator	traitors	yes
+202305203	Kirsty	medium	innocents	yes
+202305203	Zoey	traitor	traitors	no
+202305203	Nilesy	innocent	innocents	yes
+202305204	Lewis	loot goblin	none	no
+202305204	Ben	veteran	innocents	yes
+202305204	Duncan	medium	innocents	yes
+202305204	Rythian	summoner	traitors	yes
+202305204	Zylus	innocent	innocents	yes
+202305204	Kirsty	traitor	traitors	no
+202305204	Zoey	beggar	traitors	no
+202305204	Nilesy	innocent	innocents	yes
+202305205	Lewis	innocent	innocents	no
+202305205	Ben	innocent	innocents	yes
+202305205	Duncan	innocent	innocents	yes
+202305205	Rythian	innocent	innocents	yes
+202305205	Zylus	traitor	traitors	yes
+202305205	Kirsty	tracker	innocents	yes
+202305205	Zoey	glitch	innocents	yes
+202305205	Nilesy	traitor	traitors	yes
+202210180	Lewis	glitch	innocents	no
+202210180	Ben	traitor	traitors	yes
+202210180	Boba	swapper	none	no
+202210180	Pedguin	summoner	traitors	yes
+202210180	Ravs	innocent	innocents	no
+202210180	Gee	tracker	innocents	yes
+202210180	Kirsty	innocent	innocents	no
+202210181	Lewis	informant	innocents	yes
+202210181	Ben	informant	traitors	yes
+202210181	Boba	innocent	innocents	yes
+202210181	Pedguin	randoman	innocents	no
+202210181	Ravs	glitch	innocents	no
+202210181	Gee	traitor	traitors	yes
+202210181	Kirsty	loot goblin	none	yes
+202210182	Lewis	innocent	innocents	yes
+202210182	Ben	traitor	traitors	yes
+202210182	Boba	innocent	innocents	yes
+202210182	Pedguin	traitor	traitors	no
+202210182	Ravs	innocent	innocents	yes
+202210182	Gee	innocent	innocents	yes
+202210182	Kirsty	innocent	innocents	yes
+202210183	Lewis	paladin	innocents	no
+202210183	Ben	innocent	innocents	yes
+202210183	Boba	swapper	none	no
+202210183	Pedguin	parasite	traitors	yes
+202210183	Ravs	traitor	traitors	yes
+202210183	Gee	innocent	innocents	yes
+202210183	Kirsty	deputy	innocents	yes
+202210184	Lewis	innocent	innocents	yes
+202210184	Ben	innocent	innocents	yes
+202210184	Boba	tracker	innocents	yes
+202210184	Pedguin	deputy	innocents	yes
+202210184	Ravs	loot goblin	none	yes
+202210184	Gee	queen bee	bees	no
+202210184	Kirsty	bee	bees	yes
+202210150	Ben	traitor	traitors	no
+202210150	Duncan	jester	jester	yes
+202210150	Ravs	innocent	innocents	no
+202210150	Rythian	paladin	innocents	yes
+202210150	Zylus	informant	traitors	yes
+202210150	Zoey	glitch	innocents	no
+202210150	Kirsty	innocent	innocents	no
+202210151	Ben	paramedic	innocents	yes
+202210151	Duncan	informant	traitors	no
+202210151	Ravs	innocent	innocents	yes
+202210151	Rythian	innocent	innocents	yes
+202210151	Zylus	tracker	innocents	yes
+202210151	Zoey	traitor	traitors	no
+202210151	Kirsty	jester	jester	no
+202210152	Ben	innocent	innocents	yes
+202210152	Duncan	traitor	traitors	yes
+202210152	Ravs	innocent	innocents	no
+202210152	Rythian	swapper	none	yes
+202210152	Zylus	summoner	traitors	yes
+202210152	Zoey	paramedic	innocents	yes
+202210152	Kirsty	medium	innocents	no
+202210153	Ben	tracker	innocents	no
+202210153	Duncan	innocent	innocents	no
+202210153	Ravs	traitor	traitors	yes
+202210153	Rythian	paramedic	innocents	yes
+202210153	Zylus	beggar	none	yes
+202210153	Zoey	innocent	innocents	yes
+202210153	Kirsty	parasite	traitors	yes
+202210154	Ben	informant	traitors	yes
+202210154	Duncan	glitch	innocents	no
+202210154	Ravs	traitor	traitors	yes
+202210154	Rythian	swapper	none	no
+202210154	Zylus	tracker	innocents	no
+202210154	Zoey	innocent	innocents	no
+202210154	Kirsty	innocent	innocents	yes
+202210155	Ben	impersonator	traitors	no
+202210155	Duncan	turncoat	innocents	no
+202210155	Ravs	traitor	traitors	no
+202210155	Rythian	paladin	innocents	no
+202210155	Zylus	innocent	innocents	no
+202210155	Zoey	innocent	innocents	yes
+202210155	Kirsty	jester	jester	yes
+202210156	Ben	informant	traitors	no
+202210156	Duncan	traitor	traitors	no
+202210156	Ravs	innocent	innocents	yes
+202210156	Rythian	innocent	innocents	yes
+202210156	Zylus	loot goblin	none	yes
+202210156	Zoey	randoman	innocents	yes
+202210156	Kirsty	turncoat	innocents	yes
+202305230	Lewis	impersonator	traitors	no
+202305230	Ben	innocent	innocents	yes
+202305230	Duncan	paramedic	innocents	no
+202305230	Pedguin	paladin	innocents	no
+202305230	Rythian	traitor	traitors	no
+202305230	Boba	jester	jester	yes
+202305230	Nilesy	innocent	innocents	no
+202305231	Lewis	traitor	traitors	yes
+202305231	Ben	clown	clown	yes
+202305231	Duncan	paladin	innocents	yes
+202305231	Pedguin	innocent	innocents	no
+202305231	Rythian	innocent	innocents	no
+202305231	Boba	summoner	traitors	yes
+202305231	Nilesy	paramedic	innocents	yes
+202305232	Lewis	innocent	innocents	no
+202305232	Ben	glitch	innocents	yes
+202305232	Duncan	traitor	traitors	yes
+202305232	Pedguin	parasite	traitors	yes
+202305232	Rythian	innocent	innocents	yes
+202305232	Boba	drunk	none	yes
+202305232	Nilesy	paladin	innocents	yes
+202305233	Lewis	randoman	innocents	yes
+202305233	Ben	deputy	innocents	yes
+202305233	Duncan	hypnotist	traitors	no
+202305233	Pedguin	shadow	none	yes
+202305233	Rythian	innocent	innocents	yes
+202305233	Boba	traitor	traitors	yes
+202305233	Nilesy	innocent	innocents	yes
+202305234	Lewis	traitor	traitors	yes
+202305234	Ben	parasite	traitors	yes
+202305234	Duncan	innocent	innocents	no
+202305234	Pedguin	beggar	none	no
+202305234	Rythian	innocent	innocents	yes
+202305234	Boba	randoman	innocents	yes
+202305234	Nilesy	veteran	innocents	no
+202305235	Lewis	traitor	traitors	yes
+202305235	Ben	traitor	traitors	yes
+202305235	Duncan	innocent	innocents	yes
+202305235	Pedguin	paladin	innocents	no
+202305235	Rythian	innocent	innocents	no
+202305235	Boba	glitch	innocents	no
+202305235	Nilesy	traitor	traitors	yes
+202305270	Lewis	shadow	none	yes
+202305270	Ben	traitor	traitors	yes
+202305270	Duncan	innocent	innocents	no
+202305270	Pedguin	deputy	innocents	yes
+202305270	Rythian	hypnotist	traitors	yes
+202305270	Boba	medium	innocents	yes
+202305270	Nilesy	innocent	innocents	yes
+202305271	Lewis	medium	innocents	yes
+202305271	Ben	glitch	innocents	yes
+202305271	Duncan	beggar	traitors	no
+202305271	Pedguin	innocent	innocents	yes
+202305271	Rythian	innocent	innocents	yes
+202305271	Boba	traitor	traitors	no
+202305271	Nilesy	summoner	traitors	yes
+202305272	Lewis	marshal	innocents	yes
+202305272	Ben	shadow	none	yes
+202305272	Duncan	traitor	traitors	yes
+202305272	Pedguin	glitch	innocents	yes
+202305272	Rythian	impersonator	traitors	no
+202305272	Boba	innocent	innocents	yes
+202305272	Nilesy	innocent	innocents	yes
+202305273	Lewis	traitor	traitors	no
+202305273	Ben	innocent	innocents	yes
+202305273	Duncan	parasite	traitors	yes
+202305273	Pedguin	innocent	innocents	yes
+202305273	Rythian	mad scientist	zombies	yes
+202305273	Boba	glitch	innocents	yes
+202305273	Nilesy	randoman	innocents	yes
+202305274	Lewis	shadow	none	yes
+202305274	Ben	traitor	traitors	yes
+202305274	Duncan	summoner	traitors	no
+202305274	Pedguin	medium	innocents	yes
+202305274	Rythian	innocent	innocents	yes
+202305274	Boba	innocent	innocents	yes
+202305274	Nilesy	veteran	innocents	yes
+202305275	Lewis	innocent	innocents	yes
+202305275	Ben	shadow	none	yes
+202305275	Duncan	informant	traitors	yes
+202305275	Pedguin	innocent	innocents	no
+202305275	Rythian	veteran	innocents	no
+202305275	Boba	traitor	traitors	yes
+202305275	Nilesy	marshal	innocents	yes
+202305276	Lewis	shadow	none	no
+202305276	Ben	medium	innocents	no
+202305276	Duncan	glitch	innocents	yes
+202305276	Pedguin	summoner	traitors	yes
+202305276	Rythian	traitor	traitors	yes
+202305276	Boba	innocent	innocents	yes
+202305276	Nilesy	innocent	innocents	no
+202305300	Lewis	informant	traitors	no
+202305300	Duncan	loot goblin	none	no
+202305300	Ravs	paramedic	innocents	yes
+202305300	Rythian	shadow	none	no
+202305300	Zylus	innocent	innocents	yes
+202305300	Kirsty	innocent	innocents	yes
+202305300	Zoey	marshal	innocents	yes
+202305300	Nilesy	traitor	traitors	yes
+202305301	Lewis	impersonator	traitors	yes
+202305301	Duncan	medium	innocents	yes
+202305301	Ravs	traitor	traitors	yes
+202305301	Rythian	shadow	none	yes
+202305301	Zylus	innocent	innocents	yes
+202305301	Kirsty	innocent	innocents	yes
+202305301	Zoey	veteran	innocents	no
+202305301	Nilesy	clown	clown	yes
+202305302	Lewis	loot goblin	none	yes
+202305302	Duncan	innocent	innocents	yes
+202305302	Ravs	traitor	traitors	no
+202305302	Rythian	glitch	innocents	yes
+202305302	Zylus	informant	traitors	yes
+202305302	Kirsty	innocent	innocents	yes
+202305302	Zoey	innocent	innocents	yes
+202305302	Nilesy	paladin	innocents	yes
+202305303	Lewis	innocent	innocents	yes
+202305303	Duncan	shadow	none	yes
+202305303	Ravs	innocent	innocents	yes
+202305303	Rythian	hypnotist	traitors	yes
+202305303	Zylus	clown	clown	yes
+202305303	Kirsty	glitch	innocents	no
+202305303	Zoey	tracker	innocents	yes
+202305303	Nilesy	traitor	traitors	yes
+202305304	Lewis	traitor	traitors	no
+202305304	Duncan	beggar	traitors	no
+202305304	Ravs	glitch	innocents	yes
+202305304	Rythian	impersonator	traitors	no
+202305304	Zylus	innocent	innocents	yes
+202305304	Kirsty	randoman	innocents	yes
+202305304	Zoey	innocent	innocents	yes
+202305304	Nilesy	shadow	innocents	yes
+202210110	Ben	beggar	none	no
+202210110	Duncan	innocent	innocents	yes
+202210110	Ravs	hypnotist	traitors	yes
+202210110	Rythian	turncoat	innocents	yes
+202210110	Zylus	innocent	innocents	yes
+202210110	Zoey	traitor	traitors	no
+202210110	Kirsty	tracker	innocents	yes
+202210111	Ben	innocent	innocents	no
+202210111	Duncan	hypnotist	traitors	yes
+202210111	Ravs	randoman	innocents	yes
+202210111	Rythian	innocent	innocents	no
+202210111	Zylus	traitor	traitors	yes
+202210111	Zoey	clown	clown	yes
+202210111	Kirsty	veteran	innocents	yes
+202210112	Ben	jester	jester	yes
+202210112	Duncan	innocent	innocents	yes
+202210112	Ravs	tracker	innocents	yes
+202210112	Rythian	informant	innocents	yes
+202210112	Zylus	glitch	innocents	yes
+202210112	Zoey	traitor	traitors	no
+202210112	Kirsty	hypnotist	traitors	no
+202210113	Ben	tracker	innocents	yes
+202210113	Duncan	innocent	innocents	yes
+202210113	Ravs	innocent	innocents	no
+202210113	Rythian	traitor	traitors	yes
+202210113	Zylus	summoner	traitors	yes
+202210113	Zoey	veteran	innocents	yes
+202210113	Kirsty	beggar	traitors	yes
+202306030	Lewis	summoner	traitors	yes
+202306030	Duncan	paramedic	innocents	yes
+202306030	Nilesy	innocent	innocents	yes
+202306030	Ravs	innocent	innocents	no
+202306030	Rythian	traitor	traitors	no
+202306030	Kirsty	shadow	none	yes
+202306030	Zylus	jester	jester	yes
+202306030	Zoey	innocent	innocents	yes
+202306031	Lewis	zombie	zombies	no
+202306031	Duncan	informant	traitors	yes
+202306031	Nilesy	clowntective	clown	yes
+202306031	Ravs	traitor	traitors	yes
+202306031	Rythian	zombie	zombies	no
+202306031	Kirsty	veteran	innocents	yes
+202306031	Zylus	marshal	innocents	no
+202306031	Zoey	mad scientist	zombies	no
+202306032	Lewis	traitor	traitors	yes
+202306032	Duncan	innocent	innocents	no
+202306032	Nilesy	parasite	traitors	yes
+202306032	Ravs	paladin	innocents	yes
+202306032	Rythian	glitch	innocents	yes
+202306032	Kirsty	swapper	none	no
+202306032	Zylus	shadow	none	yes
+202306032	Zoey	innocent	innocents	yes
+202306033	Lewis	loot goblin	none	no
+202306033	Duncan	innocent	innocents	no
+202306033	Nilesy	traitor	traitors	yes
+202306033	Ravs	glitch	innocents	yes
+202306033	Rythian	clown	clown	yes
+202306033	Kirsty	summoner	traitors	yes
+202306033	Zylus	tracker	innocents	yes
+202306033	Zoey	innocent	innocents	yes
+202210080	Ben	innocent	innocents	no
+202210080	Duncan	randoman	innocents	yes
+202210080	Ravs	traitor	traitors	yes
+202210080	Pedguin	innocent	innocents	yes
+202210080	Kirsty	informant	traitors	yes
+202210080	Osie	innocent	innocents	yes
+202210080	Boba	turncoat	innocents	yes
+202210081	Ben	veteran	innocents	no
+202210081	Duncan	innocent	innocents	yes
+202210081	Ravs	tracker	innocents	no
+202210081	Pedguin	innocent	innocents	no
+202210081	Kirsty	traitor	traitors	yes
+202210081	Osie	jester	jester	no
+202210081	Boba	parasite	traitors	yes
+202210082	Ben	medium	innocents	no
+202210082	Duncan	innocent	innocents	no
+202210082	Ravs	innocent	innocents	no
+202210082	Pedguin	glitch	innocents	no
+202210082	Kirsty	summoner	traitors	yes
+202210082	Boba	traitor	traitors	yes
+202210082	Osie	drunk	none	yes
+202210083	Ben	zombie	zombies	yes
+202210083	Duncan	mad scientist	zombies	yes
+202210083	Ravs	zombie	zombies	yes
+202210083	Pedguin	parasite	traitors	no
+202210083	Kirsty	innocent	innocents	yes
+202210083	Osie	innocent	innocents	yes
+202210083	Boba	zombie	zombies	yes
+202210084	Ben	traitor	traitors	yes
+202210084	Duncan	hypnotist	traitors	no
+202210084	Ravs	innocent	innocents	yes
+202210084	Kirsty	innocent	innocents	yes
+202210084	Osie	tracker	innocents	yes
+202210084	Boba	glitch	innocents	yes
+202210084	Pedguin	loot goblin	none	no
+202210040	Ben	traitor	traitors	no
+202210040	Duncan	informant	traitors	yes
+202210040	Ravs	innocent	innocents	yes
+202210040	Pedguin	innocent	innocents	yes
+202210040	Kirsty	innocent	innocents	yes
+202210040	Osie	glitch	innocents	yes
+202210040	Boba	randoman	innocents	yes
+202210041	Ben	glitch	innocents	yes
+202210041	Duncan	tracker	innocents	no
+202210041	Ravs	innocent	innocents	yes
+202210041	Pedguin	traitor	traitors	yes
+202210041	Kirsty	informant	traitors	yes
+202210041	Osie	innocent	innocents	yes
+202210041	Boba	innocent	innocents	yes
+202210042	Ben	traitor	traitors	yes
+202210042	Duncan	traitor	traitors	yes
+202210042	Ravs	innocent	innocents	yes
+202210042	Pedguin	randoman	innocents	no
+202210042	Kirsty	hypnotist	traitors	yes
+202210042	Osie	innocent	innocents	yes
+202210042	Boba	deputy	innocents	yes
+202210043	Ben	zombie	zombies	yes
+202210043	Duncan	innocent	innocents	yes
+202210043	Ravs	innocent	innocents	yes
+202210043	Pedguin	mad scientist	zombies	yes
+202210043	Kirsty	traitor	traitors	yes
+202210043	Osie	paladin	innocents	no
+202210043	Boba	hypnotist	traitors	yes
+202210010	Lewis	innocent	innocents	yes
+202210010	Ben	beggar	none	yes
+202210010	Osie	traitor	traitors	yes
+202210010	Kirsty	informant	traitors	no
+202210010	Zoey	paladin	innocents	yes
+202210010	Rythian	turncoat	innocents	yes
+202210010	Zylus	innocent	innocents	yes
+202210011	Lewis	parasite	traitors	yes
+202210011	Ben	randoman	innocents	no
+202210011	Osie	traitor	traitors	yes
+202210011	Kirsty	loot goblin	none	yes
+202210011	Zoey	glitch	innocents	no
+202210011	Rythian	innocent	innocents	yes
+202210011	Zylus	innocent	innocents	yes
+202210012	Lewis	innocent	innocents	yes
+202210012	Ben	deputy	innocents	yes
+202210012	Osie	traitor	traitors	no
+202210012	Kirsty	innocent	innocents	yes
+202210012	Zoey	hypnotist	traitors	no
+202210012	Rythian	tracker	innocents	yes
+202210012	Zylus	traitor	traitors	no
+202210013	Lewis	traitor	traitors	yes
+202210013	Ben	informant	traitors	no
+202210013	Osie	tracker	innocents	yes
+202210013	Kirsty	innocent	innocents	yes
+202210013	Zoey	innocent	innocents	yes
+202210013	Rythian	jester	jester	no
+202210013	Zylus	veteran	innocents	yes
+202210014	Lewis	loot goblin	none	no
+202210014	Ben	parasite	traitors	no
+202210014	Osie	innocent	innocents	yes
+202210014	Kirsty	randoman	innocents	yes
+202210014	Zoey	innocent	innocents	yes
+202210014	Rythian	traitor	traitors	no
+202210014	Zylus	deputy	innocents	no
+202306060	Lewis	innocent	innocents	yes
+202209270	Lewis	jester	jester	yes
+202209270	Ben	innocent	innocents	yes
+202209270	Osie	summoner	traitors	yes
+202209270	Kirsty	innocent	innocents	yes
+202209270	Zoey	veteran	innocents	yes
+202306060	Duncan	shadow	none	yes
+202306060	Ravs	glitch	innocents	yes
+202306060	Rythian	traitor	traitors	no
+202306060	Zylus	beggar	innocents	yes
+202306060	Kirsty	informant	traitors	yes
+202306060	Zoey	paladin	innocents	yes
+202306060	Nilesy	innocent	innocents	yes
+202306061	Lewis	shadow	none	yes
+202306061	Duncan	tracker	innocents	no
+202306061	Ravs	traitor	traitors	yes
+202306061	Rythian	innocent	innocents	yes
+202306061	Zylus	glitch	innocents	no
+202306061	Kirsty	impersonator	traitors	yes
+202306061	Zoey	traitor	traitors	yes
+202306061	Nilesy	beggar	innocents	no
+202306062	Lewis	paladin	innocents	no
+202306062	Duncan	traitor	traitors	yes
+202306062	Ravs	innocent	innocents	yes
+202306062	Rythian	shadow	innocents	yes
+202306062	Zylus	innocent	innocents	no
+202306062	Kirsty	innocent	innocents	no
+202306062	Zoey	glitch	innocents	yes
+202306062	Nilesy	impersonator	traitors	yes
+202306100	Lewis	shadow	none	yes
+202306100	Ben	medium	innocents	yes
+202306100	Duncan	innocent	innocents	yes
+202306100	Rythian	innocent	innocents	yes
+202306100	Zylus	traitor	traitors	no
+202306100	Zoey	traitor	traitors	no
+202306100	Nilesy	informant	traitors	yes
+202306100	Daltos	veteran	innocents	yes
+202306101	Lewis	veteran	innocents	yes
+202306101	Ben	summoner	traitors	yes
+202306101	Duncan	randoman	innocents	no
+202306101	Rythian	innocent	innocents	yes
+202306101	Zylus	traitor	traitors	yes
+202306101	Zoey	clown	clown	yes
+202306101	Nilesy	shadow	none	yes
+202306101	Daltos	innocent	innocents	yes
+202306102	Lewis	paladin	innocents	no
+202306102	Ben	informant	traitors	yes
+202306102	Duncan	veteran	innocents	no
+202306102	Rythian	beggar	none	no
+202306102	Zylus	innocent	innocents	yes
+202306102	Zoey	innocent	innocents	no
+202306102	Nilesy	shadow	none	yes
+202306102	Daltos	traitor	traitors	yes
+202306103	Lewis	randoman	innocents	yes
+202306103	Ben	mad scientist	zombies	yes
+202306103	Duncan	zombie	zombies	yes
+202306103	Rythian	zombie	zombies	no
+202306103	Zylus	zombie	zombies	yes
+202306103	Zoey	innocent	innocents	yes
+202306103	Nilesy	parasite	traitors	yes
+202306103	Daltos	zombie	zombies	no
+202306104	Lewis	informant	traitors	no
+202306104	Ben	medium	innocents	yes
+202306104	Duncan	innocent	innocents	yes
+202306104	Rythian	traitor	traitors	yes
+202306104	Zylus	shadow	none	yes
+202306104	Zoey	glitch	innocents	yes
+202306104	Nilesy	innocent	innocents	yes
+202306104	Daltos	innocent	innocents	yes
+202306132	Lewis	shadow	none	yes
+202306132	Ben	innocent	innocents	yes
+202306132	Duncan	innocent	innocents	yes
+202306132	Rythian	traitor	traitors	no
+202306132	Zylus	glitch	innocents	yes
+202306132	Zoey	clown	clown	yes
+202306132	Nilesy	medium	innocents	yes
+202306132	Daltos	informant	traitors	yes
+202306133	Lewis	medium	innocents	yes
+202306133	Ben	traitor	traitors	yes
+202306133	Duncan	summoner	traitors	yes
+202306133	Rythian	innocent	innocents	no
+202306133	Zylus	drunk	none	yes
+202306133	Zoey	shadow	none	yes
+202306133	Nilesy	glitch	innocents	yes
+202306133	Daltos	innocent	innocents	yes
+202209270	Rythian	traitor	traitors	no
+202209270	Zylus	randoman	innocents	no
+202209271	Lewis	traitor	traitors	yes
+202209271	Ben	summoner	traitors	yes
+202209271	Osie	tracker	innocents	yes
+202209271	Kirsty	glitch	innocents	yes
+202209271	Zoey	innocent	innocents	no
+202209271	Rythian	innocent	innocents	yes
+202209271	Zylus	clown	clown	yes
+202209272	Lewis	mad scientist	zombies	yes
+202209272	Ben	innocent	innocents	yes
+202209272	Osie	traitor	traitors	yes
+202209272	Kirsty	deputy	innocents	no
+202209272	Zoey	innocent	innocents	yes
+202209272	Rythian	zombie	zombies	yes
+202209272	Zylus	zombie	zombies	yes
+202209273	Lewis	deputy	innocents	yes
+202209273	Ben	paladin	innocents	yes
+202209273	Osie	clown	clown	yes
+202209273	Kirsty	innocent	innocents	yes
+202209273	Zoey	innocent	innocents	yes
+202209273	Rythian	informant	traitors	yes
+202209273	Zylus	traitor	traitors	no
+202209274	Lewis	loot goblin	none	yes
+202209274	Ben	summoner	traitors	no
+202209274	Osie	paladin	innocents	yes
+202209274	Kirsty	innocent	innocents	yes
+202209274	Zoey	traitor	traitors	yes
+202209274	Rythian	innocent	innocents	yes
+202209274	Zylus	turncoat	traitors	yes
+202209275	Lewis	traitor	traitors	no
+202209275	Ben	innocent	innocents	yes
+202209275	Osie	informant	traitors	no
+202209275	Kirsty	turncoat	innocents	yes
+202209275	Zoey	medium	innocents	yes
+202209275	Rythian	innocent	innocents	yes
+202209275	Zylus	loot goblin	none	yes
+202209240	Lewis	parasite	traitors	yes
+202209240	Ben	traitor	traitors	no
+202209240	Osie	swapper	none	no
+202209240	Kirsty	paramedic	innocents	yes
+202209240	Zoey	innocent	innocents	yes
+202209240	Rythian	innocent	innocents	yes
+202209240	Zylus	paladin	innocents	yes
+202209241	Lewis	innocent	innocents	yes
+202209241	Ben	traitor	traitors	yes
+202209241	Osie	tracker	innocents	no
+202209241	Kirsty	innocent	innocents	yes
+202209241	Zoey	impersonator	traitors	yes
+202209241	Rythian	turncoat	innocents	no
+202209241	Zylus	mad scientist	zombies	yes
+202209242	Lewis	mad scientist	zombies	yes
+202209242	Ben	summoner	traitors	no
+202209242	Osie	innocent	innocents	yes
+202209242	Kirsty	innocent	innocents	yes
+202209242	Zoey	traitor	traitors	no
+202209242	Rythian	randoman	innocents	yes
+202209242	Zylus	glitch	innocents	yes
+202209243	Lewis	summoner	traitors	no
+202209243	Ben	innocent	innocents	yes
+202209243	Osie	loot goblin	none	no
+202209243	Kirsty	randoman	innocents	yes
+202209243	Zoey	veteran	innocents	yes
+202209243	Rythian	innocent	innocents	yes
+202209243	Zylus	traitor	traitors	no
+202209244	Lewis	traitor	traitors	yes
+202209244	Ben	summoner	traitors	yes
+202209244	Osie	randoman	innocents	yes
+202209244	Kirsty	deputy	innocents	yes
+202209244	Zoey	innocent	innocents	no
+202209244	Rythian	innocent	innocents	no
+202209244	Zylus	swapper	none	no
+202306130	Lewis	veteran	innocents	no
+202306130	Ben	innocent	innocents	yes
+202306130	Duncan	tracker	innocents	yes
+202306130	Rythian	clown	clown	yes
+202306130	Zylus	informant	traitors	yes
+202306130	Zoey	innocent	innocents	yes
+202306130	Nilesy	shadow	none	yes
+202306130	Daltos	traitor	traitors	yes
+202306131	Lewis	glitch	innocents	yes
+202306131	Ben	drunk	none	yes
+202306131	Duncan	summoner	traitors	yes
+202306131	Rythian	mad scientist	zombies	yes
+202306131	Zylus	paladin	innocents	yes
+202306131	Zoey	innocent	innocents	yes
+202306131	Nilesy	innocent	innocents	yes
+202306131	Daltos	traitor	traitors	no
+202306170	Lewis	innocent	innocents	yes
+202306170	Ben	summoner	traitors	yes
+202306170	Duncan	medium	innocents	no
+202306170	Rythian	loot goblin	none	yes
+202306170	Zylus	traitor	traitors	yes
+202306170	Zoey	veteran	innocents	yes
+202306170	Nilesy	innocent	innocents	yes
+202306170	Daltos	traitor	traitors	yes
+202306171	Lewis	veteran	innocents	no
+202306171	Ben	summoner	traitors	yes
+202306171	Duncan	mad scientist	zombies	yes
+202306171	Rythian	shadow	none	yes
+202306171	Zylus	innocent	innocents	yes
+202306171	Zoey	innocent	innocents	yes
+202306171	Nilesy	paladin	innocents	no
+202306171	Daltos	traitor	traitors	yes
+202306172	Lewis	beggar	traitors	yes
+202306172	Ben	summoner	traitors	no
+202306172	Duncan	traitor	traitors	no
+202306172	Rythian	veteran	innocents	yes
+202306172	Zylus	swapper	none	no
+202306172	Zoey	innocent	innocents	yes
+202306172	Nilesy	tracker	innocents	yes
+202306172	Daltos	innocent	innocents	yes
+202306173	Lewis	mad scientist	zombies	yes
+202306173	Ben	marshal	innocents	yes
+202306173	Duncan	zombie	zombies	no
+202306173	Rythian	zombie	zombies	no
+202306173	Zylus	zombie	zombies	no
+202306173	Zoey	zombie	zombies	no
+202306173	Nilesy	innocent	innocents	yes
+202306173	Daltos	zombie	zombies	yes
+202306174	Lewis	traitor	traitors	yes
+202306174	Ben	innocent	innocents	yes
+202306174	Duncan	innocent	innocents	yes
+202306174	Rythian	beggar	traitors	no
+202306174	Zylus	deputy	innocents	yes
+202306174	Zoey	innocent	innocents	yes
+202306174	Nilesy	randoman	innocents	yes
+202306174	Daltos	informant	traitors	no
+202306175	Lewis	medium	innocents	no
+202306175	Ben	innocent	innocents	no
+202306175	Duncan	beggar	innocents	no
+202306175	Rythian	traitor	traitors	yes
+202306175	Zylus	hypnotist	traitors	yes
+202306175	Zoey	innocent	innocents	no
+202306175	Nilesy	veteran	innocents	no
+202306175	Daltos	jester	jester	no
+202306176	Lewis	mad scientist	zombies	yes
+202306176	Ben	deputy	innocents	yes
+202306176	Duncan	innocent	innocents	yes
+202306176	Rythian	informant	traitors	no
+202306176	Zylus	traitor	traitors	no
+202306176	Zoey	shadow	none	no
+202306176	Nilesy	innocent	innocents	yes
+202306176	Daltos	randoman	innocents	yes
+202306200	Lewis	innocent	innocents	yes
+202306200	Ben	innocent	innocents	yes
+202306200	Duncan	mad scientist	zombies	yes
+202306200	Rythian	parasite	traitors	no
+202306200	Zylus	traitor	traitors	no
+202306200	Zoey	clowntective	clown	yes
+202306200	Nilesy	glitch	innocents	yes
+202306200	Daltos	marshal	innocents	yes
+202306201	Lewis	parasite	traitors	no
+202306201	Ben	innocent	innocents	yes
+202306201	Duncan	traitor	traitors	no
+202306201	Rythian	innocent	innocents	yes
+202306201	Zylus	drunk	none	yes
+202306201	Zoey	mad scientist	zombies	yes
+202306201	Nilesy	paladin	innocents	yes
+202306201	Daltos	veteran	innocents	yes
+202306202	Lewis	traitor	traitors	yes
+202306202	Ben	shadow	none	yes
+202306202	Duncan	tracker	innocents	no
+202306202	Rythian	veteran	innocents	no
+202306202	Zylus	innocent	innocents	yes
+202306202	Zoey	informant	traitors	yes
+202306202	Nilesy	jester	jester	no
+202306202	Daltos	innocent	innocents	yes
+202306203	Lewis	traitor	traitors	yes
+202306203	Ben	informant	traitors	yes
+202306203	Duncan	glitch	innocents	no
+202306203	Rythian	innocent	innocents	no
+202306203	Zylus	mad scientist	zombies	yes
+202306203	Zoey	innocent	innocents	no
+202306203	Nilesy	shadow	none	no
+202306203	Daltos	paladin	innocents	no
+202306204	Lewis	veteran	innocents	yes
+202306204	Ben	traitor	traitors	no
+202306204	Duncan	marshal	innocents	yes
+202306204	Rythian	traitor	traitors	yes
+202306204	Zylus	innocent	innocents	yes
+202306204	Zoey	innocent	innocents	yes
+202306204	Nilesy	loot goblin	none	yes
+202306204	Daltos	summoner	traitors	no
+202306205	Lewis	innocent	innocents	no
+202306205	Ben	glitch	innocents	yes
+202306205	Duncan	shadow	none	yes
+202306205	Rythian	paladin	innocents	yes
+202306205	Zylus	summoner	traitors	yes
+202306205	Zoey	traitor	traitors	yes
+202306205	Nilesy	innocent	innocents	yes
+202306205	Daltos	clown	clown	yes
+202306220	Lewis	innocent	innocents	yes
+202306220	Ben	veteran	innocents	yes
+202306220	Duncan	impersonator	traitors	yes
+202306220	Ravs	shadow	none	yes
+202306220	Zylus	innocent	innocents	no
+202306220	Osie	innocent	innocents	no
+202306220	Kirsty	tracker	innocents	no
+202306220	Nilesy	traitor	traitors	yes
+202306221	Lewis	traitor	traitors	no
+202306221	Ben	paladin	innocents	yes
+202306221	Duncan	innocent	innocents	yes
+202306221	Ravs	veteran	innocents	yes
+202306221	Zylus	informant	traitors	yes
+202306221	Osie	loot goblin	none	yes
+202306221	Kirsty	innocent	innocents	yes
+202306221	Nilesy	shadow	none	yes
+202306222	Lewis	innocent	innocents	no
+202306222	Ben	innocent	innocents	yes
+202306222	Duncan	informant	traitors	yes
+202306222	Ravs	mad scientist	zombies	yes
+202306222	Zylus	zombie	zombies	yes
+202306222	Osie	deputy	innocents	yes
+202306222	Kirsty	traitor	traitors	yes
+202306222	Nilesy	marshal	innocents	yes
+202306223	Lewis	jester	jester	no
+202306223	Ben	jester	jester	no
+202306223	Duncan	jester	jester	no
+202306223	Ravs	jester	jester	no
+202306223	Zylus	jester	jester	no
+202306223	Osie	traitor	traitors	no
+202306223	Kirsty	jester	jester	no
+202306223	Nilesy	jester	jester	no
+202306240	Ben	veteran	innocents	yes
+202306240	Duncan	loot goblin	none	yes
+202306240	Rythian	marshal	innocents	yes
+202306240	Zylus	hypnotist	traitors	no
+202306240	Pedguin	traitor	traitors	no
+202306240	Kirsty	traitor	traitors	no
+202306240	Nilesy	innocent	innocents	yes
+202306241	Ben	innocent	innocents	yes
+202306241	Duncan	innocent	innocents	yes
+202306241	Rythian	traitor	traitors	no
+202306241	Zylus	parasite	traitors	yes
+202306241	Pedguin	paramedic	innocents	yes
+202306241	Kirsty	randoman	innocents	yes
+202306241	Nilesy	loot goblin	none	yes
+202306242	Ben	traitor	traitors	no
+202306242	Duncan	shadow	none	yes
+202306242	Rythian	paramedic	innocents	yes
+202306242	Zylus	innocent	innocents	yes
+202306242	Pedguin	parasite	traitors	no
+202306242	Kirsty	tracker	innocents	yes
+202306242	Nilesy	innocent	innocents	yes
+202306243	Ben	innocent	innocents	yes
+202306243	Duncan	loot goblin	none	yes
+202306243	Rythian	randoman	innocents	yes
+202306243	Zylus	informant	traitors	no
+202306243	Pedguin	traitor	traitors	no
+202306243	Kirsty	innocent	innocents	no
+202306243	Nilesy	paramedic	innocents	no
+202209200	Lewis	traitor	traitors	no
+202209200	Ben	turncoat	traitors	no
+202209200	Duncan	tracker	innocents	yes
+202209200	Ravs	loot goblin	none	no
+202209200	Rythian	innocent	innocents	yes
+202209200	Zylus	innocent	innocents	yes
+202209200	Lolip	parasite	traitors	no
+202209201	Lewis	paladin	innocents	no
+202209201	Ben	glitch	innocents	yes
+202209201	Duncan	innocent	innocents	no
+202209201	Ravs	innocent	innocents	yes
+202209201	Rythian	mad scientist	zombies	yes
+202209201	Zylus	parasite	traitors	yes
+202209201	Lolip	traitor	traitors	yes
+202209202	Lewis	impersonator	traitors	yes
+202209202	Ben	impersonator	traitors	yes
+202209202	Duncan	deputy	innocents	no
+202209202	Ravs	deputy	innocents	yes
+202209202	Rythian	tracker	innocents	no
+202209202	Zylus	deputy	innocents	yes
+202209202	Lolip	beggar	traitors	yes
+202209203	Lewis	glitch	innocents	yes
+202209203	Ben	innocent	innocents	yes
+202209203	Duncan	medium	innocents	yes
+202209203	Ravs	informant	traitors	yes
+202209203	Rythian	innocent	innocents	yes
+202209203	Zylus	clown	clown	yes
+202209203	Lolip	traitor	traitors	no
+202306280	Ben	innocent	innocents	yes
+202306280	Duncan	shadow	none	yes
+202306280	Rythian	innocent	innocents	yes
+202306280	Zylus	randoman	innocents	yes
+202306280	Pedguin	informant	traitors	yes
+202306280	Kirsty	paramedic	innocents	yes
+202306280	Nilesy	traitor	traitors	no
+202306281	Ben	traitor	traitors	yes
+202306281	Duncan	tracker	innocents	no
+202306281	Rythian	innocent	innocents	no
+202306281	Zylus	paramedic	innocents	yes
+202306281	Pedguin	loot goblin	none	no
+202306281	Kirsty	innocent	innocents	no
+202306281	Nilesy	summoner	traitors	yes
+202306282	Ben	deputy	innocents	yes
+202306282	Duncan	traitor	traitors	no
+202306282	Rythian	beggar	none	no
+202306282	Zylus	randoman	innocents	yes
+202306282	Pedguin	innocent	innocents	yes
+202306282	Kirsty	informant	traitors	yes
+202306282	Nilesy	innocent	innocents	yes
+202306283	Ben	innocent	innocents	yes
+202306283	Duncan	innocent	innocents	yes
+202306283	Rythian	tracker	innocents	yes
+202306283	Zylus	swapper	none	no
+202306283	Pedguin	veteran	innocents	no
+202306283	Kirsty	traitor	traitors	yes
+202306283	Nilesy	informant	traitors	yes
+202306284	Ben	summoner	traitors	yes
+202306284	Duncan	glitch	innocents	yes
+202306284	Rythian	paladin	innocents	yes
+202306284	Zylus	innocent	innocents	no
+202306284	Pedguin	traitor	traitors	no
+202306284	Kirsty	innocent	innocents	yes
+202306284	Nilesy	innocent	innocents	yes
+202306290	Lewis	innocent	innocents	yes
+202306290	Ben	traitor	traitors	no
+202306290	Duncan	traitor	traitors	yes
+202306290	Kirsty	innocent	innocents	yes
+202306290	Zoey	innocent	innocents	yes
+202306290	Nilesy	innocent	innocents	yes
+202306290	Lolip	paladin	innocents	yes
+202306290	Daltos	innocent	innocents	yes
+202306291	Lewis	paladin	innocents	no
+202306291	Ben	jester	jester	no
+202306291	Duncan	jester	jester	no
+202306291	Kirsty	jester	jester	no
+202306291	Zoey	jester	jester	no
+202306291	Nilesy	jester	jester	yes
+202306291	Lolip	traitor	traitors	no
+202306291	Daltos	jester	jester	no
+202306292	Lewis	glitch	innocents	yes
+202306292	Ben	beggar	none	yes
+202306292	Duncan	parasite	traitors	no
+202306292	Kirsty	loot goblin	none	yes
+202306292	Zoey	paladin	innocents	yes
+202306292	Nilesy	innocent	innocents	yes
+202306292	Lolip	traitor	traitors	no
+202306292	Daltos	innocent	innocents	yes
+202306293	Lewis	paladin	innocents	yes
+202306293	Ben	glitch	innocents	yes
+202306293	Duncan	beggar	innocents	no
+202306293	Kirsty	innocent	innocents	yes
+202306293	Zoey	innocent	innocents	no
+202306293	Nilesy	innocent	innocents	yes
+202306293	Lolip	traitor	traitors	yes
+202306293	Daltos	impersonator	traitors	yes
+202306294	Lewis	beggar	traitors	yes
+202306294	Ben	innocent	innocents	yes
+202306294	Duncan	innocent	innocents	yes
+202306294	Kirsty	traitor	traitors	yes
+202306294	Zoey	randoman	innocents	yes
+202306294	Nilesy	summoner	traitors	no
+202306294	Lolip	jester	jester	yes
+202306294	Daltos	veteran	innocents	no
+202306295	Lewis	traitor	traitors	no
+202306295	Ben	randoman	innocents	yes
+202306295	Duncan	randoman	innocents	yes
+202306295	Kirsty	traitor	traitors	yes
+202306295	Zoey	traitor	traitors	no
+202306295	Nilesy	traitor	traitors	no
+202306295	Lolip	randoman	innocents	yes
+202306295	Daltos	traitor	traitors	no
+202307010	Lewis	innocent	innocents	yes
+202307010	Ben	traitor	traitors	no
+202307010	Duncan	parasite	traitors	no
+202307010	Kirsty	deputy	innocents	yes
+202307010	Zoey	marshal	innocents	yes
+202307010	Nilesy	innocent	innocents	yes
+202307010	Daltos	loot goblin	none	no
+202307010	Lolip	jester	jester	no
+202307011	Lewis	traitor	traitors	no
+202307011	Ben	shadow	none	yes
+202307011	Duncan	summoner	traitors	yes
+202307011	Kirsty	glitch	innocents	yes
+202307011	Zoey	innocent	innocents	yes
+202307011	Nilesy	innocent	innocents	yes
+202307011	Daltos	medium	innocents	yes
+202307011	Lolip	traitor	traitors	yes
+202307012	Lewis	randoman	innocents	yes
+202307012	Ben	loot goblin	none	yes
+202307012	Duncan	innocent	innocents	yes
+202307012	Kirsty	traitor	traitors	no
+202307012	Zoey	innocent	innocents	yes
+202307012	Nilesy	veteran	innocents	yes
+202307012	Daltos	informant	traitors	no
+202307012	Lolip	swapper	none	yes
+202307013	Lewis	traitor	traitors	yes
+202307013	Ben	glitch	innocents	no
+202307013	Duncan	parasite	traitors	yes
+202307013	Kirsty	beggar	none	no
+202307013	Zoey	innocent	innocents	no
+202307013	Nilesy	innocent	innocents	yes
+202307013	Daltos	mad scientist	zombies	yes
+202307013	Lolip	randoman	innocents	no
+202307042	Lewis	beggar	traitors	no
+202307042	Ben	innocent	innocents	yes
+202307042	Duncan	summoner	traitors	no
+202307042	Kirsty	traitor	traitors	no
+202307042	Zoey	jester	jester	no
+202307042	Nilesy	paramedic	innocents	yes
+202307042	Lolip	tracker	innocents	yes
+202307042	Daltos	innocent	innocents	yes
+202307043	Lewis	innocent	innocents	yes
+202307043	Ben	impersonator	traitors	no
+202307043	Duncan	innocent	innocents	yes
+202307043	Kirsty	beggar	none	no
+202307043	Zoey	veteran	innocents	yes
+202307043	Nilesy	innocent	innocents	yes
+202307043	Lolip	traitor	traitors	no
+202307043	Daltos	tracker	innocents	yes
+202307061	Ben	zombie	zombies	no
+202307061	Duncan	mad scientist	zombies	no
+202307061	Rythian	zombie	zombies	yes
+202307061	Zylus	marshal	innocents	yes
+202307061	Zoey	innocent	innocents	yes
+202307061	Kirsty	glitch	innocents	yes
+202307061	Nilesy	innocent	innocents	yes
+202307061	Breeh	informant	traitors	yes
+202307064	Ben	informant	traitors	yes
+202307064	Duncan	innocent	innocents	yes
+202307064	Rythian	paramedic	innocents	yes
+202307064	Zylus	medium	innocents	yes
+202307064	Zoey	traitor	traitors	no
+202307064	Kirsty	innocent	innocents	yes
+202307064	Nilesy	loot goblin	none	no
+202307064	Breeh	traitor	traitors	yes
+202307065	Ben	marshal	innocents	yes
+202307065	Duncan	informant	traitors	yes
+202307065	Rythian	veteran	innocents	yes
+202307065	Zylus	innocent	innocents	yes
+202307065	Zoey	traitor	traitors	no
+202307065	Kirsty	innocent	innocents	yes
+202307065	Nilesy	impersonator	traitors	yes
+202307065	Breeh	clown	clown	yes
+202307014	Lewis	veteran	innocents	no
+202307014	Ben	parasite	traitors	yes
+202307014	Duncan	randoman	innocents	yes
+202307014	Kirsty	loot goblin	none	yes
+202307014	Zoey	innocent	innocents	yes
+202307014	Nilesy	beggar	none	no
+202307014	Daltos	innocent	innocents	yes
+202307014	Lolip	traitor	traitors	yes
+202307015	Lewis	jester	jester	no
+202307015	Ben	jester	jester	no
+202307015	Duncan	jester	jester	no
+202307015	Kirsty	jester	jester	no
+202307015	Zoey	parasite	traitors	no
+202307015	Nilesy	jester	jester	no
+202307015	Daltos	jester	jester	no
+202307015	Lolip	jester	jester	no
+202307040	Lewis	innocent	innocents	no
+202307040	Ben	glitch	innocents	yes
+202307040	Duncan	shadow	none	yes
+202307040	Kirsty	traitor	traitors	yes
+202307040	Zoey	innocent	innocents	no
+202307040	Nilesy	randoman	innocents	yes
+202307040	Lolip	informant	traitors	yes
+202307040	Daltos	beggar	traitors	yes
+202307041	Lewis	innocent	innocents	yes
+202307041	Ben	shadow	none	no
+202307041	Duncan	innocent	innocents	yes
+202307041	Kirsty	paladin	innocents	no
+202307041	Zoey	glitch	innocents	no
+202307041	Nilesy	traitor	traitors	yes
+202307041	Lolip	parasite	traitors	yes
+202307041	Daltos	jester	jester	no
+202307044	Lewis	innocent	innocents	yes
+202307044	Ben	traitor	traitors	no
+202307044	Duncan	veteran	innocents	yes
+202307044	Kirsty	traitor	traitors	yes
+202307044	Zoey	jester	jester	no
+202307044	Nilesy	hypnotist	traitors	yes
+202307044	Lolip	innocent	innocents	yes
+202307044	Daltos	paladin	innocents	yes
+202307045	Lewis	tracker	innocents	yes
+202307045	Ben	innocent	innocents	yes
+202307045	Duncan	traitor	traitors	no
+202307045	Kirsty	drunk	none	yes
+202307045	Zoey	clown	clown	yes
+202307045	Nilesy	innocent	innocents	yes
+202307045	Lolip	paramedic	innocents	yes
+202307045	Daltos	parasite	traitors	yes
+202307060	Ben	innocent	innocents	yes
+202307060	Duncan	beggar	none	yes
+202307060	Rythian	traitor	traitors	no
+202307060	Zylus	veteran	innocents	yes
+202307060	Zoey	summoner	traitors	no
+202307060	Kirsty	innocent	innocents	yes
+202307060	Nilesy	tracker	innocents	yes
+202307060	Breeh	swapper	none	yes
+202307062	Ben	randoman	innocents	yes
+202307062	Duncan	beggar	none	no
+202307062	Rythian	zombie	zombies	no
+202307062	Zylus	zombie	zombies	yes
+202307062	Zoey	mad scientist	zombies	no
+202307062	Kirsty	traitor	traitors	yes
+202307062	Nilesy	zombie	zombies	no
+202307062	Breeh	innocent	innocents	yes
+202307063	Ben	innocent	innocents	yes
+202307063	Duncan	traitor	traitors	yes
+202307063	Rythian	tracker	innocents	yes
+202307063	Zylus	traitor	traitors	yes
+202307063	Zoey	beggar	none	no
+202307063	Kirsty	hypnotist	traitors	yes
+202307063	Nilesy	innocent	innocents	yes
+202307063	Breeh	glitch	innocents	no
+202307080	Ben	zombie	zombies	yes
+202307080	Duncan	zombie	zombies	yes
+202307080	Rythian	zombie	zombies	yes
+202307080	Zoey	parasite	traitors	yes
+202307080	Kirsty	zombie	zombies	yes
+202307080	Nilesy	innocent	innocents	yes
+202307080	Breeh	mad scientist	zombies	no
+202307080	Zylus	zombie	zombies	yes
+202307081	Ben	jester	jester	no
+202307081	Duncan	innocent	innocents	yes
+202307081	Rythian	parasite	traitors	no
+202307081	Zoey	traitor	traitors	yes
+202307081	Kirsty	glitch	innocents	yes
+202307081	Nilesy	innocent	innocents	yes
+202307081	Breeh	tracker	innocents	yes
+202307081	Zylus	clown	communists	yes
+202307082	Ben	innocent	innocents	no
+202307082	Duncan	mad scientist	zombies	yes
+202307082	Rythian	medium	innocents	no
+202307082	Zoey	traitor	traitors	yes
+202307082	Kirsty	innocent	innocents	yes
+202307082	Nilesy	hypnotist	traitors	yes
+202307082	Breeh	traitor	traitors	yes
+202307082	Zylus	veteran	innocents	yes
+202307083	Ben	glitch	innocents	yes
+202307083	Duncan	innocent	innocents	yes
+202307083	Rythian	innocent	innocents	yes
+202307083	Zoey	innocent	innocents	yes
+202307083	Kirsty	traitor	traitors	no
+202307083	Nilesy	marshal	innocents	yes
+202307083	Breeh	traitor	traitors	no
+202307083	Zylus	traitor	traitors	no
+202307110	Ben	innocent	innocents	no
+202307110	Duncan	beggar	innocents	yes
+202307110	Rythian	mad scientist	zombies	yes
+202307110	Zylus	glitch	innocents	no
+202307110	Zoey	innocent	innocents	no
+202307110	Kirsty	impersonator	traitors	yes
+202307110	Nilesy	traitor	traitors	yes
+202307110	Breeh	tracker	innocents	no
+202307111	Ben	zombie	zombies	yes
+202307111	Duncan	innocent	innocents	no
+202307111	Rythian	glitch	innocents	yes
+202307111	Zylus	summoner	traitors	yes
+202307111	Zoey	randoman	innocents	no
+202307111	Kirsty	mad scientist	zombies	yes
+202307111	Nilesy	jester	jester	no
+202307111	Breeh	traitor	traitors	yes
+202307112	Ben	innocent	innocents	yes
+202307112	Duncan	parasite	traitors	no
+202307112	Rythian	traitor	traitors	no
+202307112	Zylus	tracker	innocents	yes
+202307112	Zoey	mad scientist	zombies	yes
+202307112	Kirsty	innocent	innocents	yes
+202307112	Nilesy	veteran	innocents	yes
+202307112	Breeh	jester	jester	no
+202307113	Ben	elf	elves	no
+202307113	Duncan	innocent	innocents	yes
+202307132	Ben	jester	jester	yes
+202307113	Rythian	parasite	traitors	yes
+202307113	Zylus	elf	elves	no
+202307113	Zoey	elf	elves	no
+202307113	Kirsty	elf	elves	yes
+202307113	Nilesy	traitor	traitors	yes
+202307113	Breeh	paramedic	innocents	yes
+202307130	Ben	queen bee	bees	yes
+202307130	Duncan	marshal	innocents	yes
+202307130	Rythian	innocent	innocents	yes
+202307130	Zylus	glitch	innocents	yes
+202307130	Zoey	innocent	innocents	no
+202307130	Kirsty	bee	bees	yes
+202307130	Nilesy	mad scientist	zombies	yes
+202307130	Breeh	innocent	innocents	no
+202307131	Ben	paramedic	innocents	yes
+202307131	Duncan	innocent	innocents	yes
+202307131	Rythian	innocent	innocents	yes
+202307131	Zylus	mad scientist	zombies	no
+202307131	Zoey	innocent	innocents	yes
+202307131	Kirsty	impersonator	traitors	yes
+202307131	Nilesy	traitor	traitors	yes
+202307131	Breeh	drunk	none	yes
+202307150	Ben	innocent	innocents	no
+202307150	Duncan	tracker	innocents	yes
+202307150	Rythian	jester	jester	yes
+202307150	Zylus	veteran	innocents	no
+202307150	Zoey	innocent	innocents	yes
+202307150	Kirsty	parasite	traitors	no
+202307150	Nilesy	innocent	innocents	yes
+202307150	Shadow	traitor	traitors	yes
+202307151	Ben	innocent	innocents	yes
+202307151	Duncan	innocent	innocents	yes
+202307151	Rythian	deputy	innocents	yes
+202307151	Zylus	medium	innocents	no
+202307151	Zoey	traitor	traitors	yes
+202307151	Kirsty	summoner	traitors	yes
+202307151	Nilesy	beggar	traitors	yes
+202307151	Shadow	mad scientist	zombies	yes
+202307152	Ben	innocent	innocents	yes
+202307152	Duncan	marshal	innocents	yes
+202307152	Rythian	traitor	traitors	no
+202307152	Zylus	zombie	zombies	yes
+202307152	Zoey	mad scientist	zombies	yes
+202307152	Kirsty	paramedic	innocents	yes
+202307152	Nilesy	impersonator	traitors	no
+202307152	Shadow	beggar	none	no
+202307153	Ben	mad scientist	zombies	yes
+202307153	Duncan	impersonator	traitors	yes
+202307153	Rythian	paramedic	innocents	no
+202307153	Zylus	innocent	innocents	no
+202307153	Zoey	innocent	innocents	yes
+202307153	Kirsty	traitor	traitors	yes
+202307153	Nilesy	randoman	innocents	no
+202307153	Shadow	beggar	none	no
+202307181	Ben	medium	innocents	yes
+202307181	Duncan	traitor	traitors	yes
+202307181	Rythian	innocent	innocents	no
+202307181	Zylus	innocent	innocents	yes
+202307181	Zoey	deputy	innocents	yes
+202307181	Kirsty	zombie	zombies	yes
+202307181	Nilesy	mad scientist	zombies	yes
+202307181	Shadow	parasite	traitors	yes
+202307184	Ben	innocent	innocents	yes
+202307184	Duncan	innocent	innocents	yes
+202307184	Rythian	traitor	traitors	yes
+202307184	Zylus	drunk	none	yes
+202307184	Zoey	paladin	innocents	yes
+202307184	Kirsty	loot goblin	none	yes
+202307184	Nilesy	traitor	traitors	no
+202307184	Shadow	veteran	innocents	yes
+202307220	Lewis	innocent	innocents	yes
+202307220	Duncan	traitor	traitors	no
+202307220	Ravs	innocent	innocents	yes
+202307220	Rythian	traitor	traitors	yes
+202307220	Zylus	tracker	innocents	yes
+202307220	Zoey	glitch	innocents	yes
+202307220	Kirsty	innocent	innocents	yes
+202307220	Nilesy	innocent	innocents	yes
+202307221	Lewis	glitch	innocents	no
+202307221	Duncan	hypnotist	traitors	yes
+202307221	Ravs	tracker	innocents	no
+202307221	Rythian	drunk	none	yes
+202307221	Zylus	innocent	innocents	yes
+202307221	Zoey	innocent	innocents	yes
+202307221	Kirsty	traitor	traitors	yes
+202307221	Nilesy	beggar	none	no
+202307223	Lewis	innocent	innocents	no
+202307223	Duncan	informant	traitors	yes
+202307223	Ravs	mad scientist	zombies	yes
+202307223	Rythian	zombie	zombies	yes
+202307223	Zylus	veteran	innocents	yes
+202307223	Zoey	innocent	innocents	no
+202307223	Kirsty	drunk	none	yes
+202307223	Nilesy	zombie	zombies	yes
+202307224	Lewis	informant	traitors	yes
+202307224	Duncan	innocent	innocents	yes
+202307224	Ravs	beggar	none	yes
+202307224	Rythian	veteran	innocents	no
+202307224	Zylus	medium	innocents	no
+202307224	Zoey	traitor	traitors	yes
+202307224	Kirsty	innocent	innocents	yes
+202307224	Nilesy	clown	clown	yes
+202307226	Lewis	innocent	innocents	no
+202307226	Duncan	innocent	innocents	yes
+202307226	Ravs	innocent	innocents	yes
+202307226	Rythian	innocent	innocents	yes
+202307226	Zylus	traitor	traitors	no
+202307226	Zoey	traitor	traitors	yes
+202307226	Kirsty	detective	innocents	yes
+202307226	Nilesy	innocent	innocents	no
+202307132	Duncan	summoner	traitors	no
+202307132	Rythian	paramedic	innocents	yes
+202307132	Zylus	traitor	traitors	no
+202307132	Zoey	innocent	innocents	yes
+202307132	Kirsty	innocent	innocents	yes
+202307132	Nilesy	tracker	innocents	yes
+202307132	Breeh	drunk	none	yes
+202307133	Ben	loot goblin	none	yes
+202307133	Duncan	zombie	zombies	no
+202307133	Rythian	zombie	zombies	no
+202307133	Zylus	glitch	innocents	yes
+202307133	Zoey	mad scientist	zombies	yes
+202307133	Kirsty	innocent	innocents	yes
+202307133	Nilesy	innocent	innocents	yes
+202307133	Breeh	zombie	zombies	yes
+202307134	Ben	mad scientist	zombies	yes
+202307134	Duncan	deputy	innocents	yes
+202307134	Rythian	zombie	zombies	yes
+202307134	Zylus	drunk	none	yes
+202307134	Zoey	deputy	innocents	no
+202307134	Kirsty	impersonator	traitors	yes
+202307134	Nilesy	deputy	innocents	yes
+202307134	Breeh	impersonator	traitors	yes
+202307135	Ben	mad scientist	zombies	yes
+202307135	Duncan	swapper	none	yes
+202307135	Rythian	zombie	zombies	no
+202307135	Zylus	zombie	zombies	yes
+202307135	Zoey	zombie	zombies	no
+202307135	Kirsty	zombie	zombies	yes
+202307135	Nilesy	zombie	zombies	yes
+202307135	Breeh	summoner	traitors	yes
+202307154	Ben	hypnotist	traitors	yes
+202307154	Duncan	innocent	innocents	yes
+202307154	Rythian	swapper	none	no
+202307154	Zylus	traitor	traitors	yes
+202307154	Zoey	medium	innocents	yes
+202307154	Kirsty	traitor	traitors	no
+202307154	Nilesy	clown	clown	yes
+202307154	Shadow	deputy	innocents	yes
+202307180	Ben	drunk	none	yes
+202307180	Duncan	swapper	none	no
+202307180	Rythian	impersonator	traitors	no
+202307180	Zylus	innocent	innocents	no
+202307180	Zoey	innocent	innocents	yes
+202307180	Kirsty	glitch	innocents	no
+202307180	Nilesy	medium	innocents	no
+202307180	Shadow	traitor	traitors	no
+202307182	Ben	mad scientist	zombies	yes
+202307182	Duncan	paramedic	innocents	no
+202307182	Rythian	jester	jester	no
+202307182	Zylus	medium	innocents	no
+202307182	Zoey	innocent	innocents	no
+202307182	Kirsty	traitor	traitors	yes
+202307182	Nilesy	impersonator	traitors	yes
+202307182	Shadow	innocent	innocents	yes
+202307183	Ben	innocent	innocents	yes
+202307183	Duncan	traitor	traitors	no
+202307183	Rythian	jester	jester	no
+202307183	Zylus	drunk	none	yes
+202307183	Zoey	randoman	innocents	yes
+202307183	Kirsty	innocent	innocents	yes
+202307183	Nilesy	parasite	traitors	no
+202307183	Shadow	paramedic	innocents	yes
+202307185	Ben	innocent	innocents	yes
+202307185	Duncan	informant	traitors	yes
+202307185	Rythian	swapper	none	no
+202307185	Zylus	veteran	innocents	yes
+202307185	Zoey	tracker	innocents	no
+202307185	Kirsty	innocent	innocents	yes
+202307185	Nilesy	traitor	traitors	yes
+202307185	Shadow	loot goblin	none	no
+202307200	Lewis	traitor	traitors	yes
+202307200	Duncan	glitch	innocents	yes
+202307200	Ravs	hypnotist	traitors	no
+202307200	Rythian	clown	clown	yes
+202307200	Zylus	traitor	traitors	no
+202307200	Zoey	medium	innocents	yes
+202307200	Kirsty	innocent	innocents	yes
+202307200	Nilesy	innocent	innocents	yes
+202307201	Lewis	traitor	traitors	yes
+202307201	Duncan	impersonator	traitors	yes
+202307201	Ravs	beggar	none	no
+202307201	Rythian	medium	innocents	yes
+202307201	Zylus	jester	jester	no
+202307201	Zoey	innocent	innocents	yes
+202307201	Kirsty	veteran	innocents	no
+202307201	Nilesy	innocent	innocents	no
+202307202	Lewis	innocent	innocents	yes
+202307202	Duncan	informant	traitors	yes
+202307202	Ravs	innocent	innocents	no
+202307202	Rythian	swapper	none	no
+202307202	Zylus	veteran	innocents	yes
+202307202	Zoey	mad scientist	zombies	yes
+202307202	Kirsty	paladin	innocents	yes
+202307202	Nilesy	traitor	traitors	yes
+202307203	Lewis	glitch	innocents	yes
+202307203	Duncan	glitch	innocents	yes
+202307203	Ravs	traitor	traitors	yes
+202307203	Rythian	glitch	innocents	yes
+202307203	Zylus	glitch	innocents	no
+202307203	Zoey	glitch	innocents	yes
+202307203	Kirsty	glitch	innocents	yes
+202307203	Nilesy	traitor	traitors	yes
+202307204	Lewis	traitor	traitors	no
+202307204	Duncan	innocent	innocents	yes
+202307204	Ravs	paramedic	innocents	yes
+202307204	Rythian	marshal	innocents	yes
+202307204	Zylus	clown	clown	yes
+202307204	Zoey	parasite	traitors	yes
+202307204	Kirsty	innocent	innocents	yes
+202307204	Nilesy	loot goblin	none	no
+202307205	Lewis	traitor	traitors	no
+202307205	Duncan	innocent	innocents	yes
+202307205	Ravs	beggar	innocents	yes
+202307205	Rythian	veteran	innocents	yes
+202307205	Zylus	loot goblin	none	yes
+202307205	Zoey	innocent	innocents	yes
+202307205	Kirsty	tracker	innocents	yes
+202307205	Nilesy	informant	traitors	no
+202307206	Lewis	veteran	innocents	no
+202307206	Duncan	summoner	traitors	yes
+202307206	Ravs	innocent	innocents	yes
+202307206	Rythian	randoman	innocents	yes
+202307206	Zylus	innocent	innocents	yes
+202307206	Zoey	traitor	traitors	yes
+202307206	Kirsty	drunk	none	yes
+202307206	Nilesy	mad scientist	zombies	yes
+202307222	Lewis	innocent	innocents	yes
+202307222	Duncan	traitor	traitors	yes
+202307222	Ravs	parasite	traitors	yes
+202307222	Rythian	drunk	none	yes
+202307222	Zylus	innocent	innocents	yes
+202307222	Zoey	veteran	innocents	yes
+202307222	Kirsty	tracker	innocents	yes
+202307222	Nilesy	clown	clown	no
+202307225	Lewis	innocent	innocents	no
+202307225	Duncan	marshal	innocents	yes
+202307225	Ravs	glitch	innocents	yes
+202307225	Rythian	traitor	traitors	yes
+202307225	Zylus	swapper	none	no
+202307225	Zoey	parasite	traitors	yes
+202307225	Kirsty	innocent	innocents	yes
+202307225	Nilesy	clown	clown	yes
+202307250	Lewis	glitch	innocents	yes
+202307250	Ben	impersonator	traitors	yes
+202307250	Ravs	innocent	innocents	yes
+202307250	Zylus	innocent	innocents	yes
+202307250	Zoey	beggar	none	yes
+202307250	Kirsty	traitor	traitors	no
+202307250	Nilesy	swapper	none	no
+202307250	Daltos	tracker	innocents	yes
+202307251	Lewis	loot goblin	none	yes
+202307251	Ben	parasite	traitors	yes
+202307251	Ravs	traitor	traitors	yes
+202307251	Zylus	glitch	innocents	yes
+202307251	Zoey	beggar	traitors	yes
+202307251	Kirsty	marshal	innocents	no
+202307251	Nilesy	innocent	innocents	yes
+202307251	Daltos	innocent	innocents	yes
+202307252	Lewis	marshal	innocents	yes
+202307252	Ben	traitor	traitors	yes
+202307252	Ravs	clown	clown	no
+202307252	Zylus	innocent	innocents	yes
+202307252	Zoey	innocent	innocents	yes
+202307252	Kirsty	summoner	traitors	yes
+202307252	Nilesy	glitch	innocents	yes
+202307252	Daltos	traitor	traitors	yes
+202307253	Lewis	innocent	innocents	no
+202307253	Ben	tracker	innocents	yes
+202307253	Ravs	paramedic	innocents	yes
+202307253	Zylus	traitor	traitors	yes
+202307253	Zoey	innocent	innocents	yes
+202307253	Kirsty	jester	jester	no
+202307253	Nilesy	drunk	none	yes
+202307253	Daltos	summoner	traitors	yes
+202307254	Lewis	beggar	traitors	no
+202307254	Ben	informant	traitors	no
+202307254	Ravs	randoman	innocents	yes
+202307254	Zylus	traitor	traitors	no
+202307254	Zoey	innocent	innocents	yes
+202307254	Kirsty	veteran	innocents	yes
+202307254	Nilesy	innocent	innocents	yes
+202307254	Daltos	mad scientist	zombies	yes
+202307270	Lewis	traitor	traitors	yes
+202307270	Ben	beggar	traitors	yes
+202307270	Ravs	innocent	innocents	yes
+202307270	Zylus	clown	clown	no
+202307270	Zoey	parasite	traitors	yes
+202307270	Kirsty	deputy	innocents	yes
+202307270	Nilesy	paladin	innocents	yes
+202307270	Daltos	innocent	innocents	yes
+202307271	Lewis	beggar	traitors	yes
+202307271	Ben	mad scientist	zombies	yes
+202307271	Ravs	zombie	zombies	yes
+202307271	Zylus	paladin	innocents	yes
+202307271	Zoey	zombie	zombies	yes
+202307271	Kirsty	innocent	innocents	yes
+202307271	Nilesy	glitch	innocents	no
+202307271	Daltos	traitor	traitors	yes
+202307272	Ben	zombie	zombies	yes
+202307272	Ravs	zombie	zombies	yes
+202307272	Zylus	impersonator	traitors	no
+202307272	Zoey	randoman	innocents	yes
+202307272	Kirsty	zombie	zombies	yes
+202307272	Nilesy	mad scientist	zombies	yes
+202307272	Daltos	zombie	zombies	yes
+202307272	Lewis	mud scientist	none	no
+202307273	Lewis	innocent	innocents	no
+202307273	Ben	deputy	innocents	yes
+202307273	Ravs	medium	innocents	no
+202307273	Zylus	jester	jester	yes
+202307273	Zoey	parasite	traitors	yes
+202307273	Kirsty	loot goblin	none	no
+202307273	Nilesy	traitor	traitors	no
+202307273	Daltos	innocent	innocents	no
+202307274	Lewis	zombie	zombies	no
+202307274	Ben	zombie	zombies	no
+202307274	Ravs	zombie	zombies	no
+202307274	Zylus	innocent	innocents	yes
+202307274	Zoey	zombie	zombies	no
+202307274	Kirsty	mad scientist	zombies	no
+202307274	Nilesy	zombie	zombies	no
+202307274	Daltos	zombie	zombies	no
+202307275	Lewis	innocent	innocents	yes
+202307275	Ben	randoman	innocents	no
+202307275	Ravs	innocent	innocents	yes
+202307275	Zylus	loot goblin	none	no
+202307275	Zoey	informant	traitors	no
+202307275	Kirsty	traitor	traitors	yes
+202307275	Nilesy	beggar	none	yes
+202307275	Daltos	veteran	innocents	yes
+202307290	Lewis	innocent	innocents	no
+202307290	Ben	informant	traitors	yes
+202307290	Duncan	beggar	none	yes
+202307290	Zylus	traitor	traitors	yes
+202307290	Rythian	glitch	innocents	yes
+202307290	Zoey	traitor	traitors	yes
+202307290	Kirsty	randoman	innocents	yes
+202307290	Briony	innocent	innocents	yes
+202307291	Lewis	innocent	innocents	no
+202307291	Ben	innocent	innocents	yes
+202307291	Duncan	tracker	innocents	yes
+202307291	Zylus	deputy	innocents	yes
+202307291	Rythian	summoner	traitors	yes
+202307291	Zoey	traitor	traitors	yes
+202307291	Kirsty	innocent	innocents	no
+202307291	Briony	swapper	none	no
+202307292	Lewis	traitor	traitors	yes
+202307292	Ben	swapper	none	no
+202307292	Duncan	randoman	innocents	no
+202307292	Zylus	innocent	innocents	yes
+202307292	Rythian	innocent	innocents	yes
+202307292	Zoey	traitor	traitors	yes
+202307292	Kirsty	veteran	innocents	yes
+202307292	Briony	impersonator	traitors	yes
+202307293	Lewis	veteran	innocents	yes
+202307293	Ben	traitor	traitors	yes
+202307293	Duncan	innocent	innocents	yes
+202307293	Zylus	mad scientist	zombies	yes
+202307293	Rythian	medium	innocents	yes
+202307293	Zoey	traitor	traitors	yes
+202307293	Kirsty	innocent	innocents	no
+202307293	Briony	informant	traitors	yes
+202307294	Lewis	beggar	traitors	no
+202307294	Ben	veteran	innocents	yes
+202307294	Duncan	hypnotist	traitors	no
+202307294	Zylus	innocent	innocents	yes
+202307294	Rythian	clown	clown	yes
+202307294	Zoey	traitor	traitors	yes
+202307294	Kirsty	traitor	traitors	yes
+202307294	Briony	innocent	innocents	yes
+202307295	Lewis	deputy	innocents	no
+202307295	Ben	informant	traitors	yes
+202307295	Duncan	traitor	traitors	yes
+202307295	Zylus	paladin	innocents	no
+202307295	Rythian	innocent	innocents	no
+202307295	Zoey	beggar	traitors	yes
+202307295	Kirsty	jester	jester	no
+202307295	Briony	innocent	innocents	no
+202308010	Lewis	randoman	innocents	yes
+202308010	Ben	impersonator	traitors	yes
+202308010	Duncan	traitor	traitors	yes
+202308010	Rythian	loot goblin	none	no
+202308010	Zylus	innocent	innocents	no
+202308010	Zoey	paramedic	innocents	yes
+202308010	Kirsty	mad scientist	zombies	yes
+202308010	Briony	innocent	innocents	yes
+202308011	Lewis	informant	traitors	no
+202308011	Ben	clown	clown	yes
+202308011	Duncan	innocent	innocents	yes
+202308011	Rythian	traitor	traitors	yes
+202308011	Zylus	innocent	innocents	yes
+202308011	Zoey	paramedic	innocents	yes
+202308011	Kirsty	jester	jester	yes
+202308011	Briony	medium	innocents	yes
+202308012	Lewis	traitor	traitors	no
+202308012	Ben	informant	traitors	yes
+202308012	Duncan	traitor	traitors	yes
+202308012	Rythian	paladin	innocents	yes
+202308012	Zylus	innocent	innocents	yes
+202308012	Zoey	veteran	innocents	yes
+202308012	Kirsty	innocent	innocents	yes
+202308012	Briony	loot goblin	none	no
+202308013	Lewis	zombie	zombies	no
+202308013	Ben	zombie	zombies	no
+202308013	Duncan	zombie	zombies	no
+202308013	Rythian	impersonator	innocents	yes
+202308013	Zylus	paramedic	innocents	yes
+202308013	Zoey	marshal	innocents	yes
+202308013	Kirsty	mad scientist	zombies	no
+202308013	Briony	zombie	zombies	no
+202308014	Lewis	deputy	innocents	yes
+202308014	Ben	traitor	traitors	yes
+202308014	Duncan	innocent	innocents	no
+202308014	Rythian	randoman	innocents	yes
+202308014	Zylus	loot goblin	none	yes
+202308014	Zoey	innocent	innocents	yes
+202308014	Kirsty	parasite	traitors	yes
+202308014	Briony	innocent	innocents	yes
+202308030	Lewis	summoner	traitors	no
+202308030	Ben	innocent	innocents	yes
+202308030	Duncan	innocent	innocents	yes
+202308030	Zoey	traitor	traitors	yes
+202308030	Kirsty	veteran	innocents	yes
+202308030	Nilesy	innocent	innocents	yes
+202308030	Briony	medium	innocents	yes
+202308030	Rythian	swapper	none	no
+202308031	Lewis	paramedic	innocents	no
+202308031	Ben	summoner	traitors	yes
+202308031	Duncan	tracker	innocents	yes
+202308031	Rythian	innocent	innocents	no
+202308031	Zoey	traitor	traitors	yes
+202308031	Kirsty	innocent	innocents	yes
+202308031	Nilesy	swapper	none	no
+202308031	Briony	loot goblin	none	no
+202308032	Lewis	innocent	innocents	yes
+202308032	Ben	mad scientist	zombies	yes
+202308032	Duncan	hypnotist	traitors	yes
+202308032	Rythian	veteran	innocents	yes
+202308032	Zoey	traitor	traitors	yes
+202308032	Kirsty	marshal	innocents	yes
+202308032	Nilesy	innocent	innocents	no
+202308032	Briony	deputy	innocents	yes
+202308033	Lewis	loot goblin	none	yes
+202308033	Ben	drunk	none	yes
+202308033	Duncan	glitch	innocents	yes
+202308033	Rythian	traitor	traitors	no
+202308033	Zoey	summoner	traitors	yes
+202308033	Kirsty	innocent	innocents	yes
+202308033	Nilesy	innocent	innocents	yes
+202308033	Briony	marshal	innocents	yes
+202308034	Lewis	traitor	traitors	yes
+202308034	Ben	paladin	innocents	yes
+202308034	Duncan	informant	traitors	yes
+202308034	Rythian	innocent	innocents	yes
+202308034	Zoey	beggar	traitors	yes
+202308034	Kirsty	veteran	innocents	no
+202308034	Nilesy	innocent	innocents	no
+202308034	Briony	mad scientist	zombies	yes
+202308035	Lewis	mad scientist	zombies	yes
+202308035	Ben	jester	jester	no
+202308035	Duncan	innocent	innocents	no
+202308035	Rythian	innocent	innocents	yes
+202308035	Zoey	veteran	innocents	yes
+202308035	Kirsty	traitor	traitors	yes
+202308035	Nilesy	impersonator	traitors	yes
+202308035	Briony	paladin	innocents	yes
+202308050	Lewis	traitor	traitors	no
+202308050	Ben	drunk	none	yes
+202308050	Duncan	innocent	innocents	yes
+202308050	Rythian	innocent	innocents	yes
+202308050	Zoey	medium	innocents	yes
+202308050	Kirsty	beggar	none	no
+202308050	Nilesy	informant	traitors	no
+202308050	Briony	veteran	innocents	yes
+202308051	Lewis	mad scientist	zombies	yes
+202308051	Ben	paramedic	innocents	yes
+202308051	Duncan	hypnotist	traitors	no
+202308051	Rythian	paramedic	innocents	yes
+202308051	Zoey	hypnotist	traitors	no
+202308051	Kirsty	traitor	traitors	yes
+202308051	Nilesy	paramedic	innocents	yes
+202308051	Briony	paramedic	innocents	yes
+202308052	Lewis	innocent	innocents	yes
+202308052	Ben	medium	innocents	no
+202308052	Duncan	veteran	innocents	yes
+202308080	Lewis	loot goblin	none	no
+202308052	Rythian	loot goblin	none	yes
+202308052	Zoey	traitor	traitors	yes
+202308052	Kirsty	traitor	traitors	yes
+202308052	Nilesy	traitor	traitors	yes
+202308052	Briony	innocent	innocents	no
+202308053	Lewis	innocent	innocents	yes
+202308053	Ben	parasite	traitors	no
+202308053	Duncan	innocent	innocents	yes
+202308053	Rythian	veteran	innocents	yes
+202308053	Zoey	traitor	traitors	yes
+202308053	Kirsty	tracker	innocents	no
+202308053	Nilesy	jester	jester	yes
+202308053	Briony	mad scientist	zombies	yes
+202308120	Lewis	innocent	innocents	no
+202308120	Duncan	beggar	none	yes
+202308120	Rythian	innocent	innocents	yes
+202308120	Zylus	informant	traitors	yes
+202308120	Pedguin	traitor	traitors	yes
+202308120	Nilesy	marshal	innocents	yes
+202308120	Osie	veteran	innocents	yes
+202308125	Lewis	randoman	innocents	yes
+202308125	Duncan	innocent	innocents	yes
+202308125	Rythian	veteran	innocents	no
+202308125	Zylus	swapper	none	no
+202308125	Pedguin	traitor	traitors	yes
+202308125	Nilesy	parasite	traitors	yes
+202308125	Osie	innocent	innocents	yes
+202308080	Ben	deputy	innocents	yes
+202308080	Duncan	innocent	innocents	yes
+202308080	Rythian	informant	traitors	no
+202308080	Zoey	paladin	innocents	yes
+202308080	Kirsty	innocent	innocents	yes
+202308080	Nilesy	clown	clown	yes
+202308080	Briony	traitor	traitors	no
+202308081	Lewis	jester	jester	yes
+202308081	Ben	traitor	traitors	yes
+202308081	Duncan	glitch	innocents	yes
+202308081	Rythian	clown	clown	yes
+202308081	Zoey	innocent	innocents	no
+202308081	Kirsty	marshal	innocents	yes
+202308081	Nilesy	innocent	innocents	yes
+202308081	Briony	summoner	traitors	yes
+202308082	Lewis	swapper	none	no
+202308082	Ben	innocent	innocents	yes
+202308082	Duncan	traitor	traitors	no
+202308082	Rythian	parasite	traitors	no
+202308082	Zoey	drunk	none	yes
+202308082	Kirsty	glitch	innocents	yes
+202308082	Nilesy	innocent	innocents	yes
+202308082	Briony	tracker	innocents	yes
+202308083	Lewis	innocent	innocents	yes
+202308083	Ben	jester	jester	yes
+202308083	Duncan	beggar	traitors	yes
+202308083	Rythian	glitch	innocents	no
+202308083	Zoey	summoner	traitors	no
+202308083	Kirsty	innocent	innocents	no
+202308083	Nilesy	randoman	innocents	no
+202308083	Briony	traitor	traitors	no
+202308084	Lewis	glitch	innocents	yes
+202308084	Ben	swapper	none	yes
+202308084	Duncan	innocent	innocents	yes
+202308084	Rythian	traitor	traitors	yes
+202308084	Zoey	clown	clown	yes
+202308084	Kirsty	paladin	innocents	yes
+202308084	Nilesy	innocent	innocents	yes
+202308084	Briony	parasite	traitors	yes
+202308121	Lewis	glitch	innocents	yes
+202308121	Duncan	innocent	innocents	yes
+202308121	Rythian	innocent	innocents	yes
+202308121	Zylus	clown	clown	yes
+202308121	Pedguin	medium	innocents	no
+202308121	Nilesy	parasite	traitors	yes
+202308121	Osie	traitor	traitors	yes
+202308122	Lewis	innocent	innocents	no
+202308122	Duncan	randoman	innocents	no
+202308122	Rythian	innocent	innocents	yes
+202308122	Zylus	glitch	innocents	no
+202308122	Pedguin	loot goblin	none	no
+202308122	Nilesy	hypnotist	traitors	yes
+202308122	Osie	traitor	traitors	yes
+202308123	Lewis	swapper	none	no
+202308123	Duncan	innocent	innocents	yes
+202308123	Rythian	traitor	traitors	yes
+202308123	Zylus	traitor	traitors	yes
+202308123	Pedguin	hypnotist	traitors	no
+202308123	Nilesy	marshal	innocents	yes
+202308123	Osie	veteran	innocents	yes
+202308124	Lewis	veteran	innocents	yes
+202308124	Duncan	innocent	innocents	yes
+202308124	Rythian	loot goblin	none	yes
+202308124	Zylus	innocent	innocents	yes
+202308124	Pedguin	traitor	traitors	no
+202308124	Nilesy	marshal	innocents	yes
+202308124	Osie	impersonator	traitors	no
 \.
 
 
@@ -2947,16 +4870,17 @@ COPY public.round_participation (id, player, role, team, died) FROM stdin;
 -- Data for Name: team; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.team (team) FROM stdin;
-innocents
-traitors
-zombies
-jester
-none
-clown
-elves
-lovers
-communists
+COPY public.team (team, colour) FROM stdin;
+innocents	green
+traitors	red
+zombies	black
+bees	yellow
+jester	purple
+clown	pink
+elves	brown
+communists	#8b0000
+lovers	#FF69B4
+none	
 \.
 
 
@@ -2967,7 +4891,7 @@ communists
 COPY public.video (title, vid, intro_death, date) FROM stdin;
 Who's the FASTEST GUN in the Yogscast!? | Gmod TTT	Q5ErlVIH31Q	not_tracked	2022-11-01
 How to Win Rock, Paper, Scissors (and kill your soulmate) | Gmod TTT	eIkEFaar-Qc	not_tracked	2022-11-05
-Only admin abuse can end this AWFUL round of Gmod TTT!	VRLFaq9XcMc	not_tracked	2022-10-23
+This map is Mr Blobby nightmare!! | Gmod TTT	1hvkhCMtuIw	false	2023-05-30
 The Magical Flying Shed | Gmod TTT (w/ RTGame)	geRFB7ihD3M	not_tracked	2022-10-25
 NEW Spooky Scary Skeleton Gun in Gmod TTT | Halloween Special!	fTM_5NZFhRY	not_tracked	2022-10-29
 You Will Die In 5 Seconds | Gmod TTT (w/ RTGame)	H2dmsjSF0Wo	not_tracked	2022-11-08
@@ -3025,6 +4949,49 @@ When one person shoots... EVERYONE SHOOTS?! | Gmod TTT	ebVSH3L5hjM	false	2023-05
 Riddle Master Ben gives away his traitor buddy | Gmod TTT	1RRbgC7wRtU	false	2023-05-06
 We're being hunted by the immortal SUPER COP!! | Gmod TTT	Xb1avFSyJa0	false	2023-05-09
 Lewis finally cracks, thinks EVERYONE is a prop | Gmod TTT	hwMR1y4gbK4	false	2023-05-13
+NEW PLAYER Nilesy paid £1,000 for this skin in Gmod TTT!!	2i_-L6Dny3o	false	2023-05-16
+These cats have NINE LIVES?! | Gmod TTT	xQP3hdxOmCM	false	2023-05-20
+Only admin abuse can end this AWFUL round of Gmod TTT!	VRLFaq9XcMc	not_tracked	2022-10-22
+It's MORE-BEEn Time! | Gmod TTT	X_jNsbBS278	false	2022-10-18
+Revenge of the flying Pikachu! | Gmod TTT	kKM7SJQZo0Y	false	2022-10-15
+We're replacing Ben with a sound board | Gmod TTT	6-QLX5wHwt0	false	2023-05-23
+We're replacing Ben with a sound board | Gmod TTT	Jp-BuV0I1Uc	false	2023-05-23
+Duncan turns Pro, uses items correctly | Gmod TTT	zehDuZ-h1m8	false	2023-05-27
+Groverhaus is tearing us APART!! | Gmod TTT	hEnLP19VM64	false	2022-10-11
+Don't save the Cat Pants Pinata!! | Gmod TTT	VCHT4u5kMvc	false	2023-06-03
+What happens to Dugtrio if one of the Digletts DIES?! | Gmod TTT	EvESsiqrxs4	false	2022-10-08
+THIS is how EVERY round should end! | Gmod TTT	BCfa3ckSRws	false	2022-10-04
+The Best Map for the Bat | Gmod TTT	JaqxhsfR4T4	false	2022-10-01
+The Rise and Fall of Queen Zoey | Gmod TTT	3kvyGLpdltw	false	2023-06-06
+The Zombies have turned on their creator! | Gmod TTT	9LYHs_9-P0M	false	2022-09-27
+Zoey uses a TRAIN as a weapon | Gmod TTT	WZKkd4gHMEM	false	2022-09-24
+Rythian and Ben's corpse fishing adventure in Gmod TTT!	gHoqpGgYNMA	false	2023-06-10
+You can't dodge the CAR GUN! | Gmod TTT	4vDh9LHM73k	false	2023-06-13
+Who poisoned Ben... TWICE?! | Gmod TTT	4fkqC1pyQ2w	false	2023-06-17
+This legendary round never happened | Gmod TTT	jAeGy-VoDmc	true	2023-06-20
+Lewis' billion dollar trading card idea | Gmod TTT	jhfFsnAOpb0	false	2023-06-22
+We escape Melon hell to kill some bots | Gmod TTT	qDS3c1Rjc7o	false	2023-06-24
+This Randomat combo is ALMOST unplayable! | Gmod TTT	eK8Nwp_C-_c	false	2022-09-20
+The fastest No Scoper in the West | Gmod TTT	zFbMsWMwW6U	false	2023-06-28
+It's time to get SERIOUS | Gmod TTT	q4pAikC1Fa8	true	2023-06-29
+This traitor trap is WAY TOO DANGEROUS | Gmod TTT	n8flDSFaBUk	false	2023-07-01
+What are you doing, Step Marine? | Gmod TTT	0ePAy9ON6aM	false	2023-07-04
+We're giving away Zoey's Secret Strats in Gmod TTT!	boSGesFpomU	false	2023-07-06
+Ben's been cursed with Lewis Vision in Gmod TTT!	iLZ69BAe0HE	false	2023-07-08
+Zoey goes full Cryptid, spreads cursed joy in Gmod TTT!	NN9A8L8expU	false	2023-07-11
+Rythian breaks character, finally embraces the Zombies in Gmod TTT!	ELKjkoyU21A	false	2023-07-13
+We combined two deadly weapons in Gmod TTT!	OVe8ddpGgZQ	false	2023-07-15
+We brought back something nobody asked for in Gmod TTT!	XqzsityJF7I	true	2023-07-18
+How to ruin a GUARANTEED WIN in Gmod TTT!	6Oa-lMt4HXM	false	2023-07-20
+Grab a detonator to win in the GREAT CORPSE RACE! | Gmod TTT	M_VWQt-qtLw	true	2023-07-22
+We love (and hate) the GIANT BF BEE!! | Gmod TTT	c5AwkqJimFY	false	2023-07-25
+Let's do the Zombie Conga! | Gmod TTT	q3A3FqDJTr4	false	2023-07-27
+Exactly zero traitors remembered this randomat | Gmod TTT	tG7nh3No6e0	false	2023-07-29
+We need a good lie down after this map... | Gmod TTT	CSp850uMz98	true	2023-08-01
+Great Big Yogs Holiday 2023 | Gmod TTT	HjBz5xKAfv8	false	2023-08-03
+Every fail compilation has THIS round of Gmod TTT!	hPk2VzNw_20	false	2023-08-05
+We're HYPNOTISED by this Lava Pit in Gmod TTT!	Ge4gwl-E7vg	false	2023-08-08
+Traitors DON'T always win this Randomat!! | Gmod TTT	RqABuPTymQ8	false	2023-08-12
 \.
 
 
@@ -3135,4 +5102,3 @@ ALTER TABLE ONLY public.round
 --
 -- PostgreSQL database dump complete
 --
-
