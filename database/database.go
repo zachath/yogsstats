@@ -49,7 +49,7 @@ func GetRounds(players bool, from, to, where string, args ...string) ([]models.R
 		Title        string  `db:"title"`
 		IntroDeath   bool    `db:"intro_death"`
 		Date         string  `db:"date"`
-		Id           string  `db:"id"`
+		Id           int     `db:"id"`
 		WinningTeam  string  `db:"winning_team"`
 		Start        int     `db:"round_start"`
 		End          int     `db:"round_end"`
@@ -83,7 +83,7 @@ func GetRounds(players bool, from, to, where string, args ...string) ([]models.R
 		if players {
 			err = db.Select(&playerParticipations, "SELECT * from round_participation WHERE id = $1;", row.Id)
 			if err != nil {
-				return nil, errors.Wrapf(err, "failed to get player participations of round '%s'", row.Id)
+				return nil, errors.Annotatef(err, "failed to get player participations of round '%s'", row.Id)
 			}
 		}
 
