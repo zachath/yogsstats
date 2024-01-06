@@ -3,38 +3,190 @@
 
 Frontend found at https://yogsstats.com
 
-API found at https://api.yogsstats.com/stats/ttt
+API found at https://api.yogsstats.com/
 
-Data is manually entered for every round played, the players, their roles, teams, what team won, etc. This data is then queried upon using the following API endpoints:
+`/meta`: Returns meta information about the API, the amount of rounds tracked, the oldest and latest rounds added.
+Returns the following schema:
+```
+{
+  "roundCount": int,
+  "oldestRound": {
+    "id": string,
+    "video": {
+      "id": string,
+      "date": "string,
+      "title": string,
+      "introDeath": false
+    },
+    "winningTeam": string,
+    "start": int,
+    "end": int,
+    "length": int
+  },
+  "newestRound": {
+    "id": string,
+    "video": {
+      "id": string,
+      "date": "string,
+      "title": string,
+      "introDeath": false
+    },
+    "winningTeam": string,
+    "start": int,
+    "end": int,
+    "length": int
+  },
+  "shortestRound": {
+    "id": string,
+    "video": {
+      "id": string,
+      "date": "string,
+      "title": string,
+      "introDeath": false
+    },
+    "winningTeam": string,
+    "start": int,
+    "end": int,
+    "length": int
+  },
+  "longestRound": {
+    "id": string,
+    "video": {
+      "id": string,
+      "date": "string,
+      "title": string,
+      "introDeath": false
+    },
+    "winningTeam": string,
+    "start": int,
+    "end": int,
+    "length": int
+  }
+}
+```
 
-`/stats/ttt/meta`: Returns meta information about the API, the amount of rounds tracked, the oldest and latest rounds added.
+`/rounds`: Returns rounds stored in the database. Optional bool query parameter `players` (default false): if to include the `players` field in response. 
+Returns the following schema:
+```
+[
+    {
+        "id": int,
+        "video": {
+            "id": "string,
+            "date": string,
+            "title": string,
+            "introDeath": bool
+        },
+        "players": [
+            {
+                "id": int,
+                "player": string,
+                "role": string,
+                "team": string
+            }
+        ]
+        "winningTeam": string,
+        "start": int,
+        "end": int,
+        "length": int
+    }
+]
+```
 
-`/stats/ttt`: Returns rounds stored in the database. Valid query parameter: `id` to only return information about the specified round. The id of rounds follows the following format: `YYYYMMDDN`, with `YYYMMDD` being the date of the upload of the video containing the round, and `N` being the nth round in said video. The index starts at 0 so the id of the first round played on 2022-12-06 would be: `202212060`.
+`/rounds/round`: Specific round. The id of rounds follows the following format: `YYYYMMDDN`, with `YYYMMDD` being the date of the upload of the video containing the round, and `N` being the nth round in said video. The index starts at 0 so the id of the first round played on 2022-12-06 would be: `202212060`.
 
-`/stats/ttt/teamWins`: Returns the number rounds won of all the teams. Valid query parameter: `team` to only return the amount of wins of the specified team.
+`/videos`: Returns videos in database.
+Returns the following schema:
 
-`/stats/ttt/playerWinPercentage:` Returns the win percentage and total rounds played of all the players. Valid optional query parameters: `player` to only return the win percentage of the specified player, `team` to only return the win percentage of the specified team for each player, `canon` a boolean value of `true` or `false`, if set to true the response will only include stats from "canon" rounds (default false).
+```
+[
+    {
+        "id": string,
+        "date": string,
+        "title": string,
+        "introDeath": bool
+    }
+]
+```
+`/videos/{video}`: Specific video.
 
-`/stats/ttt/detectiveWinPercentage`: Returns the detective win percentage. Valid query parameter: `player` to only return the percentage of the specified player. `canon` - boolean, to only return statistics of 'canon' rounds.
+`/teams`: Returns teams in database.
+Returns to following schema:
+```
+[
+    {
+        "teamName": string,
+        "canWin": bool,
+        "wins": int,
+        "possibleRoles": [
+            string
+        ]
+    }
+]
+```
+`/teams/{team}`: Specific team.
 
-`/stats/ttt/roleWinPercentage`: Returns the win percentage and total rounds played of all the players. Valid optional query parameters: `player` to only return the win percentage of the specified player, `role` to only return the win percentage of the specified role for each player.
+`/roles`: Returns roles in database.
+Returns the following schema:
 
-`/stats/ttt/traitorCombos`: Returns every player tracked in the database, mapped to every player they have been "traitor buddies" with and what their win rate together has been. Valid query parameter: `player` to only return the percentages of the specified player.
+```
+[
+    {
+        "roleName": string,
+        "detective": bool,
+        "possibleTeams": [
+            string
+        ]
+    }
+]
+```
 
-`/stats/ttt/jesterKills`: Returns the amount of times they have killed the jester (and resulted in a jester win) for each player.
+`/roles/{role}`: Specific team.
 
-`/stats/ttt/videos`: Returns videos in database.
+`/players`: Returns players in database. 
+Returns the following schema:
 
-`/stats/ttt/teams`: Returns teams in database.
+```
+[
+    {
+        "name": string,
+        "detectiveWinPercentage": {
+            "percentage": float,
+            "wins": int,
+            "rounds": int
+        },
+        "teamWinPercentage": [
+            {
+            "percentage": float,
+            "wins": int,
+            "rounds": int,
+            "team": string
+            }
+        ],
+        "roleWinPercentage": [
+            {
+            "percentage": float,
+            "wins": int,
+            "rounds": int,
+            "role": string
+            }
+        ],
+        "traitorCombos": [
+            {
+            "percentage": float,
+            "wins": int,
+            "rounds": int,
+            "buddy": string
+            },
+        ],
+        "jesterKills": int
+    }
+]
+```
+`/players/{player}`: Specific player.
 
-`/stats/ttt/roles`: Returns roles in database.
-
-`/stats/ttt/players`: Returns players in database.
-
-Every endpoint, except `meta, roles, & teams`, supports the following query parameters: `to` and `from` in the `YYYY-MM-DD` format which then only includes rounds within the specified date range. These are implicitly used if not explicitly defined, with the `to` date being set to the time of the request. Any endpoint which returns float values to indicate percentages have the optional parameter `round` which truncates the response, set to false by default.
-
-All response data is in JSON format.
+Every endpoint, except `meta & roles`, supports the following query parameters: `to` and `from` in the `YYYY-MM-DD` format which then only includes rounds within the specified date range. These are implicitly used if not explicitly defined, with the `to` date being set to the time of the request.
 
 ### This API is unofficial and unrelated to the Yogscast.
 
-For any questions, send a dm to u/SgtTorran on reddit.<sup>*I have a tiny penis*<sup>
+<sup>*I have a tiny penis*<sup>

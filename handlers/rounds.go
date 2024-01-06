@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"strconv"
 	"yogsstats/database"
 	"yogsstats/models"
 
@@ -56,8 +57,15 @@ func GetRound(rw http.ResponseWriter, req *http.Request) {
 }
 
 func InsertRound(rw http.ResponseWriter, req *http.Request) {
+	id, err := strconv.Atoi(mux.Vars(req)["round"])
+	if err != nil {
+		log.Error().Stack().Err(err).Msg("failed to convert round id to int")
+		wrtiteInternalError(&rw)
+		return
+	}
+
 	round := models.Round{
-		Id: mux.Vars(req)["round"],
+		Id: id,
 	}
 
 	b, err := io.ReadAll(req.Body)
@@ -74,7 +82,7 @@ func InsertRound(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if round.Id == "" || round.Video.Id == "" || round.WinningTeam == "" || round.Start > round.End || len(round.Players) == 0 {
+	if round.Video.Id == "" || round.WinningTeam == "" || round.Start > round.End || len(round.Players) == 0 {
 		log.Error().Stack().Err(err).Msg("request did not contian all required fields")
 		http.Error(rw, "bad request", http.StatusBadRequest)
 		return

@@ -39,14 +39,14 @@ type Team struct {
 }
 
 type RoundParticipation struct {
-	Id     int    `db:"id"`
+	Id     int    `json:"id" db:"id"`
 	Player string `json:"player" db:"player"`
 	Role   string `json:"role" db:"role"`
 	Team   string `json:"team" db:"team"`
 }
 
 type Round struct {
-	Id           string               `json:"id" db:"id"`
+	Id           int                  `json:"id" db:"id"`
 	Video        Video                `json:"video"`
 	Players      []RoundParticipation `json:"players,omitempty" db:"players"`
 	WinningTeam  string               `json:"winningTeam" db:"winning_team"`
