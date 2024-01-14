@@ -56,18 +56,19 @@ CREATE TABLE public.roles_by_teams (
 ALTER TABLE public.roles_by_teams OWNER TO postgres;
 
 --
--- Name: round_participation; Type: TABLE; Schema: public; Owner: postgres
+-- Name: round_participations; Type: TABLE; Schema: public; Owner: postgres
 --
 
-CREATE TABLE public.round_participation (
+CREATE TABLE public.round_participations (
     id integer NOT NULL,
     player text NOT NULL,
     role text NOT NULL,
-    team text NOT NULL
+    team text NOT NULL,
+    died boolean NOT NULL
 );
 
 
-ALTER TABLE public.round_participation OWNER TO postgres;
+ALTER TABLE public.round_participations OWNER TO postgres;
 
 --
 -- Name: rounds; Type: TABLE; Schema: public; Owner: postgres
@@ -136,11 +137,11 @@ ALTER TABLE ONLY public.roles
 
 
 --
--- Name: round_participation round_participation_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: round_participations round_participations_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.round_participation
-    ADD CONSTRAINT round_participation_pkey PRIMARY KEY (id, player);
+ALTER TABLE ONLY public.round_participations
+    ADD CONSTRAINT round_participations_pkey PRIMARY KEY (id, player);
 
 
 --
@@ -184,27 +185,27 @@ ALTER TABLE ONLY public.roles_by_teams
 
 
 --
--- Name: round_participation round_participation_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: round_participations round_participations_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.round_participation
-    ADD CONSTRAINT round_participation_id_fkey FOREIGN KEY (id) REFERENCES public.rounds(id);
-
-
---
--- Name: round_participation round_participation_player_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.round_participation
-    ADD CONSTRAINT round_participation_player_fkey FOREIGN KEY (player) REFERENCES public.players(name);
+ALTER TABLE ONLY public.round_participations
+    ADD CONSTRAINT round_participations_id_fkey FOREIGN KEY (id) REFERENCES public.rounds(id);
 
 
 --
--- Name: round_participation round_participation_team_role_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: round_participations round_participations_player_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.round_participation
-    ADD CONSTRAINT round_participation_team_role_fk FOREIGN KEY (role, team) REFERENCES public.roles_by_teams(role, team);
+ALTER TABLE ONLY public.round_participations
+    ADD CONSTRAINT round_participations_player_fkey FOREIGN KEY (player) REFERENCES public.players(name);
+
+
+--
+-- Name: round_participations round_participations_team_role_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.round_participations
+    ADD CONSTRAINT round_participations_team_role_fk FOREIGN KEY (role, team) REFERENCES public.roles_by_teams(role, team);
 
 
 --

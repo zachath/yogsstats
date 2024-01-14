@@ -20,7 +20,6 @@ import (
 func BasicAuth(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		_, providedPassword, ok := req.BasicAuth()
-		log.Debug().Bool("ok", ok).Msg("")
 
 		if ok {
 			hashedPass := os.Getenv("POST_PASS")

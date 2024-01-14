@@ -16,7 +16,7 @@ var (
 	user                         = "postgres"
 	password                     = os.Getenv("PQ_PASS")
 	dbIp                         = os.Getenv("HOST") + ":5432"
-	connectionStringTTT          = fmt.Sprintf("postgresql://%s:%s@%s/%s", user, password, dbIp, "ttt2")
+	connectionStringTTT          = fmt.Sprintf("postgresql://%s:%s@%s/%s", user, password, dbIp, "ttt")
 	db                  *sqlx.DB = initDB(connectionStringTTT)
 )
 
@@ -81,9 +81,9 @@ func GetRounds(players bool, from, to, where string, args ...string) ([]models.R
 	for _, row := range rows {
 		playerParticipations := []models.RoundParticipation{}
 		if players {
-			err = db.Select(&playerParticipations, "SELECT * from round_participation WHERE id = $1;", row.Id)
+			err = db.Select(&playerParticipations, "SELECT * from round_participations WHERE id = $1;", row.Id)
 			if err != nil {
-				return nil, errors.Annotatef(err, "failed to get player participations of round '%s'", row.Id)
+				return nil, errors.Annotatef(err, "failed to get player participations of round '%d'", row.Id)
 			}
 		}
 
@@ -134,7 +134,7 @@ func InsertRound(round models.Round) error {
 	}
 
 	for _, rp := range round.Players {
-		_, err = tx.Exec("INSERT INTO round_participation VALUES ($1, $2, $3, $4);", round.Id, rp.Player, rp.Role, rp.Team)
+		_, err = tx.Exec("INSERT INTO round_participations VALUES ($1, $2, $3, $4);", round.Id, rp.Player, rp.Role, rp.Team)
 		if err != nil {
 			if rollback := tx.Rollback(); rollback != nil {
 				return errors.Annotate(rollback, "failed to perform & rollback query")
@@ -162,8 +162,6 @@ func GetVideos(from, to, where string, args ...string) ([]models.Video, error) {
 	for _, arg := range args {
 		arguments = append(arguments, arg)
 	}
-
-	log.Debug().Str("query", query).Msg("")
 
 	err := db.Select(&videos, query, arguments...)
 	if err != nil {
@@ -396,7 +394,7 @@ func detectiveWinPercentage(player, from, to string, canon bool) (models.WinPerc
 	var stat []models.WinPercentageStat
 	err := db.Select(
 		&stat,
-		"SELECT trunc(A.wins / (B.total)::numeric,3) as percentage, A.wins as wins, B.total as total FROM (SELECT COUNT(*) as wins FROM round_participation RP JOIN rounds R ON RP.id = R.id JOIN roles RO ON RP.role = RO.role JOIN videos V on R.video = V.video_id WHERE RP.player = $1 AND V.date >= $2 AND V.date <= $3 AND RO.is_detective = true AND R.winning_team = 'innocents') as A, (SELECT COUNT(*) as total FROM round_participation RP JOIN rounds R ON RP.id = R.id JOIN roles RO ON RP.role = RO.role JOIN videos V on R.video = V.video_id WHERE RP.player = $1 AND V.date >= $2 AND V.date <= $3 AND RO.is_detective = true) as B;",
+		"SELECT trunc(A.wins / (B.total)::numeric,3) as percentage, A.wins as wins, B.total as total FROM (SELECT COUNT(*) as wins FROM round_participations RP JOIN rounds R ON RP.id = R.id JOIN roles RO ON RP.role = RO.role JOIN videos V on R.video = V.video_id WHERE RP.player = $1 AND V.date >= $2 AND V.date <= $3 AND RO.is_detective = true AND R.winning_team = 'innocents') as A, (SELECT COUNT(*) as total FROM round_participations RP JOIN rounds R ON RP.id = R.id JOIN roles RO ON RP.role = RO.role JOIN videos V on R.video = V.video_id WHERE RP.player = $1 AND V.date >= $2 AND V.date <= $3 AND RO.is_detective = true) as B;",
 		player,
 		from,
 		to,
@@ -428,7 +426,7 @@ func teamWinPercentage(player, from, to string, teams []models.Team) ([]models.W
 
 		err := db.Select(
 			&teamStat,
-			"SELECT trunc(A.wins / (B.total)::numeric,3) as percentage, A.wins as wins, B.total as total FROM (SELECT COUNT(*) as wins FROM round_participation RP JOIN rounds R ON RP.id = R.id JOIN videos V on R.video = V.video_id WHERE RP.player = $1 AND V.date >= $2 AND V.date <= $3 AND RP.team = $4 AND R.winning_team = $4) as A, (SELECT COUNT(*) as total FROM round_participation RP JOIN rounds R ON RP.id = R.id JOIN videos V on R.video = V.video_id WHERE RP.player = $1 AND V.date >= $2 AND V.date <= $3 AND RP.team = $4) as B;",
+			"SELECT trunc(A.wins / (B.total)::numeric,3) as percentage, A.wins as wins, B.total as total FROM (SELECT COUNT(*) as wins FROM round_participations RP JOIN rounds R ON RP.id = R.id JOIN videos V on R.video = V.video_id WHERE RP.player = $1 AND V.date >= $2 AND V.date <= $3 AND RP.team = $4 AND R.winning_team = $4) as A, (SELECT COUNT(*) as total FROM round_participations RP JOIN rounds R ON RP.id = R.id JOIN videos V on R.video = V.video_id WHERE RP.player = $1 AND V.date >= $2 AND V.date <= $3 AND RP.team = $4) as B;",
 			player,
 			from,
 			to,
@@ -459,7 +457,7 @@ func roleWinPercentage(player, from, to string, roles []models.Role) ([]models.W
 
 		err := db.Select(
 			&roleStat,
-			"SELECT trunc(A.wins / (B.total)::numeric,3) as percentage, A.wins as wins, B.total as total FROM (SELECT COUNT(*) as wins FROM round_participation RP JOIN rounds R ON RP.id = R.id JOIN videos V on R.video = V.video_id WHERE RP.player = $1 AND V.date >= $2 AND V.date <= $3 AND RP.role = $4 AND R.winning_team IN (SELECT team FROM roles_by_teams WHERE role = $4)) as A, (SELECT COUNT(*) as total FROM round_participation RP JOIN rounds R ON RP.id = R.id JOIN videos V on R.video = V.video_id WHERE RP.player = $1 AND V.date >= $2 AND V.date <= $3 AND RP.role = $4) as B;",
+			"SELECT trunc(A.wins / (B.total)::numeric,3) as percentage, A.wins as wins, B.total as total FROM (SELECT COUNT(*) as wins FROM round_participations RP JOIN rounds R ON RP.id = R.id JOIN videos V on R.video = V.video_id WHERE RP.player = $1 AND V.date >= $2 AND V.date <= $3 AND RP.role = $4 AND R.winning_team IN (SELECT team FROM roles_by_teams WHERE role = $4)) as A, (SELECT COUNT(*) as total FROM round_participations RP JOIN rounds R ON RP.id = R.id JOIN videos V on R.video = V.video_id WHERE RP.player = $1 AND V.date >= $2 AND V.date <= $3 AND RP.role = $4) as B;",
 			player,
 			from,
 			to,
@@ -502,7 +500,7 @@ func traitorCombos(player, from, to string, tc *map[string]map[string]models.Win
 			var val []models.WinPercentageStat
 			err = db.Select(
 				&val,
-				"SELECT $2 as buddy, trunc(A.wins / (B.total)::numeric,3) as percentage, A.wins as wins, B.total as total FROM (SELECT COUNT(*) as wins FROM rounds R JOIN videos V ON R.video = V.video_id JOIN round_participation RP1 ON RP1.id = R.id JOIN round_participation RP2 ON RP2.id = R.id WHERE RP1.player = $1 AND RP2.player = $2 AND RP1.team = 'traitors' AND RP2.team = 'traitors' AND R.winning_team = 'traitors' AND V.date >= $3 AND V.date <= $4) as A, (SELECT COUNT(*) as total FROM rounds R JOIN videos V ON R.video = V.video_id JOIN round_participation RP1 ON RP1.id = R.id JOIN round_participation RP2 ON RP2.id = R.id WHERE RP1.player = $1 AND RP2.player = $2 AND RP1.team = 'traitors' AND RP2.team = 'traitors' AND V.date >= $3 AND V.date <= $4) as B;",
+				"SELECT $2 as buddy, trunc(A.wins / (B.total)::numeric,3) as percentage, A.wins as wins, B.total as total FROM (SELECT COUNT(*) as wins FROM rounds R JOIN videos V ON R.video = V.video_id JOIN round_participations RP1 ON RP1.id = R.id JOIN round_participations RP2 ON RP2.id = R.id WHERE RP1.player = $1 AND RP2.player = $2 AND RP1.team = 'traitors' AND RP2.team = 'traitors' AND R.winning_team = 'traitors' AND V.date >= $3 AND V.date <= $4) as A, (SELECT COUNT(*) as total FROM rounds R JOIN videos V ON R.video = V.video_id JOIN round_participations RP1 ON RP1.id = R.id JOIN round_participations RP2 ON RP2.id = R.id WHERE RP1.player = $1 AND RP2.player = $2 AND RP1.team = 'traitors' AND RP2.team = 'traitors' AND V.date >= $3 AND V.date <= $4) as B;",
 				player,
 				p,
 				from,

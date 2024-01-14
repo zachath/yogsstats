@@ -30,14 +30,14 @@ func APIMetaData(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	oldestRound, err := db.GetRound(false, from, to, " ORDER BY V.date DESC")
+	oldestRound, err := db.GetRound(false, from, to, " ORDER BY V.date ASC")
 	if err != nil {
 		log.Error().Stack().Err(err).Msg("failed to get oldest round")
 		wrtiteInternalError(&rw)
 		return
 	}
 
-	newestRound, err := db.GetRound(false, from, to, " ORDER BY V.date ASC")
+	newestRound, err := db.GetRound(false, from, to, " ORDER BY V.date DESC")
 	if err != nil {
 		log.Error().Stack().Err(err).Msg("failed to get newest round")
 		wrtiteInternalError(&rw)
