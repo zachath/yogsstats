@@ -43,15 +43,18 @@ type RoundParticipation struct {
 	Player string `json:"player" db:"player"`
 	Role   string `json:"role" db:"role"`
 	Team   string `json:"team" db:"team"`
+	Died   bool   `json:"died" db:"died"`
 }
 
 type Round struct {
-	Id           int                  `json:"id" db:"id"`
-	Video        Video                `json:"video"`
-	Players      []RoundParticipation `json:"players,omitempty" db:"players"`
-	WinningTeam  string               `json:"winningTeam" db:"winning_team"`
-	Start        int                  `json:"start" db:"vid_start"`
-	End          int                  `json:"end" db:"vid_end"`
-	Length       int                  `json:"length"`
-	JesterKiller string               `json:"jesterKiller,omitempty" db:"jester_killer"`
+	Id               int                  `json:"id" db:"id"`
+	Video            Video                `json:"video"`
+	Players          []RoundParticipation `json:"players,omitempty" db:"players"`
+	WinningTeam      string               `json:"winningTeam" db:"winning_team"`
+	Start            int                  `json:"start" db:"vid_start"`
+	End              int                  `json:"end" db:"vid_end"`
+	Length           int                  `json:"length"`
+	JesterKiller     string               `json:"jesterKiller,omitempty" db:"jester_killer"`
+	Guessed          string               `json:"guessed,omitempty" db:"guessed"`
+	VindicatorKiller string               `json:"vindicatorKiller,omitempty" db:"vindicator_killer"`
 }

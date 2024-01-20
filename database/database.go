@@ -120,10 +120,24 @@ func InsertRound(round models.Round) error {
 		return errors.Annotate(err, "failed to begin transaction")
 	}
 
-	if round.JesterKiller == "" {
-		_, err = tx.Exec("INSERT INTO rounds VALUES ($1, $2, $3, $4, $5);", round.Id, round.WinningTeam, round.Video.Id, round.Start, round.End)
-	} else {
-		_, err = tx.Exec("INSERT INTO rounds VALUES ($1, $2, $3, $4, $5, $6);", round.Id, round.WinningTeam, round.Video.Id, round.Start, round.End, round.JesterKiller)
+	_, err = tx.Exec("INSERT INTO rounds VALUES ($1, $2, $3, $4, $5);", round.Id, round.WinningTeam, round.Video.Id, round.Start, round.End)
+	if err != nil {
+		if rollback := tx.Rollback(); rollback != nil {
+			return errors.Annotate(rollback, "failed to perform & rollback query")
+		}
+		return errors.Annotate(err, "failed to perform query")
+	}
+
+	if round.JesterKiller != "" {
+		_, err = tx.Exec("UPDATE rounds SET jester_killer = $1 WHERE id = $2;", round.JesterKiller, round.Id)
+	}
+
+	if round.Guessed != "" {
+		_, err = tx.Exec("UPDATE rounds SET guessed = $1 WHERE id = $2;", round.JesterKiller, round.Id)
+	}
+
+	if round.VindicatorKiller != "" {
+		_, err = tx.Exec("UPDATE rounds SET vindicator_killer = $1 WHERE id = $2;", round.VindicatorKiller, round.Id)
 	}
 
 	if err != nil {
@@ -134,7 +148,7 @@ func InsertRound(round models.Round) error {
 	}
 
 	for _, rp := range round.Players {
-		_, err = tx.Exec("INSERT INTO round_participations VALUES ($1, $2, $3, $4);", round.Id, rp.Player, rp.Role, rp.Team)
+		_, err = tx.Exec("INSERT INTO round_participations VALUES ($1, $2, $3, $4, $5);", round.Id, rp.Player, rp.Role, rp.Team, rp.Died)
 		if err != nil {
 			if rollback := tx.Rollback(); rollback != nil {
 				return errors.Annotate(rollback, "failed to perform & rollback query")
