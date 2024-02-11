@@ -133,7 +133,7 @@ func InsertRound(round models.Round) error {
 	}
 
 	if round.Guessed != "" {
-		_, err = tx.Exec("UPDATE rounds SET guessed = $1 WHERE id = $2;", round.JesterKiller, round.Id)
+		_, err = tx.Exec("UPDATE rounds SET guessed = $1 WHERE id = $2;", round.Guessed, round.Id)
 	}
 
 	if round.VindicatorKiller != "" {
